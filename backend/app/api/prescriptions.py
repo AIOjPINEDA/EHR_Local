@@ -13,9 +13,6 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.api.auth import get_current_practitioner
 from app.models.encounter import Encounter
-from app.models.patient import Patient
-from app.models.medication_request import MedicationRequest
-from app.models.condition import Condition
 from app.models.practitioner import Practitioner
 from app.services.pdf_service import PDFService
 

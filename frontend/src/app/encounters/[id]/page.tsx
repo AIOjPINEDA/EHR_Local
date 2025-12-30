@@ -333,13 +333,21 @@ export default function EncounterDetailPage() {
           </Link>
           
           {encounter.medications.length > 0 && (
-            <button
-              onClick={handleGeneratePdf}
-              disabled={isGeneratingPdf}
-              className="flex-1 py-3 px-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 text-center"
-            >
-              📄 Descargar Receta PDF
-            </button>
+            <>
+              <button
+                onClick={handleGeneratePdf}
+                disabled={isGeneratingPdf}
+                className="flex-1 py-3 px-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 text-center"
+              >
+                📄 Descargar Receta PDF
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="py-3 px-4 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50"
+              >
+                🖨️ Imprimir
+              </button>
+            </>
           )}
         </div>
       </main>

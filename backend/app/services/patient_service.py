@@ -37,14 +37,12 @@ class PatientService:
         Returns:
             Tuple of (patients list, total count)
         """
-        query_lower = query.lower()
-        
         # Build search conditions
         stmt = (
             select(Patient)
             .options(selectinload(Patient.allergies))
             .where(
-                Patient.active == True,
+                Patient.active.is_(True),
                 or_(
                     Patient.name_given.ilike(f"%{query}%"),
                     Patient.name_family.ilike(f"%{query}%"),
@@ -63,7 +61,7 @@ class PatientService:
         count_stmt = (
             select(Patient)
             .where(
-                Patient.active == True,
+                Patient.active.is_(True),
                 or_(
                     Patient.name_given.ilike(f"%{query}%"),
                     Patient.name_family.ilike(f"%{query}%"),
@@ -114,7 +112,7 @@ class PatientService:
         # Validate DNI/NIE
         is_valid, doc_type = validate_documento_identidad(data["identifier_value"])
         if not is_valid:
-            raise ValueError(f"DNI/NIE inválido: la letra no corresponde")
+            raise ValueError("DNI/NIE inválido: la letra no corresponde")
         
         # Check for duplicates
         existing = await self.get_by_dni(data["identifier_value"])
@@ -148,7 +146,8 @@ class PatientService:
         await self.db.commit()
         await self.db.refresh(patient)
         
-        return patient
+        # Reload with relationships for response
+        return await self.get_by_id(str(patient.id))
     
     async def update(self, patient_id: str, data: dict) -> Optional[Patient]:
         """Update patient data."""

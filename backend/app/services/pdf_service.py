@@ -3,7 +3,6 @@ ConsultaMed Backend - PDF Generation Service
 
 Genera recetas médicas en PDF usando WeasyPrint.
 """
-import io
 from pathlib import Path
 from typing import List, Dict, Any
 

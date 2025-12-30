@@ -68,8 +68,8 @@ class TestValidateNIEEspañol:
     
     def test_valid_nie_y_prefix(self):
         """Test valid NIEs starting with Y."""
-        # Y = 1, so Y0000000R should be valid (10000000R)
-        assert validate_nie_español("Y0000000R") is True
+        # Y = 1, so Y0000000Z should be valid (10000000 % 23 = 6 -> Z)
+        assert validate_nie_español("Y0000000Z") is True
     
     def test_valid_nie_z_prefix(self):
         """Test valid NIEs starting with Z."""

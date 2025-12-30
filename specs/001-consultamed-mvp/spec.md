@@ -192,7 +192,7 @@ Como médico, quiero configurar mis datos profesionales para que aparezcan corre
 - **Paciente sin alergias**: Sección visible pero vacía, sin badges
 - **Template sin match**: Usuario puede escribir tratamiento manualmente
 - **PDF con muchos medicamentos**: Layout se adapta sin cortar contenido
-- **Sesión expirada durante edición**: Guarda localmente y pide re-login
+- **Sesión expirada**: Redirige a login (MVP); guardar localmente (futuro)
 - **Doble submit**: Backend idempotente, evita duplicados
 
 ---
@@ -233,10 +233,10 @@ Como médico, quiero configurar mis datos profesionales para que aparezcan corre
 
 | ID | Requisito | Prioridad | Story |
 |----|-----------|-----------|-------|
-| FR-030 | Sistema DEBE autenticar usuarios via Supabase Auth | Must | US-1 |
-| FR-031 | Sistema DEBE manejar refresh de tokens automáticamente | Must | US-1 |
+| FR-030 | Sistema DEBE autenticar usuarios via JWT (MVP: local, producción: Supabase Auth) | Must | US-1 |
+| FR-031 | Sistema DEBE manejar refresh de tokens automáticamente | Should | US-1 |
 | FR-032 | Sistema DEBE redirigir a login si sesión expira | Must | US-1 |
-| FR-033 | Sistema DEBE aplicar RLS en todas las tablas de datos | Must | US-1 |
+| FR-033 | Sistema DEBE aplicar RLS en todas las tablas de datos (producción) | Should | US-1 |
 
 ### Key Entities
 

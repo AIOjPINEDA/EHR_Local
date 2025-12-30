@@ -44,3 +44,12 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = "test_*.py"
 python_functions = "test_*"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/__pycache__/*", "app/templates/*"]
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "if __name__ == .__main__.:"]
+fail_under = 60
+show_missing = true

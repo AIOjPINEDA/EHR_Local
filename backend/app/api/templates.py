@@ -2,7 +2,6 @@
 ConsultaMed Backend - Templates Endpoints
 """
 from typing import Optional, List
-from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status, Depends
 from pydantic import BaseModel
@@ -82,7 +81,7 @@ async def list_templates(
     
     # Filtrar por favoritos
     if favorites_only:
-        query = query.where(TreatmentTemplate.is_favorite == True)
+        query = query.where(TreatmentTemplate.is_favorite.is_(True))
     
     # Búsqueda por nombre o diagnóstico
     if search:
