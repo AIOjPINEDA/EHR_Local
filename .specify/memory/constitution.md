@@ -1,50 +1,114 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# ConsultaMed Constitution
+
+Sistema de Historia Clínica Electrónica para consultorio médico privado en España.
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. FHIR R5 Alignment (NON-NEGOTIABLE)
+Todos los modelos de datos DEBEN alinearse con recursos FHIR R5 para garantizar interoperabilidad futura:
+- **Patient** → FHIR Patient resource (identificadores españoles: DNI/NIE/Pasaporte)
+- **Encounter** → FHIR Encounter (consultas médicas)
+- **Condition** → FHIR Condition (diagnósticos CIE-10)
+- **MedicationRequest** → FHIR MedicationRequest (prescripciones)
+- **AllergyIntolerance** → FHIR AllergyIntolerance
+- **Practitioner** → FHIR Practitioner (médicos colegiados)
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Los campos personalizados se implementan como extensiones, NUNCA modificando la estructura base.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. Mobile-First Design (iPad Pro Primary)
+El dispositivo principal es iPad Pro; toda la UI DEBE ser:
+- **Touch-optimized**: Targets mínimo 44x44px, gestos nativos (swipe, long-press)
+- **Responsive**: Funcional en iPad (1024px+), tablet (768px+) y móvil (320px+)
+- **Offline-capable**: Operaciones críticas deben funcionar sin conexión
+- **Performance**: LCP < 2.5s, INP < 200ms, CLS < 0.1
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### III. Spanish Regulatory Compliance
+El sistema DEBE cumplir con la normativa española:
+- **RGPD/LOPDGDD**: Consentimiento explícito, derecho al olvido, portabilidad
+- **DNI/NIE Validation**: Algoritmo de letra de control obligatorio
+- **Número de Colegiado**: Formato válido por comunidad autónoma
+- **Retención de datos**: Historiales médicos mínimo 5 años (según CCAA)
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### IV. Security by Default (Row Level Security)
+Supabase RLS es OBLIGATORIO para toda tabla con datos de pacientes:
+- Autenticación vía Supabase Auth (email/password para MVP)
+- Cada query DEBE pasar por políticas RLS
+- audit_log para toda operación CRUD en datos sensibles
+- HTTPS obligatorio, tokens JWT con expiración 1h
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### V. Simplicity Over Features (YAGNI)
+Contexto: 2 médicos, ~50 consultas/mes, consultorio pequeño:
+- NO implementar features no solicitadas explícitamente
+- Preferir soluciones estándar sobre abstracciones custom
+- Máximo 3 clics para cualquier acción frecuente
+- Sin multi-tenancy, sin facturación, sin citas (fase MVP)
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### VI. Test-First for Critical Paths
+Testing obligatorio para:
+- **Validadores**: DNI/NIE, número colegiado, fechas
+- **Cálculos clínicos**: Edad, alertas de alergias
+- **Flujos de autenticación**: Login, logout, refresh token
+- **APIs críticas**: CRUD de pacientes y encuentros
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Coverage mínimo 80% en validators y services.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Technology Stack
+
+### Frontend (Vercel)
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript 5.x (strict mode)
+- **Styling**: Tailwind CSS 3.x + shadcn/ui
+- **State**: TanStack Query 5.x (server state), Zustand (client state)
+- **Forms**: React Hook Form + Zod validation
+
+### Backend (Railway)
+- **Framework**: FastAPI 0.109+
+- **Language**: Python 3.11+
+- **ORM**: SQLAlchemy 2.x (async)
+- **Validation**: Pydantic 2.x
+- **PDF**: WeasyPrint 60+
+
+### Database (Supabase)
+- **Engine**: PostgreSQL 15.x
+- **Auth**: Supabase Auth
+- **Security**: Row Level Security enabled
+- **Storage**: Supabase Storage (documentos)
+
+## Development Workflow
+
+### Branch Strategy
+- `main`: Producción (protected)
+- `develop`: Integración
+- `feature/*`: Features individuales
+- `fix/*`: Correcciones
+
+### Code Quality Gates
+1. **Linting**: ESLint (frontend), Ruff (backend)
+2. **Formatting**: Prettier (frontend), Black (backend)
+3. **Type checking**: TypeScript strict, mypy
+4. **Tests**: pytest (backend), Vitest (frontend)
+5. **PR Review**: Mínimo 1 aprobación
+
+### Commit Convention
+```
+type(scope): descripción corta
+
+feat(patients): add DNI validation
+fix(auth): correct token refresh logic
+docs(api): update endpoint documentation
+```
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Esta constitución:
+- Supersede cualquier práctica no documentada
+- Requiere aprobación explícita para modificaciones
+- Se versiona semánticamente (MAJOR.MINOR.PATCH)
+- Se revisa trimestralmente o ante cambios regulatorios
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Excepciones a estos principios DEBEN:
+1. Documentarse en el PR con justificación
+2. Aprobarse por ambos médicos propietarios
+3. Registrarse en `docs/exceptions.md`
+
+**Version**: 1.0.0 | **Ratified**: 2024-12-30 | **Last Amended**: 2024-12-30

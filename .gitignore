@@ -1,6 +1,20 @@
 # ============================================
 # ConsultaMed - .gitignore
 # ============================================
+# IMPORTANTE: Este repo es PÚBLICO
+# NO subir datos de pacientes ni credenciales
+# ============================================
+
+# ============================================
+# DATOS SENSIBLES - CRÍTICO
+# ============================================
+# Carpeta con datos antiguos de pacientes (NUNCA subir)
+CRM_Antiguo/
+
+# Archivos SQL con datos reales
+**/seed_data.sql
+**/backup*.sql
+**/dump*.sql
 
 # ============================================
 # Python / Backend
@@ -134,3 +148,16 @@ secrets/
 *.bak
 *.backup
 .cache/
+
+# ============================================
+# Spec-kit (mantener solo estructura)
+# ============================================
+.specify/memory/decisions/
+!.specify/memory/decisions/.gitkeep
+
+# ============================================
+# Logs de desarrollo
+# ============================================
+*.log
+debug/
+tmp/
