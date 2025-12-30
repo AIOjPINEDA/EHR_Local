@@ -3,6 +3,7 @@
 > Sistema de gestión de consultas médicas para consultorios privados pequeños.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Status](https://img.shields.io/badge/status-MVP%20Complete-green)
 ![License](https://img.shields.io/badge/license-Private-red)
 
 ## 🎯 Objetivo
@@ -13,20 +14,35 @@ ConsultaMed permite a médicos de consultorios privados (1-2 médicos) documenta
 - **Templates de tratamiento**: Protocolos predefinidos por diagnóstico
 - **Recetas PDF automáticas**: Generación profesional con 1 clic
 
+## ✅ Estado del MVP
+
+| Componente | Estado |
+|------------|--------|
+| Backend API (FastAPI) | ✅ Completo |
+| Frontend (Next.js 14) | ✅ Completo |
+| Auth JWT | ✅ Funcional |
+| Pacientes CRUD | ✅ Con validación DNI |
+| Alergias | ✅ CRUD completo |
+| Consultas | ✅ Con diagnósticos y medicaciones |
+| Templates | ✅ CRUD completo |
+| PDF Recetas | ✅ WeasyPrint |
+| Tests Backend | ✅ 24 passing |
+
 ## 🏗️ Arquitectura
 
 ```
 ┌─────────────────┐     REST API     ┌─────────────────┐
-│     Vercel      │◄───────────────►│     Railway     │
-│   Next.js 14    │     (JSON)      │    FastAPI      │
+│   localhost     │◄───────────────►│   localhost     │
+│   :3000         │     (JSON)      │   :8000         │
+│   Next.js 14    │                  │    FastAPI      │
 │   TypeScript    │                  │    Python       │
 │   Tailwind CSS  │                  │   WeasyPrint    │
 └─────────────────┘                  └────────┬────────┘
                                               │
                                               ▼
                                     ┌─────────────────┐
-                                    │    Supabase     │
                                     │   PostgreSQL    │
+                                    │   (local/Supa)  │
                                     └─────────────────┘
 ```
 
@@ -47,8 +63,8 @@ consultamed/
 
 - Python 3.11+
 - Node.js 18+
-- pnpm (recomendado) o npm
-- Cuenta Supabase (gratis)
+- npm o pnpm
+- PostgreSQL (local o Supabase)
 
 ### Backend (FastAPI)
 
@@ -57,8 +73,7 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
-cp .env.example .env
-# Editar .env con credenciales Supabase
+# Crear .env con: DATABASE_URL=postgresql+asyncpg://user@localhost:5432/consultamed
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -66,23 +81,22 @@ uvicorn app.main:app --reload --port 8000
 
 ```bash
 cd frontend
-pnpm install
-cp .env.example .env.local
-# Editar .env.local
-pnpm dev
+npm install
+npm run dev
+# Abrir http://localhost:3000
 ```
 
-### Base de Datos
+### Credenciales de Prueba
 
-1. Crear proyecto en [Supabase](https://supabase.com)
-2. Ejecutar `database/schema.sql` en SQL Editor
-3. Ejecutar `database/seed.sql` para datos iniciales
+- **Email**: `sara@consultamed.es` o `jaime@consultamed.es`
+- **Password**: `demo`
 
 ## 📚 Documentación
 
-- [Especificación Completa](./docs/SPEC.md)
+- [Estado del Proyecto](./TODO.md)
 - [API Contract](./docs/API.md)
 - [Guía de Usuario](./docs/USER_GUIDE.md)
+- [Spec MVP](./specs/001-consultamed-mvp/spec.md)
 
 ## 👥 Usuarios
 
@@ -91,17 +105,19 @@ pnpm dev
 | Sara Isabel Muñoz Mejía | Medicina Familiar | 282886589 |
 | Jaime A. Pineda Moreno | Urgencias | 282888890 |
 
-## 📋 Sprints
+## 📋 Estado
 
 - [x] Sprint 0: Setup inicial
-- [ ] Sprint 1: Fundamentos (Auth + Búsqueda)
-- [ ] Sprint 2: Core (Pacientes + Consultas)
-- [ ] Sprint 3: Templates + PDF
-- [ ] Sprint 4: Deploy + Polish
+- [x] Sprint 1: Auth + Búsqueda
+- [x] Sprint 2: Pacientes + Consultas  
+- [x] Sprint 3: Templates + PDF
+- [ ] Sprint 4: Deploy a producción
 
 ## 🔒 Seguridad
 
-- Row Level Security (RLS) en todas las tablas
+- JWT Auth con expiración 8h (MVP)
+- Validación DNI/NIE español
+- Row Level Security (RLS) pendiente para producción
 - Autenticación JWT obligatoria
 - HTTPS en producción
 - Validación backend de todos los inputs

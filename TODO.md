@@ -1,70 +1,90 @@
-# ConsultaMed - Tareas Pendientes
+# ConsultaMed - Estado del Proyecto
 
-## Sprint 0: Setup ✅
-- [x] Crear estructura del repositorio
-- [x] Configurar backend FastAPI
-- [x] Configurar frontend Next.js
-- [x] Crear schema de base de datos
-- [x] Crear documentación inicial
+> **Estado**: ✅ MVP COMPLETO - Listo para merge  
+> **Última actualización**: 2024-12-30  
+> **Branch**: `001-consultamed-mvp`
 
-## Sprint 1: Fundamentos (Próximo)
+## ✅ MVP Completado
 
-### Backend (Jaime)
-- [ ] T-007: Completar modelo Practitioner con auth
-- [ ] T-008: Crear schemas Pydantic para auth
-- [ ] T-009: Implementar JWT utils
-- [ ] T-010: Crear endpoints /auth/*
-- [ ] T-019: Completar endpoints /patients
-- [ ] T-020: Tests del validador DNI
+### Backend (FastAPI)
+- [x] Auth JWT con login/logout
+- [x] Endpoints /patients CRUD con validación DNI/NIE
+- [x] Endpoints /allergies CRUD
+- [x] Endpoints /encounters con diagnósticos y medicaciones
+- [x] Endpoints /templates CRUD completo
+- [x] Endpoints /prescriptions con generación PDF (WeasyPrint)
+- [x] Tests de validadores DNI/NIE (24 tests passing)
+- [x] Linting con ruff (0 errores)
 
-### Frontend (Agente AI)
-- [ ] T-011: Configurar TanStack Query
-- [ ] T-012: Crear hook useAuth
-- [ ] T-013: Completar página login
-- [ ] T-014: Crear middleware auth
-- [ ] T-015: Crear layout principal
-- [ ] T-024: Crear hook usePatients
-- [ ] T-025: Crear PatientSearch component
+### Frontend (Next.js 14)
+- [x] Página de login con JWT
+- [x] Dashboard con búsqueda de pacientes
+- [x] Lista de pacientes paginada
+- [x] Formulario nuevo paciente con validación DNI
+- [x] Detalle de paciente con alergias y encuentros
+- [x] Formulario nueva consulta con templates
+- [x] Detalle de consulta con descarga PDF e impresión
+- [x] Gestión de templates de tratamiento
+- [x] Build de producción exitoso
 
-### Compartido
-- [ ] T-005: Crear proyecto en Supabase
-- [ ] T-006: Ejecutar schema SQL en Supabase
-
-## Sprint 2: Core Funcional (Pendiente)
-- Ver tasks T-027 a T-046 en SPEC.md
-
-## Sprint 3: Templates + PDF (Pendiente)
-- Ver tasks T-047 a T-064 en SPEC.md
-
-## Sprint 4: Deploy + Polish (Pendiente)
-- Ver tasks T-065 a T-080 en SPEC.md
+### Base de Datos (PostgreSQL)
+- [x] Schema SQL con modelos FHIR-aligned
+- [x] Datos seed de practitioners
 
 ---
 
-## Notas
+## 📋 Post-MVP (Siguiente Iteración)
 
-### Para iniciar desarrollo:
+### Alta Prioridad
+- [ ] Deploy a producción (Vercel + Railway + Supabase)
+- [ ] Tests E2E con Playwright
+- [ ] Migrar de JWT local a Supabase Auth
+- [ ] Row Level Security (RLS) en Supabase
 
-1. **Backend**:
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   cp .env.example .env
-   # Editar .env con credenciales
-   uvicorn app.main:app --reload
-   ```
+### Media Prioridad
+- [ ] Aumentar cobertura de tests backend (>80%)
+- [ ] Tests unitarios frontend
+- [ ] Validación de interacciones medicamentosas
+- [ ] Historial de cambios (audit log)
 
-2. **Frontend**:
-   ```bash
-   cd frontend
-   npm install
-   cp .env.example .env.local
-   npm run dev
-   ```
+### Baja Prioridad
+- [ ] PWA con service worker
+- [ ] Modo offline
+- [ ] Backup automático
 
-3. **Base de datos**:
-   - Crear proyecto en Supabase
-   - Ejecutar `ConsultaMed_Schema_Supabase.sql` en SQL Editor
-   - Ejecutar `database/seed.sql` para datos iniciales
+---
+
+## 🚀 Cómo Ejecutar
+
+### Backend
+```bash
+cd backend
+source ../.venv/bin/activate  # o crear venv nuevo
+pip install -r requirements.txt
+# Crear archivo .env con DATABASE_URL
+uvicorn app.main:app --reload --port 8000
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+# Abrir http://localhost:3000
+```
+
+### Credenciales de Prueba
+- **Email**: `sara@consultamed.es` o `jaime@consultamed.es`
+- **Password**: `demo`
+
+---
+
+## 📊 Verificación Final
+
+| Check | Estado |
+|-------|--------|
+| `ruff check .` | ✅ All checks passed |
+| `pytest -v` | ✅ 24 passed |
+| `npm run build` | ✅ Build exitoso |
+| API endpoints | ✅ Todos probados |
+| PDF generation | ✅ Funcional |

@@ -1,13 +1,33 @@
 # Implementation Plan: ConsultaMed MVP
 
-**Branch**: `001-consultamed-mvp` | **Date**: 2024-12-30 | **Spec**: specs/001-consultamed-mvp/spec.md
+**Branch**: `001-consultamed-mvp` | **Date**: 2024-12-30 | **Spec**: specs/001-consultamed-mvp/spec.md  
+**Status**: ✅ MVP COMPLETE  
 **Input**: Feature specification from `/specs/001-consultamed-mvp/spec.md`
 
 **Note**: Filled per `/speckit.plan` workflow.
 
 ## Summary
 
-MVP para consulta médica: autenticación con Supabase Auth, búsqueda y CRUD de pacientes con validación DNI/NIE y cálculo de edad, gestión de alergias, registro de consultas con templates de tratamiento, y generación de receta PDF desde backend FastAPI.
+MVP para consulta médica: autenticación JWT local (producción: Supabase Auth), búsqueda y CRUD de pacientes con validación DNI/NIE y cálculo de edad, gestión de alergias, registro de consultas con templates de tratamiento, y generación de receta PDF desde backend FastAPI.
+
+## Implementation Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Backend Auth | ✅ | JWT login/logout, /me endpoint |
+| Backend Patients | ✅ | CRUD con validación DNI |
+| Backend Allergies | ✅ | CRUD completo |
+| Backend Encounters | ✅ | Con conditions y medications |
+| Backend Templates | ✅ | CRUD completo |
+| Backend Prescriptions | ✅ | PDF generation (WeasyPrint) |
+| Frontend Auth | ✅ | Login page, auth store |
+| Frontend Dashboard | ✅ | Patient search |
+| Frontend Patients | ✅ | List, detail, create |
+| Frontend Encounters | ✅ | Create, detail with print |
+| Frontend Templates | ✅ | Full CRUD page |
+| Tests Backend | ✅ | 24 DNI validator tests |
+| Linting | ✅ | ruff check passing |
+| Build | ✅ | npm run build passing |
 
 ## Technical Context
 

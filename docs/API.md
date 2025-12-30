@@ -1,11 +1,7 @@
 # ConsultaMed API - Documentación
 
-## Base URL
-
-```
-Production: https://api.consultamed.app
-Development: http://localhost:8000
-```
+> **Estado**: ✅ MVP Completo - Todos los endpoints funcionales  
+> **Base URL**: `http://localhost:8000/api/v1`
 
 ## Autenticación
 
@@ -19,50 +15,54 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### Authentication
 
-| Method | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/auth/login` | Iniciar sesión |
-| GET | `/auth/me` | Usuario actual |
+| Method | Endpoint | Descripción | Estado |
+|--------|----------|-------------|--------|
+| POST | `/auth/login` | Iniciar sesión (form-data) | ✅ |
+| GET | `/auth/me` | Usuario actual | ✅ |
 
 ### Patients
 
-| Method | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/patients` | Listar/buscar pacientes |
-| GET | `/patients/{id}` | Obtener paciente |
-| POST | `/patients` | Crear paciente |
-| PUT | `/patients/{id}` | Actualizar paciente |
+| Method | Endpoint | Descripción | Estado |
+|--------|----------|-------------|--------|
+| GET | `/patients/` | Listar/buscar pacientes | ✅ |
+| GET | `/patients/{id}` | Obtener paciente | ✅ |
+| POST | `/patients/` | Crear paciente | ✅ |
+| PATCH | `/patients/{id}` | Actualizar paciente | ✅ |
 
 ### Allergies
 
-| Method | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/patients/{id}/allergies` | Añadir alergia |
-| DELETE | `/patients/{id}/allergies/{allergy_id}` | Eliminar alergia |
+| Method | Endpoint | Descripción | Estado |
+|--------|----------|-------------|--------|
+| GET | `/patients/{id}/allergies` | Listar alergias | ✅ |
+| POST | `/patients/{id}/allergies` | Añadir alergia | ✅ |
+| DELETE | `/patients/{id}/allergies/{allergy_id}` | Eliminar alergia | ✅ |
 
 ### Encounters
 
-| Method | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/patients/{id}/encounters` | Historial consultas |
-| POST | `/patients/{id}/encounters` | Nueva consulta |
+| Method | Endpoint | Descripción | Estado |
+|--------|----------|-------------|--------|
+| GET | `/encounters/patient/{patient_id}` | Historial consultas | ✅ |
+| GET | `/encounters/{id}` | Detalle consulta | ✅ |
+| POST | `/encounters/patient/{patient_id}` | Nueva consulta | ✅ |
+| PATCH | `/encounters/{id}` | Actualizar consulta | ✅ |
 
 ### Templates
 
-| Method | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/templates` | Listar templates |
-| GET | `/templates/match?diagnosis=X` | Buscar template por diagnóstico |
-| POST | `/templates` | Crear template |
-| PUT | `/templates/{id}` | Actualizar template |
-| DELETE | `/templates/{id}` | Eliminar template |
+| Method | Endpoint | Descripción | Estado |
+|--------|----------|-------------|--------|
+| GET | `/templates/` | Listar templates | ✅ |
+| GET | `/templates/{id}` | Obtener template | ✅ |
+| GET | `/templates/match?diagnosis=X` | Buscar por diagnóstico | ✅ |
+| POST | `/templates/` | Crear template | ✅ |
+| PATCH | `/templates/{id}` | Actualizar template | ✅ |
+| DELETE | `/templates/{id}` | Eliminar template | ✅ |
 
 ### Prescriptions
 
-| Method | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/encounters/{id}/prescription/preview` | Vista previa datos |
-| GET | `/encounters/{id}/prescription/pdf` | Descargar PDF |
+| Method | Endpoint | Descripción | Estado |
+|--------|----------|-------------|--------|
+| GET | `/prescriptions/{encounter_id}/preview` | Vista previa datos | ✅ |
+| GET | `/prescriptions/{encounter_id}/pdf` | Descargar PDF | ✅ |
 
 ## Códigos de Error
 
