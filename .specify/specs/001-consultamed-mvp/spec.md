@@ -29,7 +29,7 @@ Los médicos en consultorios pequeños pierden tiempo valioso en:
 | Médico de Familia | Sara Isabel Muñoz Mejía (Nº Col: 282886589) | Diario |
 | Médico de Urgencias | Jaime A. Pineda Moreno (Nº Col: 282888890) | Diario |
 
-**Contexto de uso**: Consultorio privado, ~50 consultas/mes, dispositivo principal iPad Pro.
+**Contexto de uso**: Consultorio privado, ~50 consultas/mes, dispositivo principal PC de escritorio.
 
 ---
 

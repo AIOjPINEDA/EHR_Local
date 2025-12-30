@@ -18,7 +18,7 @@ Ver: [ConsultaMed_SPEC_COMPLETO.md](../ConsultaMed_SPEC_COMPLETO.md)
 ## Principios Clave
 
 - **Simplicidad Primero**: La forma más simple posible
-- **Mobile-First**: Diseñado para iPad Pro
+- **Desktop-First**: Diseñado para PC de escritorio
 - **60 segundos**: Documentar consulta conocida < 60s
 - **FHIR-Ready**: Compatible pero no dependiente
 - **Backend = Lógica**: Toda validación en Python

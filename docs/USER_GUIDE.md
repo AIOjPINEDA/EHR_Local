@@ -6,7 +6,7 @@ ConsultaMed es una aplicación web diseñada para facilitar la gestión de consu
 
 ## Acceso
 
-1. Abre la aplicación en tu navegador (iPad recomendado)
+1. Abre la aplicación en tu navegador (Chrome/Firefox en PC recomendado)
 2. Introduce tu email y contraseña
 3. Pulsa "Iniciar Sesión"
 

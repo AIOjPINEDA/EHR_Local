@@ -7,7 +7,7 @@ Auto-generated from feature plans. Last updated: 2024-12-30
 **ConsultaMed** es un sistema de Historia Clínica Electrónica (EHR) para consultorios médicos privados en España.
 
 - **Usuarios**: 2 médicos, ~50 consultas/mes
-- **Dispositivo principal**: iPad Pro
+- **Dispositivo principal**: PC de escritorio
 - **Objetivo**: Documentar consulta en <60 segundos con templates
 
 ## Active Technologies

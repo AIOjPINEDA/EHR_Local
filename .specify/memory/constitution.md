@@ -15,11 +15,11 @@ Todos los modelos de datos DEBEN alinearse con recursos FHIR R5 para garantizar 
 
 Los campos personalizados se implementan como extensiones, NUNCA modificando la estructura base.
 
-### II. Mobile-First Design (iPad Pro Primary)
-El dispositivo principal es iPad Pro; toda la UI DEBE ser:
-- **Touch-optimized**: Targets mínimo 44x44px, gestos nativos (swipe, long-press)
-- **Responsive**: Funcional en iPad (1024px+), tablet (768px+) y móvil (320px+)
-- **Offline-capable**: Operaciones críticas deben funcionar sin conexión
+### II. Desktop-First Design (PC Primary)
+El dispositivo principal es PC de escritorio; toda la UI DEBE ser:
+- **Mouse-optimized**: Hover states, click preciso, atajos de teclado
+- **Responsive**: Funcional en desktop (1280px+), laptop (1024px+) y tablet (768px+)
+- **Keyboard-friendly**: Navegación completa con Tab, atajos para acciones frecuentes
 - **Performance**: LCP < 2.5s, INP < 200ms, CLS < 0.1
 
 ### III. Spanish Regulatory Compliance
@@ -111,4 +111,4 @@ Excepciones a estos principios DEBEN:
 2. Aprobarse por ambos médicos propietarios
 3. Registrarse en `docs/exceptions.md`
 
-**Version**: 1.0.0 | **Ratified**: 2024-12-30 | **Last Amended**: 2024-12-30
+**Version**: 1.1.0 | **Ratified**: 2024-12-30 | **Last Amended**: 2024-12-30
