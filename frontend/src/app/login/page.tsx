@@ -2,6 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api/client";
+import { authStore } from "@/lib/stores/auth-store";
+
+interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  practitioner: {
+    id: string;
+    identifier_value: string;
+    name_given: string;
+    name_family: string;
+    qualification_code: string | null;
+    telecom_email: string | null;
+  };
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,16 +31,37 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // TODO: Implement actual login with backend
-      // const response = await api.post('/auth/login', { email, password });
+      // Enviar como form-data para OAuth2PasswordRequestForm
+      const formData = new URLSearchParams();
+      formData.append("username", email);
+      formData.append("password", password);
       
-      // For now, simulate login
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: formData.toString(),
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Error de autenticación");
+      }
+      
+      const data: LoginResponse = await response.json();
+      
+      // Guardar en store y API client
+      authStore.login(data.access_token, data.practitioner);
+      api.setToken(data.access_token);
       
       // Redirect to dashboard
       router.push("/dashboard");
     } catch (err) {
-      setError("Credenciales inválidas. Por favor, inténtelo de nuevo.");
+      setError(err instanceof Error ? err.message : "Error de conexión");
     } finally {
       setIsLoading(false);
     }

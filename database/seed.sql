@@ -13,6 +13,7 @@ INSERT INTO practitioners (
   name_given,
   name_family,
   qualification_code,
+  telecom_email,
   active
 ) VALUES 
 (
@@ -20,6 +21,7 @@ INSERT INTO practitioners (
   'Sara Isabel',
   'Muñoz Mejía',
   'Medicina Familiar y Comunitaria',
+  'sara@consultamed.es',
   true
 ),
 (
@@ -27,9 +29,11 @@ INSERT INTO practitioners (
   'Jaime A.',
   'Pineda Moreno',
   'Medicina de Urgencias',
+  'jaime@consultamed.es',
   true
 )
-ON CONFLICT (identifier_value) DO NOTHING;
+ON CONFLICT (identifier_value) DO UPDATE SET
+  telecom_email = EXCLUDED.telecom_email;
 
 -- ============================================================================
 -- TEMPLATES DE TRATAMIENTO INICIALES
