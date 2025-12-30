@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Receta Médica</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 0;
+        }
+        
+        /* Header */
+        .header {
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .practitioner-info {
+            text-align: right;
+        }
+        
+        .practitioner-name {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #1e40af;
+        }
+        
+        .practitioner-details {
+            font-size: 10pt;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        /* Title */
+        .title {
+            font-size: 18pt;
+            color: #1e40af;
+            margin-bottom: 20px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        /* Patient Info */
+        .patient-box {
+            background-color: #f1f5f9;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .patient-box .label {
+            font-weight: bold;
+            color: #1e40af;
+        }
+        
+        .patient-row {
+            margin-bottom: 5px;
+        }
+        
+        /* Diagnosis */
+        .diagnosis-section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        
+        /* Medications */
+        .medications-section {
+            margin-bottom: 25px;
+        }
+        
+        .medication-item {
+            border-left: 3px solid #10b981;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            background-color: #f0fdf4;
+        }
+        
+        .medication-name {
+            font-weight: bold;
+            font-size: 12pt;
+            color: #065f46;
+        }
+        
+        .medication-dosage {
+            margin-top: 5px;
+        }
+        
+        .medication-duration {
+            font-style: italic;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        /* Instructions */
+        .instructions-section {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .instructions-title {
+            font-weight: bold;
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .date-section {
+            font-size: 10pt;
+        }
+        
+        .signature-section {
+            text-align: center;
+        }
+        
+        .signature-line {
+            border-top: 1px solid #333;
+            width: 200px;
+            margin-bottom: 5px;
+        }
+        
+        .signature-label {
+            font-size: 9pt;
+            color: #666;
+        }
+        
+        /* Watermark */
+        .watermark {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 8pt;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Practitioner Info -->
+        <div class="header">
+            <div class="practitioner-info">
+                <div class="practitioner-name">{{ practitioner.full_name }}</div>
+                <div class="practitioner-details">
+                    Nº Colegiado: {{ practitioner.identifier_value }}<br>
+                    {{ practitioner.qualification_code }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Title -->
+        <h1 class="title">Receta Médica</h1>
+        
+        <!-- Patient Information -->
+        <div class="patient-box">
+            <div class="patient-row">
+                <span class="label">Paciente:</span> {{ patient.full_name }}
+            </div>
+            <div class="patient-row">
+                <span class="label">DNI:</span> {{ patient.identifier_value }}
+                &nbsp;&nbsp;&nbsp;
+                <span class="label">Edad:</span> {{ patient.age }} años
+            </div>
+        </div>
+        
+        <!-- Diagnosis -->
+        <div class="diagnosis-section">
+            <div class="section-title">Diagnóstico</div>
+            <p>{{ encounter.diagnosis }}</p>
+        </div>
+        
+        <!-- Medications -->
+        <div class="medications-section">
+            <div class="section-title">Tratamiento</div>
+            
+            {% for med in medications %}
+            <div class="medication-item">
+                <div class="medication-name">{{ med.medication_text }}</div>
+                <div class="medication-dosage">{{ med.dosage_text }}</div>
+                {% if med.duration_value and med.duration_unit %}
+                <div class="medication-duration">
+                    Duración: {{ med.duration_value }} 
+                    {% if med.duration_unit == 'd' %}días
+                    {% elif med.duration_unit == 'wk' %}semanas
+                    {% elif med.duration_unit == 'mo' %}meses
+                    {% elif med.duration_unit == 'h' %}horas
+                    {% else %}{{ med.duration_unit }}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Instructions -->
+        {% if instructions %}
+        <div class="instructions-section">
+            <div class="instructions-title">Indicaciones adicionales:</div>
+            <p>{{ instructions }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="date-section">
+                <strong>Fecha:</strong> {{ encounter.date }}
+            </div>
+            
+            <div class="signature-section">
+                <div class="signature-line"></div>
+                <div class="signature-label">Firma del médico</div>
+            </div>
+        </div>
+        
+        <!-- Watermark -->
+        <div class="watermark">ConsultaMed</div>
+    </div>
+</body>
+</html>

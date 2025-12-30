@@ -1,0 +1,3 @@
+"""
+ConsultaMed Backend - Services Package
+"""
