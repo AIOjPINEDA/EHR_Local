@@ -15,10 +15,16 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS Middleware
+# CORS Middleware - Allow both localhost and 127.0.0.1
+cors_origins = [
+    settings.FRONTEND_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
