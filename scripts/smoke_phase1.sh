@@ -1,67 +1,91 @@
 #!/bin/bash
-# ConsultaMed V1 - Smoke Test Phase 1
-# Purpose: Validate that core API endpoints are functional
+# ConsultaMed V1 - Smoke Test
+# Purpose: Validate core API flow with authenticated requests
 # Usage: ./scripts/smoke_phase1.sh [API_URL]
 
-set -e
+set -euo pipefail
 
-API_URL="${API_URL:-http://localhost:8000}"
+API_URL="${1:-${API_URL:-http://localhost:8000}}"
 PILOT_PASSWORD="${PILOT_PASSWORD:-piloto2026}"
+TEST_EMAIL="${TEST_EMAIL:-sara@consultamed.es}"
+WARNINGS=0
 
-echo "🔥 ConsultaMed Smoke Test - Phase 1"
-echo "   API URL: $API_URL"
+echo "ConsultaMed Smoke Test"
+echo "API URL: $API_URL"
 echo ""
 
-# Test 1: Health check (basic connectivity)
-echo "1️⃣  Testing API connectivity..."
-if curl -sf "$API_URL/api/v1/health" > /dev/null 2>&1 || curl -sf "$API_URL/docs" > /dev/null; then
-    echo "   ✅ API is reachable"
+echo "1) API connectivity"
+if curl -sf "$API_URL/health" >/dev/null; then
+    echo "   OK /health"
 else
-    echo "   ⚠️  Health endpoint not available, trying auth..."
+    echo "   FAIL: $API_URL/health not reachable"
+    exit 1
 fi
 
-# Test 2: Authentication
-echo "2️⃣  Testing authentication..."
-TOKEN=$(curl -sf -X POST "$API_URL/api/v1/auth/login" \
+echo "2) Authentication"
+LOGIN_RESPONSE=$(curl -sf -X POST "$API_URL/api/v1/auth/login" \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    -d "username=sara@consultamed.es&password=$PILOT_PASSWORD" 2>/dev/null \
-    | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+    -d "username=$TEST_EMAIL&password=$PILOT_PASSWORD")
+TOKEN=$(echo "$LOGIN_RESPONSE" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
 
-if [ -n "$TOKEN" ]; then
-    echo "   ✅ Authentication successful"
+if [ -z "$TOKEN" ]; then
+    echo "   FAIL: login did not return access_token"
+    exit 1
+fi
+echo "   OK token issued"
+
+echo "3) Authenticated profile"
+ME_RESPONSE=$(curl -sf "$API_URL/api/v1/auth/me" \
+    -H "Authorization: Bearer $TOKEN")
+if echo "$ME_RESPONSE" | grep -q '"id"'; then
+    echo "   OK /auth/me"
 else
-    echo "   ❌ FAILED: Could not authenticate"
+    echo "   FAIL: /auth/me response invalid"
     exit 1
 fi
 
-# Test 3: Patients endpoint (requires auth)
-echo "3️⃣  Testing patients endpoint..."
-PATIENTS_RESPONSE=$(curl -sf "$API_URL/api/v1/patients" \
-    -H "Authorization: Bearer $TOKEN" 2>/dev/null)
-
-if echo "$PATIENTS_RESPONSE" | grep -q "items"; then
-    echo "   ✅ Patients endpoint working"
+echo "4) Patients list"
+PATIENTS_RESPONSE=$(curl -sf "$API_URL/api/v1/patients?limit=1" \
+    -H "Authorization: Bearer $TOKEN")
+if ! echo "$PATIENTS_RESPONSE" | grep -q '"items"'; then
+    echo "   FAIL: /patients response invalid"
+    exit 1
+fi
+PATIENT_ID=$(echo "$PATIENTS_RESPONSE" | grep -o '"id":"[^"]*"' | head -n1 | cut -d'"' -f4)
+if [ -z "$PATIENT_ID" ]; then
+    echo "   WARN: no patients found, skipping encounters check"
+    WARNINGS=1
 else
-    echo "   ❌ FAILED: Patients endpoint error"
+    echo "   OK patient_id=$PATIENT_ID"
+fi
+
+echo "5) Patient encounters"
+if [ -n "$PATIENT_ID" ]; then
+    ENCOUNTERS_RESPONSE=$(curl -sf "$API_URL/api/v1/encounters/patient/$PATIENT_ID?limit=1" \
+        -H "Authorization: Bearer $TOKEN")
+    if echo "$ENCOUNTERS_RESPONSE" | grep -q '"items"'; then
+        echo "   OK /encounters/patient/{id}"
+    else
+        echo "   FAIL: encounters endpoint response invalid"
+        exit 1
+    fi
+else
+    echo "   SKIP: /encounters/patient/{id}"
+fi
+
+echo "6) Templates list"
+TEMPLATES_RESPONSE=$(curl -sf "$API_URL/api/v1/templates?limit=1" \
+    -H "Authorization: Bearer $TOKEN")
+if echo "$TEMPLATES_RESPONSE" | grep -q '"items"'; then
+    echo "   OK /templates"
+else
+    echo "   FAIL: templates endpoint response invalid"
     exit 1
 fi
 
-# Test 4: Encounters endpoint
-echo "4️⃣  Testing encounters endpoint..."
-ENCOUNTERS_RESPONSE=$(curl -sf "$API_URL/api/v1/encounters/patient/test-id" \
-    -H "Authorization: Bearer $TOKEN" 2>/dev/null || echo '{"error":"expected"}')
-
-# Just checking we get a response (404 for test-id is expected)
-if [ -n "$ENCOUNTERS_RESPONSE" ]; then
-    echo "   ✅ Encounters endpoint responding"
+echo ""
+if [ "$WARNINGS" -eq 0 ]; then
+    echo "Smoke test passed: auth + patients + encounters + templates are operational."
 else
-    echo "   ⚠️  Encounters endpoint not responding"
+    echo "Smoke test passed with warnings: core endpoints are operational."
 fi
-
-echo ""
-echo "========================================"
-echo "🎉 SMOKE TEST PASSED"
-echo "========================================"
-echo ""
-echo "All core endpoints are functional."
-echo "Ready for pilot deployment!"

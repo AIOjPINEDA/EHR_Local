@@ -72,6 +72,8 @@ pnpm-debug.log*
 .next/
 out/
 .vercel
+*.tsbuildinfo
+frontend/test-output.css
 
 # ============================================
 # Environment Variables

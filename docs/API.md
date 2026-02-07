@@ -38,9 +38,10 @@ curl -X POST "http://localhost:8000/api/v1/auth/login" \
   "token_type": "bearer",
   "practitioner": {
     "id": "uuid",
-    "name": "Sara Isabel",
-    "family": "Muñoz Mejía",
-    "email": "sara@consultamed.es"
+    "identifier_value": "12345678Z",
+    "name_given": "Sara Isabel",
+    "name_family": "Muñoz Mejía",
+    "telecom_email": "sara@consultamed.es"
   }
 }
 ```
@@ -56,6 +57,13 @@ curl -X POST "http://localhost:8000/api/v1/auth/login" \
 | POST | `/auth/login` | Iniciar sesión (form-data) |
 | GET | `/auth/me` | Usuario actual |
 
+### Health Checks (fuera de `/api/v1`)
+
+| Method | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/health` | Estado del backend |
+| GET | `/` | Health básico con metadata |
+
 ### Patients
 
 | Method | Endpoint | Descripción |
@@ -67,7 +75,7 @@ curl -X POST "http://localhost:8000/api/v1/auth/login" \
 
 **Búsqueda:**
 ```bash
-GET /patients/?search=Garcia&skip=0&limit=20
+GET /patients/?search=Garcia&offset=0&limit=20
 ```
 
 ### Allergies

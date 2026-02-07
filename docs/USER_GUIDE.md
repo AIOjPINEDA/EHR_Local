@@ -21,7 +21,7 @@
 2. Introduce tu email y contraseña
 3. Pulsa **"Iniciar Sesión"**
 
-> ⚠️ La sesión expira automáticamente tras 8 horas de inactividad.
+> ⚠️ La sesión expira automáticamente tras 8 horas.
 
 ---
 
@@ -30,8 +30,7 @@
 Tras iniciar sesión verás:
 
 - **Barra de búsqueda**: Busca pacientes por nombre o DNI
-- **Accesos rápidos**: Nuevo paciente, Templates, Configuración
-- **Últimas consultas**: Historial reciente
+- **Accesos rápidos**: Nuevo paciente, Lista de pacientes, Templates
 
 ---
 
@@ -62,7 +61,7 @@ Las alergias son **críticas** para la seguridad del paciente:
 3. Indica:
    - Sustancia (ej: Penicilina)
    - Tipo (medicamento, alimento, ambiental)
-   - Criticidad (alta, media, baja)
+   - Criticidad (alta o baja)
 4. Pulsa **"Guardar"**
 
 > ⚠️ Las alergias se muestran con **badge rojo** en todas las vistas del paciente.
@@ -98,7 +97,7 @@ Los templates aceleran la documentación de diagnósticos frecuentes:
 
 ### Ver Templates
 
-1. Accede a **"Configuración" → "Templates"**
+1. Accede a **"Templates"** desde el dashboard
 2. Verás dos secciones:
    - **Templates del Sistema**: Predefinidos (no editables)
    - **Mis Templates**: Personalizados
@@ -120,11 +119,9 @@ Los templates aceleran la documentación de diagnósticos frecuentes:
 
 ### Generar Receta
 
-1. Al finalizar una consulta, pulsa **"Generar Receta"**
-2. Se abrirá una vista previa
-3. Opciones:
-   - **"Descargar PDF"**: Guarda el archivo
-   - **"Imprimir"**: Envía a impresora
+1. Abre el detalle de una consulta con tratamiento farmacológico
+2. Pulsa **"Generar Receta PDF"** o **"Descargar Receta PDF"**
+3. Opcional: usa **"Imprimir"** desde la misma pantalla
 
 ### Contenido de la Receta
 
@@ -142,8 +139,7 @@ Los templates aceleran la documentación de diagnósticos frecuentes:
 
 ### Cerrar Sesión
 
-1. Pulsa tu nombre en la esquina superior derecha
-2. Selecciona **"Cerrar Sesión"**
+1. Pulsa **"Cerrar sesión"** en la esquina superior derecha del dashboard
 
 ---
 

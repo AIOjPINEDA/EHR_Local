@@ -20,7 +20,7 @@
 
 - [x] TypeScript type-check passes (`tsc --noEmit`)
 - [x] ESLint configured (`.eslintrc.json`)
-- [x] Test script added (`npm run test` → placeholder)
+- [x] Frontend contract smoke test activo (`npm run test`)
 - [x] Encounter types updated with `subject_id`
 
 ### CI/CD
@@ -48,7 +48,7 @@ chmod +x scripts/smoke_phase1.sh
 ./scripts/smoke_phase1.sh http://localhost:8000
 ```
 
-Expected result: All 4 checks pass.
+Expected result: script finaliza con "Smoke test passed".
 
 ---
 

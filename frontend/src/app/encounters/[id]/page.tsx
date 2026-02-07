@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
@@ -53,18 +53,7 @@ export default function EncounterDetailPage() {
   const [error, setError] = useState("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   
-  useEffect(() => {
-    authStore.loadFromStorage();
-    if (!authStore.isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    api.setToken(authStore.token);
-    
-    loadEncounter();
-  }, [router, encounterId]);
-  
-  const loadEncounter = async () => {
+  const loadEncounter = useCallback(async () => {
     try {
       const encounterData = await api.get<EncounterDetail>(`/encounters/${encounterId}`);
       setEncounter(encounterData);
@@ -77,7 +66,17 @@ export default function EncounterDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [encounterId]);
+
+  useEffect(() => {
+    authStore.loadFromStorage();
+    if (!authStore.isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    api.setToken(authStore.token);
+    loadEncounter();
+  }, [router, loadEncounter]);
   
   const handleGeneratePdf = async () => {
     if (!encounter || encounter.medications.length === 0) {

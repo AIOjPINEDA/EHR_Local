@@ -164,12 +164,14 @@ chmod +x scripts/smoke_phase1.sh
 
 Resultado esperado:
 ```
-🔥 ConsultaMed Smoke Test - Phase 1
-1️⃣  Testing API connectivity... ✅
-2️⃣  Testing authentication... ✅
-3️⃣  Testing patients endpoint... ✅
-4️⃣  Testing encounters endpoint... ✅
-🎉 SMOKE TEST PASSED
+ConsultaMed Smoke Test
+1) API connectivity
+2) Authentication
+3) Authenticated profile
+4) Patients list
+5) Patient encounters
+6) Templates list
+Smoke test passed
 ```
 
 ---
@@ -201,7 +203,8 @@ EHR_Guadalix/
 ├── frontend/               # Next.js 14 App
 │   ├── src/app/           # Páginas y rutas
 │   ├── src/components/    # Componentes React
-│   └── src/lib/           # API client y stores
+│   ├── src/lib/           # API client y stores
+│   └── scripts/           # Smoke checks frontend
 ├── backend/               # FastAPI Backend
 │   ├── app/api/           # Endpoints REST
 │   ├── app/models/        # SQLAlchemy models
@@ -209,8 +212,9 @@ EHR_Guadalix/
 ├── supabase/migrations/   # SQL migrations
 ├── scripts/               # Smoke tests
 ├── docs/                  # Documentación
-│   ├── API.md            # Endpoints REST
-│   ├── USER_GUIDE.md     # Guía de usuario
+│   ├── README.md         # Índice documentación activa
+│   ├── API.md            # Contratos API
+│   ├── USER_GUIDE.md     # Guía de uso
 │   ├── architecture/     # Documentación técnica
 │   └── release/          # Guías de despliegue
 └── .github/workflows/     # CI/CD
@@ -257,8 +261,11 @@ npm run type-check
 
 | Documento | Descripción |
 |-----------|-------------|
-| [API.md](./docs/API.md) | Documentación de endpoints REST |
+| [docs/README.md](./docs/README.md) | Índice y mapa de documentación activa |
+| [API.md](./docs/API.md) | Contratos de endpoints REST |
 | [USER_GUIDE.md](./docs/USER_GUIDE.md) | Guía de uso para médicos |
+| [overview.md](./docs/architecture/overview.md) | Arquitectura implementada |
+| [DEPLOYMENT_GUIDE.md](./docs/release/DEPLOYMENT_GUIDE.md) | Guía de despliegue |
 | [v1-readiness-checklist.md](./docs/release/v1-readiness-checklist.md) | Checklist de despliegue |
 
 ---

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
@@ -31,19 +31,7 @@ export default function PatientDetailPage() {
   });
   const [savingAllergy, setSavingAllergy] = useState(false);
   
-  useEffect(() => {
-    authStore.loadFromStorage();
-    if (!authStore.isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    api.setToken(authStore.token);
-    
-    loadPatient();
-    loadEncounters();
-  }, [router, patientId]);
-  
-  const loadPatient = async () => {
+  const loadPatient = useCallback(async () => {
     try {
       const data = await api.get<Patient>(`/patients/${patientId}`);
       setPatient(data);
@@ -52,16 +40,27 @@ export default function PatientDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  const loadEncounters = async () => {
+  }, [patientId]);
+
+  const loadEncounters = useCallback(async () => {
     try {
       const data = await api.get<EncountersResponse>(`/encounters/patient/${patientId}?limit=20`);
       setEncounters(data.items);
     } catch (err) {
       console.error("Error loading encounters:", err);
     }
-  };
+  }, [patientId]);
+
+  useEffect(() => {
+    authStore.loadFromStorage();
+    if (!authStore.isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    api.setToken(authStore.token);
+    loadPatient();
+    loadEncounters();
+  }, [router, loadPatient, loadEncounters]);
   
   const handleAddAllergy = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -25,6 +25,7 @@ ruff check .
 cd ../frontend
 npm run lint
 npm run type-check
+npm test
 # Esperado: Sin errores
 ```
 
