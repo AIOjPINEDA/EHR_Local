@@ -1,5 +1,8 @@
 # ConsultaMed Development Guidelines
 
+> **📋 Canonical Reference**: This file is synchronized with the central agent contract.
+> For the authoritative source of truth, see [AGENTS.md](../AGENTS.md).
+
 Auto-generated from feature plans. Last updated: 2024-12-30
 
 ## Project Overview
