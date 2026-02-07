@@ -94,22 +94,36 @@ Data models follow FHIR nomenclature:
 - Components in PascalCase
 - Custom hooks prefixed with `use`
 
-## Limits and Constraints
+## Boundaries
 
-1. **Do not modify** security-critical validators without explicit approval:
-   - `app/validators/dni.py`
-   - `app/validators/nie.py`
-   - RLS policies in `database/`
+### Always
+- Run tests before committing:
+  ```bash
+  cd backend && pytest tests/ -v
+  cd frontend && npm test
+  ```
+- Validate all inputs in backend (frontend validation is only for UX)
+- Use type hints (Python) and strict mode (TypeScript)
+- Follow FHIR R5 naming for data models
+- Comply with GDPR/LOPD-GDD for patient data
+- Use RLS for tables with patient data
 
-2. **Do not add dependencies** to `requirements.txt` or `package.json` without documenting the reason.
+### Ask First
+- Adding new dependencies to `requirements.txt` or `package.json`
+- Modifying database schema or RLS policies
+- Creating new API endpoints
+- Changing authentication flow
+- Modifying PDF templates
 
-3. **Do not bypass** authentication in any API endpoint.
-
-4. **Always run tests** before committing:
-   ```bash
-   cd backend && pytest tests/ -v
-   cd frontend && npm test
-   ```
+### Never
+- Bypass authentication in any API endpoint
+- Modify security validators without explicit approval:
+  - `app/validators/dni.py`
+  - `app/validators/nie.py`
+  - RLS policies in `database/`
+- Log PII (patient names, DNI, or health data)
+- Remove existing tests
+- Commit without running tests
 
 ## Active Specs
 
@@ -123,6 +137,8 @@ See `docs/architecture/overview.md` for system design.
 
 - `.github/copilot-instructions.md` - Copilot-specific instructions (references this file)
 - `CLAUDE.md` - Claude Code shim (references this file)
+- `GEMINI.md` - Gemini context shim (references this file)
+- `.gemini/settings.json` - Gemini CLI config to use AGENTS.md
 
 ---
 
