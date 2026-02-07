@@ -205,13 +205,14 @@ EHR_Guadalix/
 ├── backend/               # FastAPI Backend
 │   ├── app/api/           # Endpoints REST
 │   ├── app/models/        # SQLAlchemy models
-│   └── tests/             # Tests pytest
+│   └── tests/             # Tests pytest (31)
 ├── supabase/migrations/   # SQL migrations
-├── scripts/               # Smoke tests y utilidades
+├── scripts/               # Smoke tests
 ├── docs/                  # Documentación
-│   ├── API.md            # Documentación de endpoints
+│   ├── API.md            # Endpoints REST
 │   ├── USER_GUIDE.md     # Guía de usuario
-│   └── release/          # Checklists de release
+│   ├── architecture/     # Documentación técnica
+│   └── release/          # Guías de despliegue
 └── .github/workflows/     # CI/CD
 ```
 
