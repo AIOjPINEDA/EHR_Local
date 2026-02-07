@@ -89,7 +89,7 @@ npm run dev
 ### Credenciales de Prueba
 
 - **Email**: `sara@consultamed.es` o `jaime@consultamed.es`
-- **Password**: `demo`
+- **Password**: `piloto2026`
 
 ## 📚 Documentación
 
