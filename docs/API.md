@@ -85,7 +85,6 @@ GET /patients/?search=Garcia&skip=0&limit=20
 | GET | `/encounters/patient/{patient_id}` | Historial consultas |
 | GET | `/encounters/{id}` | Detalle consulta |
 | POST | `/encounters/patient/{patient_id}` | Nueva consulta |
-| PATCH | `/encounters/{id}` | Actualizar consulta |
 
 **Respuesta incluye `subject_id`** para navegación frontend:
 ```json
