@@ -99,8 +99,17 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # MVP: aceptar password "demo" para cualquier practitioner
-    if form_data.password != "demo":
+    # Verify password using bcrypt
+    import bcrypt
+    
+    if not practitioner.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email o contraseña incorrectos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not bcrypt.checkpw(form_data.password.encode('utf-8'), practitioner.password_hash.encode('utf-8')):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email o contraseña incorrectos",

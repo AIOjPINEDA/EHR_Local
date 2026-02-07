@@ -52,6 +52,13 @@ class Practitioner(Base):
     # Telecom
     telecom_email: Mapped[str] = mapped_column(String(100), nullable=True)
     
+    # Authentication
+    password_hash: Mapped[str] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="Bcrypt password hash"
+    )
+    
     # Status
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     
