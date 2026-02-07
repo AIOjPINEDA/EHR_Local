@@ -45,7 +45,7 @@ else
 fi
 
 echo "4) Patients list"
-PATIENTS_RESPONSE=$(curl -sf "$API_URL/api/v1/patients?limit=1" \
+PATIENTS_RESPONSE=$(curl -sf "$API_URL/api/v1/patients/?limit=1" \
     -H "Authorization: Bearer $TOKEN")
 if ! echo "$PATIENTS_RESPONSE" | grep -q '"items"'; then
     echo "   FAIL: /patients response invalid"
@@ -74,7 +74,7 @@ else
 fi
 
 echo "6) Templates list"
-TEMPLATES_RESPONSE=$(curl -sf "$API_URL/api/v1/templates?limit=1" \
+TEMPLATES_RESPONSE=$(curl -sf "$API_URL/api/v1/templates/?limit=1" \
     -H "Authorization: Bearer $TOKEN")
 if echo "$TEMPLATES_RESPONSE" | grep -q '"items"'; then
     echo "   OK /templates"
