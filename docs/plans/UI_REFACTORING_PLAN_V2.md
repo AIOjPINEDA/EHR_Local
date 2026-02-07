@@ -132,23 +132,24 @@ frontend/src/
 
 ## 4. Fases de Implementación
 
-### Fase 0: Foundation (1-2 días)
-**Objetivo:** Setup de infraestructura sin cambios visuales
+### Fase 0: Foundation (Executed & Verified)
+**Objetivo:** Setup de infraestructura y sistema de diseño base.
 
 #### Tareas:
-- [ ] Crear `lib/utils.ts` con helper `cn()` (clsx + tailwind-merge)
-- [ ] Crear `styles/design-tokens.css` con variables CSS
-- [ ] Implementar componentes UI básicos:
-  - [ ] `components/ui/button.tsx`
-  - [ ] `components/ui/input.tsx`
-  - [ ] `components/ui/badge.tsx`
-  - [ ] `components/ui/card.tsx`
-  - [ ] `components/ui/dialog.tsx`
-  - [ ] `components/ui/skeleton.tsx`
-- [ ] Implementar sistema de toasts:
-  - [ ] `lib/hooks/use-toast.ts`
-  - [ ] `components/ui/toast.tsx`
-- [ ] Crear barrel export `components/ui/index.ts`
+- [x] Crear `lib/utils.ts` con helper `cn()` (clsx + tailwind-merge)
+- [x] Crear `styles/design-tokens.css` con variables CSS (Radius, Colors)
+- [x] Implementar componentes UI básicos:
+  - [x] `components/ui/button.tsx`
+  - [x] `components/ui/input.tsx`
+  - [x] `components/ui/badge.tsx`
+  - [x] `components/ui/card.tsx`
+  - [x] `components/ui/dialog.tsx`
+  - [x] `components/ui/skeleton.tsx`
+- [x] Implementar sistema de toasts:
+  - [x] `lib/hooks/use-toast.ts`
+  - [x] `components/ui/toast.tsx`
+- [x] Crear barrel export `components/ui/index.ts`
+- [x] **Verificación**: `/design-system` page creada y validada visualmente.
 
 #### Código de Referencia:
 
@@ -220,17 +221,19 @@ export { Button, buttonVariants };
 
 ---
 
-### Fase 1: App Shell (2-3 días)
-**Objetivo:** Layout persistente con navegación lateral
+### Fase 1: App Shell (Executed & Verified)
+**Objetivo:** Layout persistente con navegación lateral y login estilizado.
 
 #### Tareas:
-- [ ] Crear `components/layout/sidebar.tsx` con navegación
-- [ ] Crear `components/layout/header.tsx` con búsqueda global
-- [ ] Crear `components/layout/app-shell.tsx` como wrapper
-- [ ] Crear `components/layout/breadcrumbs.tsx`
-- [ ] Crear `components/layout/user-menu.tsx`
-- [ ] Migrar `app/layout.tsx` a route group `(authenticated)`
-- [ ] Implementar sidebar colapsable (mobile: icons-only)
+- [x] Crear `components/layout/sidebar.tsx` con navegación (Desktop-First)
+- [x] Crear `components/layout/header.tsx` con búsqueda global
+- [x] Crear `components/layout/app-shell.tsx` (implementado como `(main)/layout.tsx`)
+- [ ] Crear `components/layout/breadcrumbs.tsx` (Pendiente)
+- [ ] Crear `components/layout/user-menu.tsx` (Pendiente)
+- [x] Migrar `app/layout.tsx` a route group `(main)`
+- [x] Implementar sidebar colapsable (mobile: icons-only)
+- [x] Refactorizar `login/page.tsx` con componentes UI atómicos.
+- [x] **Verificación**: Mockup de layout validado en `/design-system`. Login page validada.
 
 #### Estructura Visual:
 ```
