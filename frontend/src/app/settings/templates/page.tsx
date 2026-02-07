@@ -20,6 +20,7 @@ interface Template {
   medications: MedicationItem[];
   instructions: string | null;
   is_favorite: boolean;
+  is_global: boolean;
 }
 
 interface TemplateListResponse {
@@ -81,6 +82,11 @@ export default function TemplatesPage() {
   };
   
   const openEditModal = (template: Template) => {
+    // No permitir editar templates globales
+    if (template.is_global) {
+      setError("Los templates del sistema no se pueden modificar");
+      return;
+    }
     setEditingTemplate(template);
     setFormName(template.name);
     setFormDiagnosis(template.diagnosis_text);
@@ -144,11 +150,16 @@ export default function TemplatesPage() {
     }
   };
   
-  const handleDeleteTemplate = async (templateId: string) => {
+  const handleDeleteTemplate = async (template: Template) => {
+    // No permitir eliminar templates globales
+    if (template.is_global) {
+      setError("Los templates del sistema no se pueden eliminar");
+      return;
+    }
     if (!confirm("¿Eliminar este template?")) return;
     
     try {
-      await api.delete(`/templates/${templateId}`);
+      await api.delete(`/templates/${template.id}`);
       loadTemplates();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al eliminar template");
@@ -156,6 +167,11 @@ export default function TemplatesPage() {
   };
   
   const handleToggleFavorite = async (template: Template) => {
+    // No permitir modificar favoritos en templates globales
+    if (template.is_global) {
+      setError("Los templates del sistema no se pueden modificar");
+      return;
+    }
     try {
       await api.put(`/templates/${template.id}`, {
         ...template,
@@ -218,28 +234,80 @@ export default function TemplatesPage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Favoritos primero */}
-            {templates.filter(t => t.is_favorite).map(template => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                onEdit={() => openEditModal(template)}
-                onDelete={() => handleDeleteTemplate(template.id)}
-                onToggleFavorite={() => handleToggleFavorite(template)}
-              />
-            ))}
+          <div className="space-y-6">
+            {/* Templates del Sistema (Globales) */}
+            {templates.filter(t => t.is_global).length > 0 && (
+              <div>
+                <h2 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  🏥 Templates del Sistema
+                  <span className="text-xs font-normal text-gray-400">(no editables)</span>
+                </h2>
+                <div className="space-y-3">
+                  {templates.filter(t => t.is_global && t.is_favorite).map(template => (
+                    <TemplateCard
+                      key={template.id}
+                      template={template}
+                      onEdit={() => openEditModal(template)}
+                      onDelete={() => handleDeleteTemplate(template)}
+                      onToggleFavorite={() => handleToggleFavorite(template)}
+                    />
+                  ))}
+                  {templates.filter(t => t.is_global && !t.is_favorite).map(template => (
+                    <TemplateCard
+                      key={template.id}
+                      template={template}
+                      onEdit={() => openEditModal(template)}
+                      onDelete={() => handleDeleteTemplate(template)}
+                      onToggleFavorite={() => handleToggleFavorite(template)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
             
-            {/* No favoritos */}
-            {templates.filter(t => !t.is_favorite).map(template => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                onEdit={() => openEditModal(template)}
-                onDelete={() => handleDeleteTemplate(template.id)}
-                onToggleFavorite={() => handleToggleFavorite(template)}
-              />
-            ))}
+            {/* Mis Templates (Personales) */}
+            {templates.filter(t => !t.is_global).length > 0 && (
+              <div>
+                <h2 className="text-sm font-semibold text-green-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  👤 Mis Templates
+                </h2>
+                <div className="space-y-3">
+                  {templates.filter(t => !t.is_global && t.is_favorite).map(template => (
+                    <TemplateCard
+                      key={template.id}
+                      template={template}
+                      onEdit={() => openEditModal(template)}
+                      onDelete={() => handleDeleteTemplate(template)}
+                      onToggleFavorite={() => handleToggleFavorite(template)}
+                    />
+                  ))}
+                  {templates.filter(t => !t.is_global && !t.is_favorite).map(template => (
+                    <TemplateCard
+                      key={template.id}
+                      template={template}
+                      onEdit={() => openEditModal(template)}
+                      onDelete={() => handleDeleteTemplate(template)}
+                      onToggleFavorite={() => handleToggleFavorite(template)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Si no hay templates personales, mostrar mensaje */}
+            {templates.filter(t => !t.is_global).length === 0 && (
+              <div className="bg-gray-50 rounded-lg p-6 text-center">
+                <p className="text-gray-500 mb-3">
+                  Aún no has creado templates personalizados.
+                </p>
+                <button
+                  onClick={openCreateModal}
+                  className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
+                >
+                  + Crear mi primer template
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -418,18 +486,29 @@ function TemplateCard({
   onDelete: () => void;
   onToggleFavorite: () => void;
 }) {
+  const isGlobal = template.is_global;
+  
   return (
-    <div className={`bg-white rounded-lg shadow-md p-6 ${template.is_favorite ? "border-l-4 border-yellow-400" : ""}`}>
+    <div className={`bg-white rounded-lg shadow-sm border p-5 ${
+      template.is_favorite ? "border-l-4 border-yellow-400" : ""
+    } ${isGlobal ? "bg-blue-50/30" : ""}`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="text-lg font-semibold text-gray-800">{template.name}</h3>
-            <button
-              onClick={onToggleFavorite}
-              className={`text-lg ${template.is_favorite ? "text-yellow-500" : "text-gray-300 hover:text-yellow-500"}`}
-            >
-              ⭐
-            </button>
+            {!isGlobal && (
+              <button
+                onClick={onToggleFavorite}
+                className={`text-lg ${template.is_favorite ? "text-yellow-500" : "text-gray-300 hover:text-yellow-500"}`}
+              >
+                ⭐
+              </button>
+            )}
+            {isGlobal && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                Sistema
+              </span>
+            )}
           </div>
           
           <p className="text-gray-600 mb-3">
@@ -462,20 +541,22 @@ function TemplateCard({
           )}
         </div>
         
-        <div className="flex gap-2">
-          <button
-            onClick={onEdit}
-            className="text-blue-600 hover:text-blue-700 text-sm"
-          >
-            ✏️ Editar
-          </button>
-          <button
-            onClick={onDelete}
-            className="text-red-600 hover:text-red-700 text-sm"
-          >
-            🗑️
-          </button>
-        </div>
+        {!isGlobal && (
+          <div className="flex gap-2">
+            <button
+              onClick={onEdit}
+              className="text-blue-600 hover:text-blue-700 text-sm"
+            >
+              ✏️ Editar
+            </button>
+            <button
+              onClick={onDelete}
+              className="text-red-600 hover:text-red-700 text-sm"
+            >
+              🗑️
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -34,6 +34,7 @@ class TemplateResponse(BaseModel):
     medications: List[MedicationItem]
     instructions: Optional[str] = None
     is_favorite: bool
+    is_global: bool = False  # True si es template del sistema
 
 
 class TemplateListResponse(BaseModel):
@@ -75,8 +76,12 @@ async def list_templates(
     """
     List treatment templates.
     """
+    # Incluir templates del usuario Y templates globales (practitioner_id IS NULL)
     query = select(TreatmentTemplate).where(
-        TreatmentTemplate.practitioner_id == current_practitioner.id
+        or_(
+            TreatmentTemplate.practitioner_id == current_practitioner.id,
+            TreatmentTemplate.practitioner_id.is_(None)
+        )
     )
     
     # Filtrar por favoritos
@@ -120,6 +125,7 @@ async def list_templates(
                 medications=t.medications or [],
                 instructions=t.instructions,
                 is_favorite=t.is_favorite,
+                is_global=t.practitioner_id is None,
             )
             for t in templates
         ],
@@ -138,11 +144,14 @@ async def match_template(
     
     Used for auto-loading treatment when selecting diagnosis.
     """
-    # Buscar template que coincida con el diagnóstico
+    # Buscar template que coincida con el diagnóstico (incluye globales)
     result = await db.execute(
         select(TreatmentTemplate)
         .where(
-            TreatmentTemplate.practitioner_id == current_practitioner.id,
+            or_(
+                TreatmentTemplate.practitioner_id == current_practitioner.id,
+                TreatmentTemplate.practitioner_id.is_(None)
+            ),
             TreatmentTemplate.diagnosis_text.ilike(f"%{diagnosis}%"),
         )
         .order_by(TreatmentTemplate.is_favorite.desc())
@@ -164,6 +173,7 @@ async def match_template(
         medications=template.medications or [],
         instructions=template.instructions,
         is_favorite=template.is_favorite,
+        is_global=template.practitioner_id is None,
     )
 
 
@@ -174,12 +184,15 @@ async def get_template(
     current_practitioner: Practitioner = Depends(get_current_practitioner),
 ):
     """
-    Get template by ID.
+    Get template by ID (incluye templates globales).
     """
     result = await db.execute(
         select(TreatmentTemplate).where(
             TreatmentTemplate.id == template_id,
-            TreatmentTemplate.practitioner_id == current_practitioner.id,
+            or_(
+                TreatmentTemplate.practitioner_id == current_practitioner.id,
+                TreatmentTemplate.practitioner_id.is_(None)
+            ),
         )
     )
     template = result.scalar_one_or_none()
@@ -198,6 +211,7 @@ async def get_template(
         medications=template.medications or [],
         instructions=template.instructions,
         is_favorite=template.is_favorite,
+        is_global=template.practitioner_id is None,
     )
 
 
@@ -243,12 +257,11 @@ async def update_template(
     current_practitioner: Practitioner = Depends(get_current_practitioner),
 ):
     """
-    Update template.
+    Update template. Solo templates propios (no globales).
     """
     result = await db.execute(
         select(TreatmentTemplate).where(
             TreatmentTemplate.id == template_id,
-            TreatmentTemplate.practitioner_id == current_practitioner.id,
         )
     )
     template = result.scalar_one_or_none()
@@ -257,6 +270,20 @@ async def update_template(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Template no encontrado"
+        )
+    
+    # Proteger templates globales de edición
+    if template.practitioner_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No se pueden modificar templates del sistema"
+        )
+    
+    # Verificar que pertenece al usuario actual
+    if template.practitioner_id != current_practitioner.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para modificar este template"
         )
     
     # Actualizar campos
@@ -294,12 +321,11 @@ async def delete_template(
     current_practitioner: Practitioner = Depends(get_current_practitioner),
 ):
     """
-    Delete template.
+    Delete template. Solo templates propios (no globales).
     """
     result = await db.execute(
         select(TreatmentTemplate).where(
             TreatmentTemplate.id == template_id,
-            TreatmentTemplate.practitioner_id == current_practitioner.id,
         )
     )
     template = result.scalar_one_or_none()
@@ -308,6 +334,20 @@ async def delete_template(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Template no encontrado"
+        )
+    
+    # Proteger templates globales de eliminación
+    if template.practitioner_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No se pueden eliminar templates del sistema"
+        )
+    
+    # Verificar que pertenece al usuario actual
+    if template.practitioner_id != current_practitioner.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para eliminar este template"
         )
     
     await db.delete(template)
