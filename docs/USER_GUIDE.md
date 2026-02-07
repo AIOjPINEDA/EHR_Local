@@ -1,72 +1,167 @@
 # ConsultaMed - Guía de Usuario
 
-## Introducción
+> **Versión:** V1 Pilot  
+> **Última actualización:** 2026-02-07
 
-ConsultaMed es una aplicación web diseñada para facilitar la gestión de consultas médicas en tu consultorio.
+---
 
-## Acceso
+## 🔐 Acceso al Sistema
 
-1. Abre la aplicación en tu navegador (Chrome/Firefox en PC recomendado)
+### Credenciales
+
+| Campo | Valor |
+|-------|-------|
+| **URL** | http://localhost:3000 (desarrollo) |
+| **Email** | sara@consultamed.es |
+| **Password** | piloto2026 |
+
+### Iniciar Sesión
+
+1. Abre la aplicación en tu navegador (Chrome o Firefox recomendado)
 2. Introduce tu email y contraseña
-3. Pulsa "Iniciar Sesión"
+3. Pulsa **"Iniciar Sesión"**
 
-## Funciones Principales
+> ⚠️ La sesión expira automáticamente tras 8 horas de inactividad.
 
-### 🔍 Buscar Paciente
+---
 
-1. Escribe nombre o DNI en la barra de búsqueda (mínimo 2 caracteres)
+## 📋 Panel Principal (Dashboard)
+
+Tras iniciar sesión verás:
+
+- **Barra de búsqueda**: Busca pacientes por nombre o DNI
+- **Accesos rápidos**: Nuevo paciente, Templates, Configuración
+- **Últimas consultas**: Historial reciente
+
+---
+
+## 👤 Gestión de Pacientes
+
+### Buscar Paciente
+
+1. Escribe en la barra de búsqueda (mínimo 2 caracteres)
 2. Selecciona el paciente de la lista
 3. Accederás a su ficha completa
 
-### ➕ Nuevo Paciente
+### Crear Nuevo Paciente
 
-1. Pulsa "Nuevo Paciente" en el menú
-2. Rellena los campos obligatorios:
-   - Nombre
-   - Apellidos
-   - DNI (se valida automáticamente)
+1. Pulsa **"+ Nuevo Paciente"** en el dashboard
+2. Completa los campos obligatorios:
+   - Nombre y apellidos
+   - DNI/NIE (se valida automáticamente la letra)
    - Fecha de nacimiento
-3. Pulsa "Guardar"
+   - Teléfono
+3. Pulsa **"Guardar"**
 
-### 🏥 Nueva Consulta
+### Añadir Alergias
+
+Las alergias son **críticas** para la seguridad del paciente:
 
 1. Abre la ficha del paciente
-2. Pulsa "Nueva Consulta"
-3. Introduce el motivo de consulta
-4. Selecciona el diagnóstico (si existe template, se cargará automáticamente)
-5. Modifica el tratamiento si es necesario
-6. Pulsa "Guardar y Generar Receta"
+2. En la sección "Alergias", pulsa **"+ Añadir"**
+3. Indica:
+   - Sustancia (ej: Penicilina)
+   - Tipo (medicamento, alimento, ambiental)
+   - Criticidad (alta, media, baja)
+4. Pulsa **"Guardar"**
 
-### 📋 Templates de Tratamiento
+> ⚠️ Las alergias se muestran con **badge rojo** en todas las vistas del paciente.
 
-Los templates te permiten predefinir tratamientos para diagnósticos frecuentes:
+---
 
-1. Accede a "Templates" en el menú
-2. Crea nuevo template con:
-   - Nombre descriptivo
-   - Diagnóstico asociado
-   - Medicamentos y dosis
-   - Indicaciones
+## 🏥 Consultas Médicas
 
-### 🖨️ Recetas PDF
+### Nueva Consulta
 
-Al finalizar una consulta:
-
-1. Verás una vista previa de la receta
-2. Pulsa "Descargar PDF" o "Imprimir"
-3. La receta incluye todos los datos del paciente y tratamiento
-
-## ⚠️ Alergias
-
-Las alergias del paciente se muestran siempre:
-- Con badge rojo en la ficha
-- Durante la creación de consultas
-
-Para añadir una alergia:
 1. Abre la ficha del paciente
-2. Pulsa "+ Alergia"
-3. Indica nombre, tipo y criticidad
+2. Pulsa **"Nueva Consulta"**
+3. Completa:
+   - **Motivo de consulta**: Síntomas principales
+   - **Diagnóstico**: Texto libre o código CIE-10
+   - **Tratamiento**: Medicamentos (se pueden cargar desde template)
+   - **Notas**: Observaciones adicionales
+4. Pulsa **"Guardar"**
 
-## Soporte
+### Usar Templates
+
+Los templates aceleran la documentación de diagnósticos frecuentes:
+
+1. Al crear una consulta, pulsa **"Cargar Template"**
+2. Selecciona el template apropiado
+3. Se autocompletarán diagnóstico y medicamentos
+4. Ajusta las dosis o duración si es necesario
+5. Guarda la consulta
+
+---
+
+## 📋 Templates de Tratamiento
+
+### Ver Templates
+
+1. Accede a **"Configuración" → "Templates"**
+2. Verás dos secciones:
+   - **Templates del Sistema**: Predefinidos (no editables)
+   - **Mis Templates**: Personalizados
+
+### Crear Template Personal
+
+1. Pulsa **"+ Nuevo Template"**
+2. Completa:
+   - Nombre descriptivo (ej: "Amigdalitis Aguda")
+   - Diagnóstico y código CIE-10
+   - Medicamentos con dosis y duración
+   - Instrucciones para el paciente
+3. Marca **"Favorito"** si lo usas frecuentemente
+4. Pulsa **"Guardar"**
+
+---
+
+## 🖨️ Recetas PDF
+
+### Generar Receta
+
+1. Al finalizar una consulta, pulsa **"Generar Receta"**
+2. Se abrirá una vista previa
+3. Opciones:
+   - **"Descargar PDF"**: Guarda el archivo
+   - **"Imprimir"**: Envía a impresora
+
+### Contenido de la Receta
+
+- Datos del médico y nº colegiado
+- Datos del paciente
+- Fecha de la consulta
+- Diagnóstico
+- Medicamentos con pauta
+- Instrucciones adicionales
+- Firma digital del médico
+
+---
+
+## ⚙️ Configuración
+
+### Cerrar Sesión
+
+1. Pulsa tu nombre en la esquina superior derecha
+2. Selecciona **"Cerrar Sesión"**
+
+---
+
+## ❓ Resolución de Problemas
+
+| Problema | Solución |
+|----------|----------|
+| "Email o contraseña incorrectos" | Verifica que usas `piloto2026` como contraseña |
+| Sesión expirada | Vuelve a iniciar sesión |
+| DNI inválido | Verifica que la letra corresponde al número |
+| No carga la página | Comprueba que backend y frontend están ejecutándose |
+
+---
+
+## 📞 Soporte
 
 Para problemas técnicos, contacta con el administrador del sistema.
+
+---
+
+*ConsultaMed V1 Pilot - Consultorio Médico Guadalix*
