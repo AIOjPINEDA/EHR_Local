@@ -35,7 +35,8 @@ jobs:
       
       - name: Run linting
         run: |
-          pip install black isort mypy
+          pip install black isort mypy ruff
+          ruff check app tests
           black --check app tests
           isort --check-only app tests
       

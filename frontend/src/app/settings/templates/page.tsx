@@ -33,11 +33,11 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
-  
+
   // Form state
   const [formName, setFormName] = useState("");
   const [formDiagnosis, setFormDiagnosis] = useState("");
@@ -48,7 +48,7 @@ export default function TemplatesPage() {
     { medication: "", dosage: "", duration: "" }
   ]);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   useEffect(() => {
     authStore.loadFromStorage();
     if (!authStore.isAuthenticated) {
@@ -58,7 +58,7 @@ export default function TemplatesPage() {
     api.setToken(authStore.token);
     loadTemplates();
   }, [router]);
-  
+
   const loadTemplates = async () => {
     try {
       const data = await api.get<TemplateListResponse>("/templates");
@@ -69,7 +69,7 @@ export default function TemplatesPage() {
       setIsLoading(false);
     }
   };
-  
+
   const openCreateModal = () => {
     setEditingTemplate(null);
     setFormName("");
@@ -80,7 +80,7 @@ export default function TemplatesPage() {
     setFormMedications([{ medication: "", dosage: "", duration: "" }]);
     setIsModalOpen(true);
   };
-  
+
   const openEditModal = (template: Template) => {
     // No permitir editar templates globales
     if (template.is_global) {
@@ -93,39 +93,39 @@ export default function TemplatesPage() {
     setFormDiagnosisCode(template.diagnosis_code || "");
     setFormInstructions(template.instructions || "");
     setFormIsFavorite(template.is_favorite);
-    setFormMedications(template.medications.length > 0 
-      ? template.medications 
+    setFormMedications(template.medications.length > 0
+      ? template.medications
       : [{ medication: "", dosage: "", duration: "" }]
     );
     setIsModalOpen(true);
   };
-  
+
   const addMedication = () => {
     setFormMedications([...formMedications, { medication: "", dosage: "", duration: "" }]);
   };
-  
+
   const removeMedication = (index: number) => {
     setFormMedications(formMedications.filter((_, i) => i !== index));
   };
-  
+
   const updateMedication = (index: number, field: keyof MedicationItem, value: string) => {
     const updated = [...formMedications];
     updated[index] = { ...updated[index], [field]: value };
     setFormMedications(updated);
   };
-  
+
   const handleSaveTemplate = async () => {
     if (!formName || !formDiagnosis) {
       setError("El nombre y diagnóstico son obligatorios");
       return;
     }
-    
+
     setIsSaving(true);
     setError("");
-    
+
     try {
       const validMedications = formMedications.filter(m => m.medication && m.dosage);
-      
+
       const payload = {
         name: formName,
         diagnosis_text: formDiagnosis,
@@ -134,13 +134,13 @@ export default function TemplatesPage() {
         instructions: formInstructions || null,
         is_favorite: formIsFavorite,
       };
-      
+
       if (editingTemplate) {
         await api.put(`/templates/${editingTemplate.id}`, payload);
       } else {
         await api.post("/templates", payload);
       }
-      
+
       setIsModalOpen(false);
       loadTemplates();
     } catch (err) {
@@ -149,7 +149,7 @@ export default function TemplatesPage() {
       setIsSaving(false);
     }
   };
-  
+
   const handleDeleteTemplate = async (template: Template) => {
     // No permitir eliminar templates globales
     if (template.is_global) {
@@ -157,7 +157,7 @@ export default function TemplatesPage() {
       return;
     }
     if (!confirm("¿Eliminar este template?")) return;
-    
+
     try {
       await api.delete(`/templates/${template.id}`);
       loadTemplates();
@@ -165,7 +165,7 @@ export default function TemplatesPage() {
       setError(err instanceof Error ? err.message : "Error al eliminar template");
     }
   };
-  
+
   const handleToggleFavorite = async (template: Template) => {
     // No permitir modificar favoritos en templates globales
     if (template.is_global) {
@@ -182,7 +182,7 @@ export default function TemplatesPage() {
       setError(err instanceof Error ? err.message : "Error al actualizar template");
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -190,7 +190,7 @@ export default function TemplatesPage() {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -210,14 +210,14 @@ export default function TemplatesPage() {
           </button>
         </div>
       </header>
-      
+
       <main className="max-w-4xl mx-auto px-4 py-8">
         {error && (
           <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
-        
+
         {templates.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
             <p className="text-gray-500 mb-4">
@@ -264,7 +264,7 @@ export default function TemplatesPage() {
                 </div>
               </div>
             )}
-            
+
             {/* Mis Templates (Personales) */}
             {templates.filter(t => !t.is_global).length > 0 && (
               <div>
@@ -293,7 +293,7 @@ export default function TemplatesPage() {
                 </div>
               </div>
             )}
-            
+
             {/* Si no hay templates personales, mostrar mensaje */}
             {templates.filter(t => !t.is_global).length === 0 && (
               <div className="bg-gray-50 rounded-lg p-6 text-center">
@@ -311,7 +311,7 @@ export default function TemplatesPage() {
           </div>
         )}
       </main>
-      
+
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -321,7 +321,7 @@ export default function TemplatesPage() {
                 {editingTemplate ? "Editar Template" : "Nuevo Template"}
               </h2>
             </div>
-            
+
             <div className="p-6 space-y-4">
               {/* Nombre */}
               <div>
@@ -336,7 +336,7 @@ export default function TemplatesPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               {/* Diagnóstico */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -364,7 +364,7 @@ export default function TemplatesPage() {
                   />
                 </div>
               </div>
-              
+
               {/* Medicamentos */}
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -379,7 +379,7 @@ export default function TemplatesPage() {
                     + Añadir
                   </button>
                 </div>
-                
+
                 <div className="space-y-3">
                   {formMedications.map((med, index) => (
                     <div key={index} className="p-3 bg-gray-50 rounded-lg">
@@ -423,7 +423,7 @@ export default function TemplatesPage() {
                   ))}
                 </div>
               </div>
-              
+
               {/* Instrucciones */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -437,7 +437,7 @@ export default function TemplatesPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               {/* Favorito */}
               <div className="flex items-center gap-2">
                 <input
@@ -452,7 +452,7 @@ export default function TemplatesPage() {
                 </label>
               </div>
             </div>
-            
+
             <div className="p-6 border-t flex justify-end gap-3">
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -487,11 +487,10 @@ function TemplateCard({
   onToggleFavorite: () => void;
 }) {
   const isGlobal = template.is_global;
-  
+
   return (
-    <div className={`bg-white rounded-lg shadow-sm border p-5 ${
-      template.is_favorite ? "border-l-4 border-yellow-400" : ""
-    } ${isGlobal ? "bg-blue-50/30" : ""}`}>
+    <div className={`bg-white rounded-lg shadow-sm border p-5 ${template.is_favorite ? "border-l-4 border-yellow-400" : ""
+      } ${isGlobal ? "bg-blue-50/30" : ""}`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
@@ -510,7 +509,7 @@ function TemplateCard({
               </span>
             )}
           </div>
-          
+
           <p className="text-gray-600 mb-3">
             <span className="font-medium">Diagnóstico:</span> {template.diagnosis_text}
             {template.diagnosis_code && (
@@ -519,7 +518,7 @@ function TemplateCard({
               </span>
             )}
           </p>
-          
+
           {template.medications.length > 0 && (
             <div className="mb-2">
               <span className="text-sm font-medium text-gray-500">Tratamiento:</span>
@@ -533,14 +532,14 @@ function TemplateCard({
               </ul>
             </div>
           )}
-          
+
           {template.instructions && (
             <p className="text-sm text-gray-500 italic">
-              "{template.instructions}"
+              &ldquo;{template.instructions}&rdquo;
             </p>
           )}
         </div>
-        
+
         {!isGlobal && (
           <div className="flex gap-2">
             <button
