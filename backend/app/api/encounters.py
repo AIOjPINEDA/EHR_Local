@@ -73,6 +73,7 @@ class MedicationResponse(BaseModel):
 class EncounterResponse(BaseModel):
     """Encounter response."""
     id: str
+    subject_id: str
     status: str
     period_start: datetime
     reason_text: Optional[str]

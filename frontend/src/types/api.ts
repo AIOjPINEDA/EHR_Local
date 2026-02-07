@@ -69,6 +69,7 @@ export interface MedicationRequest {
 
 export interface EncounterSummary {
   id: string;
+  subject_id: string;
   period_start: string;
   reason_text: string | null;
   conditions: Condition[];
