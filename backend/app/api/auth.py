@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import JWTError, jwt
@@ -30,15 +30,14 @@ class TokenResponse(BaseModel):
 
 class PractitionerResponse(BaseModel):
     """Practitioner response schema."""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     identifier_value: str
     name_given: str
     name_family: str
     qualification_code: Optional[str]
     telecom_email: Optional[str]
-    
-    class Config:
-        from_attributes = True
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
