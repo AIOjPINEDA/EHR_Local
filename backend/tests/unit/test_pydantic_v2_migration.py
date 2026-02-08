@@ -1,10 +1,13 @@
 """Regression tests for Pydantic V2 model configuration style."""
 from pathlib import Path
 
+import pytest
+
+pytestmark = pytest.mark.unit
 
 def test_no_legacy_class_config_usage() -> None:
     """All Pydantic models/settings should use V2 `model_config` style."""
-    app_dir = Path(__file__).resolve().parents[1] / "app"
+    app_dir = Path(__file__).resolve().parents[2] / "app"
     offenders: list[str] = []
 
     for py_file in app_dir.rglob("*.py"):

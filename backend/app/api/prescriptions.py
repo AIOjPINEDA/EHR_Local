@@ -3,6 +3,7 @@ ConsultaMed Backend - Prescriptions Endpoints (PDF Generation)
 """
 import io
 from datetime import date
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import StreamingResponse
@@ -20,12 +21,25 @@ router = APIRouter()
 pdf_service = PDFService()
 
 
+def _resolve_encounter_instructions(encounter: Encounter) -> str:
+    """Resolve instructions with SOAP-aware fallback priority."""
+    candidates = [
+        encounter.recommendations_text,
+        encounter.plan_text,
+        encounter.note,
+    ]
+    for value in candidates:
+        if value and value.strip():
+            return value.strip()
+    return ""
+
+
 @router.get("/{encounter_id}/preview")
 async def get_prescription_preview(
     encounter_id: str,
     db: AsyncSession = Depends(get_db),
     current_practitioner: Practitioner = Depends(get_current_practitioner),
-):
+) -> dict[str, Any]:
     """
     Get prescription data for preview.
     
@@ -77,7 +91,7 @@ async def get_prescription_preview(
             }
             for m in encounter.medications
         ],
-        instructions=encounter.note or "",
+        instructions=_resolve_encounter_instructions(encounter),
     )
 
 
@@ -86,7 +100,7 @@ async def download_prescription_pdf(
     encounter_id: str,
     db: AsyncSession = Depends(get_db),
     current_practitioner: Practitioner = Depends(get_current_practitioner),
-):
+) -> StreamingResponse:
     """
     Generate and download prescription PDF.
     
@@ -145,7 +159,7 @@ async def download_prescription_pdf(
             }
             for m in encounter.medications
         ],
-        instructions=encounter.note or "",
+        instructions=_resolve_encounter_instructions(encounter),
     )
     
     # Nombre de archivo: receta_DNI_fecha.pdf

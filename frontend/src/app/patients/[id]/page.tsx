@@ -235,6 +235,11 @@ export default function PatientDetailPage() {
                             {encounter.reason_text}
                           </p>
                         )}
+                        {(encounter.assessment_text || encounter.conditions[0]?.code_text) && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            {encounter.assessment_text || encounter.conditions[0]?.code_text}
+                          </p>
+                        )}
                         {encounter.conditions.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-2">
                             {encounter.conditions.map((c) => (

@@ -1,7 +1,7 @@
 """
 ConsultaMed Backend - Encounters Endpoints
 """
-from typing import Optional, List
+from typing import Optional, List, cast
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -24,6 +24,40 @@ router = APIRouter()
 # Schemas
 # ============================================
 
+
+def _clean_text(value: Optional[str]) -> Optional[str]:
+    """Normalize optional free-text fields."""
+    if value is None:
+        return None
+    text = value.strip()
+    return text or None
+
+
+def _build_legacy_note(
+    note: Optional[str],
+    subjective_text: Optional[str],
+    objective_text: Optional[str],
+    assessment_text: Optional[str],
+    plan_text: Optional[str],
+    recommendations_text: Optional[str],
+) -> Optional[str]:
+    """
+    Keep `note` backward-compatible when frontend sends structured SOAP fields.
+    """
+    explicit_note = _clean_text(note)
+    if explicit_note:
+        return explicit_note
+
+    sections = [
+        ("Subjetivo", _clean_text(subjective_text)),
+        ("Objetivo", _clean_text(objective_text)),
+        ("Análisis", _clean_text(assessment_text)),
+        ("Plan", _clean_text(plan_text)),
+        ("Recomendaciones", _clean_text(recommendations_text)),
+    ]
+    lines = [f"{title}: {content}" for title, content in sections if content]
+    return "\n".join(lines) if lines else None
+
 class ConditionCreate(BaseModel):
     """Schema for creating a condition."""
     code_text: str = Field(..., min_length=1, max_length=200)
@@ -41,6 +75,11 @@ class MedicationCreate(BaseModel):
 class EncounterCreate(BaseModel):
     """Schema for creating an encounter."""
     reason_text: Optional[str] = None
+    subjective_text: Optional[str] = None
+    objective_text: Optional[str] = None
+    assessment_text: Optional[str] = None
+    plan_text: Optional[str] = None
+    recommendations_text: Optional[str] = None
     note: Optional[str] = None
     conditions: List[ConditionCreate] = []
     medications: List[MedicationCreate] = []
@@ -77,6 +116,11 @@ class EncounterResponse(BaseModel):
     status: str
     period_start: datetime
     reason_text: Optional[str]
+    subjective_text: Optional[str]
+    objective_text: Optional[str]
+    assessment_text: Optional[str]
+    plan_text: Optional[str]
+    recommendations_text: Optional[str]
     note: Optional[str]
     conditions: List[ConditionResponse] = []
     medications: List[MedicationResponse] = []
@@ -99,7 +143,7 @@ async def list_patient_encounters(
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> EncounterListResponse:
     """
     List all encounters for a patient.
     
@@ -132,7 +176,10 @@ async def list_patient_encounters(
     count_result = await db.execute(count_stmt)
     total = len(count_result.scalars().all())
     
-    return EncounterListResponse(items=list(encounters), total=total)
+    return EncounterListResponse(
+        items=cast(List[EncounterResponse], list(encounters)),
+        total=total,
+    )
 
 
 @router.get("/{encounter_id}", response_model=EncounterResponse)
@@ -140,7 +187,7 @@ async def get_encounter(
     encounter_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> EncounterResponse:
     """
     Get encounter by ID with full details.
     """
@@ -162,7 +209,7 @@ async def get_encounter(
             detail="Consulta no encontrada"
         )
     
-    return encounter
+    return cast(EncounterResponse, encounter)
 
 
 @router.post("/patient/{patient_id}", status_code=status.HTTP_201_CREATED, response_model=EncounterResponse)
@@ -171,7 +218,7 @@ async def create_encounter(
     encounter_data: EncounterCreate,
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> EncounterResponse:
     """
     Create new encounter for patient.
     
@@ -189,11 +236,31 @@ async def create_encounter(
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
     
     # Create encounter
+    reason_text = _clean_text(encounter_data.reason_text)
+    subjective_text = _clean_text(encounter_data.subjective_text)
+    objective_text = _clean_text(encounter_data.objective_text)
+    assessment_text = _clean_text(encounter_data.assessment_text)
+    plan_text = _clean_text(encounter_data.plan_text)
+    recommendations_text = _clean_text(encounter_data.recommendations_text)
+    note = _build_legacy_note(
+        note=encounter_data.note,
+        subjective_text=subjective_text,
+        objective_text=objective_text,
+        assessment_text=assessment_text,
+        plan_text=plan_text,
+        recommendations_text=recommendations_text,
+    )
+
     encounter = Encounter(
         subject_id=patient_id,
         participant_id=current_user.id,
-        reason_text=encounter_data.reason_text,
-        note=encounter_data.note,
+        reason_text=reason_text,
+        subjective_text=subjective_text,
+        objective_text=objective_text,
+        assessment_text=assessment_text,
+        plan_text=plan_text,
+        recommendations_text=recommendations_text,
+        note=note,
         status="finished",
     )
     db.add(encounter)
@@ -234,4 +301,4 @@ async def create_encounter(
         .where(Encounter.id == encounter.id)
     )
     result = await db.execute(stmt)
-    return result.scalar_one()
+    return cast(EncounterResponse, result.scalar_one())

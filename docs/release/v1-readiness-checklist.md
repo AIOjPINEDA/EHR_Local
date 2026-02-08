@@ -10,8 +10,8 @@
 
 ### Backend
 
-- [x] All tests pass (`pytest tests/ -v` → 31 passed)
-- [x] Ruff linting clean (`ruff check .` → All checks passed)
+- [x] Core backend tests pass (`pytest tests/unit tests/contracts -v --tb=short`)
+- [x] Ruff linting clean (`ruff check .`)
 - [x] Authentication hardened (bcrypt password hashing)
 - [x] EncounterResponse includes `subject_id` for frontend navigation
 - [x] SQL migration for `password_hash` column ready
@@ -27,6 +27,7 @@
 
 - [x] Backend workflow includes ruff linting
 - [x] Frontend workflow ready for PR checks
+- [x] Local gate script disponible (`./scripts/test_gate.sh`)
 
 ---
 
@@ -57,6 +58,7 @@ Expected result: script finaliza con "Smoke test passed".
 1. **Apply SQL Migration**
    ```bash
    psql $DATABASE_URL < supabase/migrations/20260208_add_password_hash.sql
+   psql $DATABASE_URL < supabase/migrations/20260208_add_encounter_soap_fields.sql
    ```
 
 2. **Deploy Backend**
@@ -97,7 +99,7 @@ Expected result: script finaliza con "Smoke test passed".
 
 | Criteria | Status |
 |----------|--------|
-| Backend tests pass | ✅ 31/31 |
+| Backend tests pass | ✅ Core suite |
 | Frontend type-check | ✅ Pass |
 | Ruff linting | ✅ Clean |
 | Auth hardening | ✅ Bcrypt |

@@ -10,8 +10,6 @@
 
 <p align="left">
   <img src="https://img.shields.io/github/actions/workflow/status/AIOjPINEDA/EHR_Local/ci.yml?branch=main&style=for-the-badge&label=CI" alt="CI" />
-  <img src="https://img.shields.io/github/actions/workflow/status/AIOjPINEDA/EHR_Local/backend.yml?branch=main&style=for-the-badge&label=Backend%20CI" alt="Backend CI" />
-  <img src="https://img.shields.io/github/actions/workflow/status/AIOjPINEDA/EHR_Local/frontend.yml?branch=main&style=for-the-badge&label=Frontend%20CI" alt="Frontend CI" />
 </p>
 
 <p align="left">
@@ -121,9 +119,10 @@ supabase start
 
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+python3.11 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+pip install ruff
 cp .env.example .env
 ```
 
@@ -139,10 +138,11 @@ ENVIRONMENT=development
 DEBUG=true
 ```
 
-Aplica migración inicial de password hash:
+Aplica migraciones iniciales:
 
 ```bash
 psql -d consultamed -f ../supabase/migrations/20260208_add_password_hash.sql
+psql -d consultamed -f ../supabase/migrations/20260208_add_encounter_soap_fields.sql
 ```
 
 Inicia backend:
@@ -267,7 +267,8 @@ EHR_Guadalix/
 
 ```bash
 cd backend
-pytest tests/ -v --tb=short
+source .venv/bin/activate
+pytest tests/unit tests/contracts -v --tb=short
 ruff check .
 ```
 
@@ -281,6 +282,15 @@ cd frontend
 npm test
 npm run lint
 npm run type-check
+```
+
+</details>
+
+<details>
+<summary><strong>Gate único recomendado (backend + frontend)</strong></summary>
+
+```bash
+./scripts/test_gate.sh
 ```
 
 </details>

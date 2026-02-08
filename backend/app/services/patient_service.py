@@ -147,7 +147,10 @@ class PatientService:
         await self.db.refresh(patient)
         
         # Reload with relationships for response
-        return await self.get_by_id(str(patient.id))
+        reloaded_patient = await self.get_by_id(str(patient.id))
+        if reloaded_patient is None:
+            raise ValueError("No se pudo recargar el paciente tras crearlo")
+        return reloaded_patient
     
     async def update(self, patient_id: str, data: dict) -> Optional[Patient]:
         """Update patient data."""

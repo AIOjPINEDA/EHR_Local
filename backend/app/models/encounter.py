@@ -66,7 +66,34 @@ class Encounter(Base):
         comment="Motivo de consulta"
     )
     
-    # Note
+    # SOAP fields
+    subjective_text: Mapped[str] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Subjetivo (S)"
+    )
+    objective_text: Mapped[str] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Objetivo (O)"
+    )
+    assessment_text: Mapped[str] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Análisis / Impresión clínica (A)"
+    )
+    plan_text: Mapped[str] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Plan terapéutico (P)"
+    )
+    recommendations_text: Mapped[str] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Recomendaciones al paciente"
+    )
+    
+    # Legacy note (backward compatibility)
     note: Mapped[str] = mapped_column(Text, nullable=True)
     
     # Relationships

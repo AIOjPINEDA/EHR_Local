@@ -12,6 +12,8 @@ from app.validators.dni import (
     format_dni,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestValidateDNIEspañol:
     """Tests for Spanish DNI validation."""

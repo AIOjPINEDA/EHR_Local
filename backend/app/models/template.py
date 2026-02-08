@@ -46,7 +46,7 @@ class TreatmentTemplate(Base):
     
     # Medications (JSONB array)
     # Structure: [{ "medication": "...", "dosage": "...", "duration": "..." }, ...]
-    medications: Mapped[dict] = mapped_column(
+    medications: Mapped[list[dict[str, str]]] = mapped_column(
         JSONB,
         nullable=False,
         default=list

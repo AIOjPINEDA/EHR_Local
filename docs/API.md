@@ -102,8 +102,36 @@ GET /patients/?search=Garcia&offset=0&limit=20
   "status": "finished",
   "period_start": "2026-02-07T10:30:00Z",
   "reason_text": "Dolor de garganta",
+  "subjective_text": "Odinofagia y febrícula desde hace 72h.",
+  "objective_text": "Faringe eritematosa. T 37.8C.",
+  "assessment_text": "Faringoamigdalitis aguda sin signos de alarma.",
+  "plan_text": "Tratamiento sintomático y control evolutivo.",
+  "recommendations_text": "Hidratación, reposo y reevaluar si empeora.",
   "conditions": [...],
   "medications": [...]
+}
+```
+
+**Payload recomendado para nueva consulta (flujo SOAP):**
+```json
+{
+  "reason_text": "Dolor de garganta",
+  "subjective_text": "Dolor al tragar desde hace 3 días.",
+  "objective_text": "Amígdalas hiperémicas, sin exudado.",
+  "assessment_text": "Faringitis aguda no complicada.",
+  "plan_text": "Analgesia, control sintomático, revisión en 48-72h si persiste.",
+  "recommendations_text": "Reposo relativo e hidratación.",
+  "conditions": [
+    { "code_text": "Faringitis aguda", "code_coding_code": "J02.9" }
+  ],
+  "medications": [
+    {
+      "medication_text": "Paracetamol 1g",
+      "dosage_text": "1 comprimido cada 8 horas",
+      "duration_value": 3,
+      "duration_unit": "d"
+    }
+  ]
 }
 ```
 
@@ -166,7 +194,7 @@ curl -s "http://localhost:8000/api/v1/patients/" \
 curl -X POST "http://localhost:8000/api/v1/encounters/patient/{patient_id}" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"reason_text": "Dolor de cabeza"}'
+  -d '{"reason_text":"Dolor de cabeza","subjective_text":"Cefalea frontal 24h","assessment_text":"Cefalea tensional"}'
 ```
 
 ---

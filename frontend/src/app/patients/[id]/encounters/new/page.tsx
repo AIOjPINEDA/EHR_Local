@@ -41,6 +41,11 @@ export default function NewEncounterPage() {
   
   // Form state
   const [reasonText, setReasonText] = useState("");
+  const [subjectiveText, setSubjectiveText] = useState("");
+  const [objectiveText, setObjectiveText] = useState("");
+  const [assessmentText, setAssessmentText] = useState("");
+  const [planText, setPlanText] = useState("");
+  const [recommendationsText, setRecommendationsText] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<TreatmentTemplate | null>(null);
   const [conditions, setConditions] = useState<{ code_text: string; code_coding_code?: string }[]>([]);
   const [medications, setMedications] = useState<{
@@ -49,7 +54,6 @@ export default function NewEncounterPage() {
     duration_value?: number;
     duration_unit?: string;
   }[]>([]);
-  const [note, setNote] = useState("");
   
   const loadData = useCallback(async () => {
     try {
@@ -93,9 +97,10 @@ export default function NewEncounterPage() {
       duration_unit: "d",
     })));
     
-    // Cargar instrucciones
+    // Mapeo pragmático MVP:
+    // Las instrucciones de plantilla se aplican a recomendaciones del plan.
     if (template.instructions) {
-      setNote(template.instructions);
+      setRecommendationsText(template.instructions);
     }
   };
 
@@ -103,7 +108,7 @@ export default function NewEncounterPage() {
     setSelectedTemplate(null);
     setConditions([]);
     setMedications([]);
-    setNote("");
+    setRecommendationsText("");
   };
   
   const addCondition = () => {
@@ -148,12 +153,16 @@ export default function NewEncounterPage() {
     try {
       const encounterData: EncounterCreate = {
         reason_text: reasonText || undefined,
+        subjective_text: subjectiveText || undefined,
+        objective_text: objectiveText || undefined,
+        assessment_text: assessmentText || undefined,
+        plan_text: planText || undefined,
+        recommendations_text: recommendationsText || undefined,
         conditions: conditions.filter(c => c.code_text),
         medications: medications.filter(m => m.medication_text && m.dosage_text),
-        note: note || undefined,
       };
-      
-      const encounter = await api.post(`/encounters/patient/${patientId}`, encounterData);
+
+      await api.post(`/encounters/patient/${patientId}`, encounterData);
       
       // Redirigir a la ficha del paciente
       router.push(`/patients/${patientId}`);
@@ -367,181 +376,233 @@ export default function NewEncounterPage() {
                 />
               </div>
               
-              {/* Diagnósticos */}
+              {/* SOAP: Subjetivo */}
               <div className="bg-white rounded-xl shadow-sm border p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <span className="text-lg">🩺</span>
-                    Diagnósticos
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={addCondition}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Añadir
-                  </button>
-                </div>
-                
-                <div className="space-y-3">
-                  {conditions.map((condition, index) => (
-                    <div key={index} className="flex gap-3 items-center group">
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          value={condition.code_text}
-                          onChange={(e) => updateCondition(index, "code_text", e.target.value)}
-                          placeholder="Diagnóstico (Ej: Amigdalitis aguda)"
-                          className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                        />
-                      </div>
-                      <div className="w-28">
-                        <input
-                          type="text"
-                          value={condition.code_coding_code || ""}
-                          onChange={(e) => updateCondition(index, "code_coding_code", e.target.value)}
-                          placeholder="CIE-10"
-                          className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm text-center"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeCondition(index)}
-                        className="p-2 text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                  
-                  {conditions.length === 0 && (
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Subjetivo (S)
+                </label>
+                <textarea
+                  value={subjectiveText}
+                  onChange={(e) => setSubjectiveText(e.target.value)}
+                  rows={4}
+                  placeholder="Síntomas referidos por el paciente, evolución y contexto..."
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
+                />
+              </div>
+
+              {/* SOAP: Objetivo */}
+              <div className="bg-white rounded-xl shadow-sm border p-5">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Objetivo (O)
+                </label>
+                <textarea
+                  value={objectiveText}
+                  onChange={(e) => setObjectiveText(e.target.value)}
+                  rows={4}
+                  placeholder="Hallazgos de exploración física, constantes y observaciones medibles..."
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
+                />
+              </div>
+
+              {/* SOAP: Análisis */}
+              <div className="bg-white rounded-xl shadow-sm border p-5 space-y-4">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Análisis (A)
+                </label>
+                <textarea
+                  value={assessmentText}
+                  onChange={(e) => setAssessmentText(e.target.value)}
+                  rows={4}
+                  placeholder="Impresión clínica, razonamiento diagnóstico y prioridad de problemas..."
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
+                />
+
+                <div className="pt-3 border-t">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                      <span className="text-lg">🩺</span>
+                      Diagnósticos
+                    </h3>
                     <button
                       type="button"
                       onClick={addCondition}
-                      className="w-full py-4 border-2 border-dashed border-gray-200 rounded-lg text-gray-400 hover:border-blue-300 hover:text-blue-500 transition flex items-center justify-center gap-2"
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
-                      Añadir diagnóstico
+                      Añadir
                     </button>
-                  )}
-                </div>
-              </div>
-              
-              {/* Medicamentos / Tratamiento */}
-              <div className="bg-white rounded-xl shadow-sm border p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <span className="text-lg">💊</span>
-                    Tratamiento
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={addMedication}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Añadir
-                  </button>
-                </div>
-                
-                <div className="space-y-3">
-                  {medications.map((med, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg p-4 group relative">
+                  </div>
+
+                  <div className="space-y-3">
+                    {conditions.map((condition, index) => (
+                      <div key={index} className="flex gap-3 items-center group">
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={condition.code_text}
+                            onChange={(e) => updateCondition(index, "code_text", e.target.value)}
+                            placeholder="Diagnóstico (Ej: Amigdalitis aguda)"
+                            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                          />
+                        </div>
+                        <div className="w-28">
+                          <input
+                            type="text"
+                            value={condition.code_coding_code || ""}
+                            onChange={(e) => updateCondition(index, "code_coding_code", e.target.value)}
+                            placeholder="CIE-10"
+                            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm text-center"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeCondition(index)}
+                          className="p-2 text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+
+                    {conditions.length === 0 && (
                       <button
                         type="button"
-                        onClick={() => removeMedication(index)}
-                        className="absolute top-2 right-2 p-1 text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                        onClick={addCondition}
+                        className="w-full py-4 border-2 border-dashed border-gray-200 rounded-lg text-gray-400 hover:border-blue-300 hover:text-blue-500 transition flex items-center justify-center gap-2"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
+                        Añadir diagnóstico
                       </button>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="md:col-span-2">
-                          <label className="block text-xs font-medium text-gray-500 mb-1">Medicamento</label>
-                          <input
-                            type="text"
-                            value={med.medication_text}
-                            onChange={(e) => updateMedication(index, "medication_text", e.target.value)}
-                            placeholder="Ej: Paracetamol 1g, Ibuprofeno 600mg..."
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">Pauta</label>
-                          <input
-                            type="text"
-                            value={med.dosage_text}
-                            onChange={(e) => updateMedication(index, "dosage_text", e.target.value)}
-                            placeholder="Ej: 1 comprimido cada 8 horas"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Duración</label>
-                            <div className="flex gap-2">
-                              <input
-                                type="number"
-                                value={med.duration_value || ""}
-                                onChange={(e) => updateMedication(index, "duration_value", parseInt(e.target.value) || 0)}
-                                placeholder="7"
-                                className="w-20 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm text-center"
-                              />
-                              <select
-                                value={med.duration_unit || "d"}
-                                onChange={(e) => updateMedication(index, "duration_unit", e.target.value)}
-                                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                              >
-                                <option value="d">días</option>
-                                <option value="wk">semanas</option>
-                                <option value="mo">meses</option>
-                              </select>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* SOAP: Plan */}
+              <div className="bg-white rounded-xl shadow-sm border p-5 space-y-4">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Plan (P)
+                </label>
+                <textarea
+                  value={planText}
+                  onChange={(e) => setPlanText(e.target.value)}
+                  rows={4}
+                  placeholder="Conducta terapéutica, estudios solicitados y seguimiento..."
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
+                />
+
+                <div className="pt-3 border-t">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                      <span className="text-lg">💊</span>
+                      Tratamiento
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={addMedication}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Añadir
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {medications.map((med, index) => (
+                      <div key={index} className="bg-gray-50 rounded-lg p-4 group relative">
+                        <button
+                          type="button"
+                          onClick={() => removeMedication(index)}
+                          className="absolute top-2 right-2 p-1 text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="md:col-span-2">
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Medicamento</label>
+                            <input
+                              type="text"
+                              value={med.medication_text}
+                              onChange={(e) => updateMedication(index, "medication_text", e.target.value)}
+                              placeholder="Ej: Paracetamol 1g, Ibuprofeno 600mg..."
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Pauta</label>
+                            <input
+                              type="text"
+                              value={med.dosage_text}
+                              onChange={(e) => updateMedication(index, "dosage_text", e.target.value)}
+                              placeholder="Ej: 1 comprimido cada 8 horas"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Duración</label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="number"
+                                  value={med.duration_value || ""}
+                                  onChange={(e) => updateMedication(index, "duration_value", parseInt(e.target.value, 10) || 0)}
+                                  placeholder="7"
+                                  className="w-20 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm text-center"
+                                />
+                                <select
+                                  value={med.duration_unit || "d"}
+                                  onChange={(e) => updateMedication(index, "duration_unit", e.target.value)}
+                                  className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                >
+                                  <option value="d">días</option>
+                                  <option value="wk">semanas</option>
+                                  <option value="mo">meses</option>
+                                </select>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                  
-                  {medications.length === 0 && (
-                    <button
-                      type="button"
-                      onClick={addMedication}
-                      className="w-full py-4 border-2 border-dashed border-gray-200 rounded-lg text-gray-400 hover:border-blue-300 hover:text-blue-500 transition flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Añadir medicamento
-                    </button>
-                  )}
+                    ))}
+
+                    {medications.length === 0 && (
+                      <button
+                        type="button"
+                        onClick={addMedication}
+                        className="w-full py-4 border-2 border-dashed border-gray-200 rounded-lg text-gray-400 hover:border-blue-300 hover:text-blue-500 transition flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Añadir medicamento
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-              
-              {/* Notas e Indicaciones */}
-              <div className="bg-white rounded-xl shadow-sm border p-5">
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <span className="text-lg">📝</span>
-                  Notas e Indicaciones
-                </label>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={3}
-                  placeholder="Indicaciones adicionales para el paciente: reposo, hidratación, signos de alarma..."
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
-                />
+
+                <div className="pt-3 border-t">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Recomendaciones
+                  </label>
+                  <textarea
+                    value={recommendationsText}
+                    onChange={(e) => setRecommendationsText(e.target.value)}
+                    rows={3}
+                    placeholder="Indicaciones para el paciente: reposo, hidratación, signos de alarma..."
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
+                  />
+                </div>
               </div>
               
               {/* Error */}

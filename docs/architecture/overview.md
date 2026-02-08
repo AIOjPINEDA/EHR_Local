@@ -51,8 +51,8 @@ flowchart TB
 ### 2. Consultation Lifecycle
 1. Doctor opens patient record.
 2. Frontend requests encounters: `/api/v1/encounters/patient/{patient_id}`.
-3. Doctor creates encounter with diagnosis/medication payload.
-4. Backend persists `Encounter`, `Condition`, `MedicationRequest`.
+3. Doctor documents SOAP flow (`reason`, `subjective`, `objective`, `assessment`, `plan`, `recommendations`) and diagnosis/treatment.
+4. Backend persists structured encounter text in `Encounter` plus linked `Condition` and `MedicationRequest`.
 5. Doctor downloads PDF from `/api/v1/prescriptions/{encounter_id}/pdf`.
 
 ## Backend Responsibilities

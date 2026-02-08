@@ -29,7 +29,7 @@ async def list_patients(
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> PatientListResponse:
     """
     List patients with optional search.
     
@@ -72,7 +72,7 @@ async def get_patient(
     patient_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> PatientResponse:
     """
     Get patient by ID.
     
@@ -87,7 +87,7 @@ async def get_patient(
             detail="Paciente no encontrado"
         )
     
-    return patient
+    return PatientResponse.model_validate(patient)
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=PatientResponse)
@@ -95,7 +95,7 @@ async def create_patient(
     patient_data: PatientCreate,
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> PatientResponse:
     """
     Create new patient.
     
@@ -108,7 +108,7 @@ async def create_patient(
     
     try:
         patient = await service.create(patient_data.model_dump())
-        return patient
+        return PatientResponse.model_validate(patient)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -122,7 +122,7 @@ async def update_patient(
     patient_data: PatientUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> PatientResponse:
     """
     Update patient data.
     """
@@ -139,7 +139,7 @@ async def update_patient(
             detail="Paciente no encontrado"
         )
     
-    return patient
+    return PatientResponse.model_validate(patient)
 
 
 @router.get("/{patient_id}/allergies", response_model=list[AllergyResponse])
@@ -147,7 +147,7 @@ async def list_allergies(
     patient_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> list[AllergyResponse]:
     """
     List patient allergies.
     """
@@ -160,7 +160,7 @@ async def list_allergies(
             detail="Paciente no encontrado"
         )
     
-    return patient.allergies
+    return [AllergyResponse.model_validate(allergy) for allergy in patient.allergies]
 
 
 @router.post("/{patient_id}/allergies", status_code=status.HTTP_201_CREATED, response_model=AllergyResponse)
@@ -169,7 +169,7 @@ async def add_allergy(
     allergy_data: AllergyCreate,
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> AllergyResponse:
     """
     Add allergy to patient.
     """
@@ -184,7 +184,7 @@ async def add_allergy(
         )
     
     allergy = await service.add_allergy(patient_id, allergy_data.model_dump())
-    return allergy
+    return AllergyResponse.model_validate(allergy)
 
 
 @router.delete("/{patient_id}/allergies/{allergy_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -193,7 +193,7 @@ async def remove_allergy(
     allergy_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> None:
     """
     Remove allergy from patient.
     """

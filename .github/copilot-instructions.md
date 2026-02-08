@@ -1,150 +1,96 @@
-# ConsultaMed Development Guidelines
+# ConsultaMed Copilot Instructions
 
-> **📋 Canonical Reference**: This file is synchronized with the central agent contract.
-> For the authoritative source of truth, see [AGENTS.md](../AGENTS.md).
+> Canonical source of truth: `AGENTS.md` at repo root.
+> Keep this file as a short operational summary for GitHub Copilot.
 
-Auto-generated from feature plans. Last updated: 2024-12-30
+Last updated: 2026-02-08
 
-## Project Overview
+## Project Context
 
-**ConsultaMed** es un sistema de Historia Clínica Electrónica (EHR) para consultorios médicos privados en España.
+- Product: ConsultaMed (EHR for private medical practices in Spain)
+- Phase: `mvp-complete` (pre-production hardening)
+- Core stack:
+  - Frontend: Next.js 14 + TypeScript strict + Tailwind/shadcn
+  - Backend: FastAPI + SQLAlchemy async + Pydantic v2
+  - Database: PostgreSQL 15 (Supabase) with RLS
 
-- **Usuarios**: 2 médicos, ~50 consultas/mes
-- **Dispositivo principal**: PC de escritorio
-- **Objetivo**: Documentar consulta en <60 segundos con templates
+## Run Commands
 
-## Active Technologies
+### Backend
 
-### Frontend (Vercel)
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript 5.x (strict mode)
-- **Styling**: Tailwind CSS 3.x + shadcn/ui
-- **State**: TanStack Query 5.x, Zustand
-- **Forms**: React Hook Form + Zod
-
-### Backend (Railway)
-- **Framework**: FastAPI 0.109+
-- **Language**: Python 3.11+
-- **ORM**: SQLAlchemy 2.x (async)
-- **Validation**: Pydantic 2.x
-- **PDF**: WeasyPrint 60+
-
-### Database (Supabase)
-- **Engine**: PostgreSQL 15.x
-- **Auth**: Supabase Auth
-- **Security**: Row Level Security (RLS) obligatorio
-
-## Project Structure
-
-```text
-/
-├── .specify/               # Spec-kit configuration
-│   ├── memory/            # Constitution and context
-│   ├── specs/             # Feature specifications
-│   ├── scripts/           # Automation scripts
-│   └── templates/         # Document templates
-├── backend/               # FastAPI application
-│   ├── app/
-│   │   ├── api/          # Endpoints
-│   │   ├── models/       # SQLAlchemy models (FHIR-aligned)
-│   │   ├── schemas/      # Pydantic schemas
-│   │   ├── services/     # Business logic
-│   │   ├── validators/   # DNI, clinical validations
-│   │   └── templates/    # HTML for PDF generation
-│   └── tests/
-├── frontend/              # Next.js application
-│   ├── src/
-│   │   ├── app/          # App Router pages
-│   │   ├── components/   # React components
-│   │   ├── lib/          # Utilities, API client
-│   │   └── types/        # TypeScript definitions
-│   └── tests/
-└── database/              # Schema and migrations
-```
-
-## Commands
-
-### Backend (Python)
 ```bash
 cd backend
-pytest                          # Run tests
-ruff check .                    # Lint
-black .                         # Format
-uvicorn app.main:app --reload   # Dev server
+pytest tests/ -v --tb=short
+ruff check .
+black .
+isort .
+mypy app --ignore-missing-imports
+uvicorn app.main:app --reload
 ```
 
-### Frontend (TypeScript)
+### Frontend
+
 ```bash
 cd frontend
-npm test                        # Run tests
-npm run lint                    # ESLint
-npm run format                  # Prettier
-npm run dev                     # Dev server
+npm run lint
+npm run type-check
+npm test
+npm run dev
 ```
 
-## Code Style
+## Test Strategy (MVP-Flexible, Scalable)
 
-### Python
-- Type hints obligatorios
-- Docstrings en español para dominio médico
-- Nombres de variables/funciones en inglés
-- PEP 8 + Black formatting
-- Ruff para linting
+Backend tests are organized by intent:
 
-### TypeScript
-- Strict mode habilitado
-- No `any` types
-- Interfaces para API responses
-- Components en PascalCase
-- Hooks custom con prefijo `use`
+- `backend/tests/unit/`: pure logic and schema behavior
+- `backend/tests/contracts/`: backend-frontend API contracts
+- `backend/tests/integration/`: cross-component flows (only when needed)
 
-## Critical Validations (Backend Only)
+Rules:
 
-### DNI Español
-```python
-def validate_dni(dni: str) -> bool:
-    """Valida formato y letra de control del DNI español."""
-    letras = "TRWAGMYFPDXBNJZSQVHLCKE"
-    numero = int(dni[:-1])
-    letra = dni[-1].upper()
-    return letras[numero % 23] == letra
+- Use one marker per file: `unit`, `contract`, or `integration`
+- Keep tests deterministic and small
+- Add at least one unit test for each new backend behavior
+- Add/update contract tests whenever response payload/schema changes
+
+Recommended local gate:
+
+```bash
+./scripts/test_gate.sh
 ```
 
-### NIE Español
-```python
-def validate_nie(nie: str) -> bool:
-    """Valida NIE con prefijo X, Y, Z."""
-    prefijos = {'X': '0', 'Y': '1', 'Z': '2'}
-    # Reemplaza prefijo y valida como DNI
-```
+## Coding Requirements
 
-## FHIR R5 Alignment
+- Python:
+  - Type hints required on all functions
+  - Domain docstrings in Spanish
+  - Names in English
+  - PEP8 + Black (line length 100)
+- TypeScript:
+  - Strict mode
+  - No `any`
+  - Interfaces for API responses
+  - Hooks prefixed with `use`
 
-Los modelos de datos siguen nomenclatura FHIR:
+## Boundaries
 
-| Modelo Local | FHIR Resource |
-|--------------|---------------|
-| Patient | Patient |
-| Practitioner | Practitioner |
-| Encounter | Encounter |
-| Condition | Condition |
-| MedicationRequest | MedicationRequest |
-| AllergyIntolerance | AllergyIntolerance |
+Always:
 
-## Security Rules
+- Validate all inputs in backend
+- Keep FHIR-style naming (`Patient`, `Encounter`, `Condition`, etc.)
+- Run tests before merge
 
-1. **RLS obligatorio**: Toda tabla con datos de pacientes
-2. **JWT expiration**: 1 hora máximo
-3. **HTTPS**: Obligatorio en producción
-4. **Audit log**: Toda operación CRUD sensible
-5. **Input validation**: Backend valida TODO, frontend es UX
+Ask first before:
 
-## Recent Changes
+- Adding new dependencies
+- Changing DB schema or RLS policies
+- Creating new API endpoints
+- Changing auth flow
+- Modifying PDF templates
 
-- 2024-12-30: Inicialización de spec-kit
-- 2024-12-30: Creación de constitution.md
-- 2024-12-30: Migración de spec a formato spec-kit
+Never:
 
-<!-- MANUAL ADDITIONS START -->
-<!-- Add project-specific notes here -->
-<!-- MANUAL ADDITIONS END -->
+- Bypass authentication in endpoints
+- Modify DNI/NIE validators without explicit approval
+- Log PII (name, DNI, clinical details)
+- Remove tests

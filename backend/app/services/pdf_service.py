@@ -4,7 +4,7 @@ ConsultaMed Backend - PDF Generation Service
 Genera recetas médicas en PDF usando WeasyPrint.
 """
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, cast
 
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML, CSS
@@ -13,7 +13,7 @@ from weasyprint import HTML, CSS
 class PDFService:
     """Service for generating PDF prescriptions."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize PDF service with templates directory."""
         template_dir = Path(__file__).parent.parent / "templates"
         self.env = Environment(loader=FileSystemLoader(str(template_dir)))
@@ -68,7 +68,7 @@ class PDFService:
         html = HTML(string=html_content)
         pdf_bytes = html.write_pdf(stylesheets=[css])
         
-        return pdf_bytes
+        return cast(bytes, pdf_bytes)
     
     def generate_prescription_preview(
         self,
