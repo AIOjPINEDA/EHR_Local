@@ -171,7 +171,7 @@ ConsultaMed Smoke Test
 4) Patients list
 5) Patient encounters
 6) Templates list
-Smoke test passed
+Smoke test passed:
 ```
 
 ---
