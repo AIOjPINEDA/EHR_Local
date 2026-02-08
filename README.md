@@ -121,9 +121,10 @@ supabase start
 
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+python3.11 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+pip install ruff
 cp .env.example .env
 ```
 
@@ -267,7 +268,8 @@ EHR_Guadalix/
 
 ```bash
 cd backend
-pytest tests/ -v --tb=short
+source .venv/bin/activate
+pytest tests/unit tests/contracts -v --tb=short
 ruff check .
 ```
 
@@ -281,6 +283,15 @@ cd frontend
 npm test
 npm run lint
 npm run type-check
+```
+
+</details>
+
+<details>
+<summary><strong>Gate único recomendado (backend + frontend)</strong></summary>
+
+```bash
+./scripts/test_gate.sh
 ```
 
 </details>

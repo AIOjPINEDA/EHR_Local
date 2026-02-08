@@ -14,6 +14,12 @@ Este índice centraliza la documentación vigente para evitar información dispe
 - `docs/API.md`: contratos y endpoints API.
 - `docs/architecture/overview.md`: arquitectura implementada actualmente.
 
+## Testing
+
+- `docs/testing/TESTING_STRATEGY.md`: estrategia de test MVP (unit/contract/integration).
+- `docs/testing/PR_TEST_CHECKLIST.md`: checklist obligatorio para PRs funcionales.
+- `backend/tests/README.md`: estructura y reglas para tests backend.
+
 ## Planes
 
 - `docs/plans/UI_REFACTORING_PLAN_V2.md`: plan de refactor de UI V2.

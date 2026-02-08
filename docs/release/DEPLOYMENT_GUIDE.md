@@ -12,21 +12,9 @@
 Antes de desplegar, ejecuta en local:
 
 ```bash
-# Backend tests
-cd backend
-pytest tests/ -v
-# Esperado: 31 passed
-
-# Backend linting
-ruff check .
-# Esperado: All checks passed
-
-# Frontend checks
-cd ../frontend
-npm run lint
-npm run type-check
-npm test
-# Esperado: Sin errores
+# Full local gate (backend + frontend)
+./scripts/test_gate.sh
+# Esperado: "Test gate passed."
 ```
 
 ---
@@ -41,11 +29,13 @@ npm test
 2. Ve a **SQL Editor**
 3. Ejecuta el contenido de:
    - `supabase/migrations/20260208_add_password_hash.sql`
+   - `supabase/migrations/20260208_add_encounter_soap_fields.sql`
 
 #### Opción B: PostgreSQL Local
 
 ```bash
 psql -d consultamed -f supabase/migrations/20260208_add_password_hash.sql
+psql -d consultamed -f supabase/migrations/20260208_add_encounter_soap_fields.sql
 ```
 
 **Verifica la migración:**

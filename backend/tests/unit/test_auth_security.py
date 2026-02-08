@@ -3,8 +3,10 @@ ConsultaMed Backend - Auth Security Tests
 
 Tests for authentication hardening - bcrypt password verification.
 """
+import pytest
 import bcrypt
 
+pytestmark = pytest.mark.unit
 
 class TestPasswordHashing:
     """Tests for bcrypt password hashing."""

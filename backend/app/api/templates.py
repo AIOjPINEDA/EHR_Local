@@ -1,7 +1,7 @@
 """
 ConsultaMed Backend - Templates Endpoints
 """
-from typing import Optional, List
+from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Query, status, Depends
 from pydantic import BaseModel
@@ -60,6 +60,25 @@ class TemplateUpdate(BaseModel):
     is_favorite: Optional[bool] = None
 
 
+def _serialize_medications(medications: List[MedicationItem]) -> list[dict[str, str]]:
+    """Convert medication schema objects to JSON-serializable dicts."""
+    return [
+        {
+            "medication": medication.medication,
+            "dosage": medication.dosage,
+            "duration": medication.duration,
+        }
+        for medication in medications
+    ]
+
+
+def _to_medication_items(raw_medications: Optional[list[dict[str, str]]]) -> List[MedicationItem]:
+    """Normalize DB medication payload into API response schema."""
+    if not raw_medications:
+        return []
+    return [MedicationItem.model_validate(item) for item in raw_medications]
+
+
 # ============================================
 # Endpoints
 # ============================================
@@ -72,7 +91,7 @@ async def list_templates(
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_practitioner: Practitioner = Depends(get_current_practitioner),
-):
+) -> TemplateListResponse:
     """
     List treatment templates.
     """
@@ -122,7 +141,7 @@ async def list_templates(
                 name=t.name,
                 diagnosis_text=t.diagnosis_text,
                 diagnosis_code=t.diagnosis_code,
-                medications=t.medications or [],
+                medications=_to_medication_items(t.medications),
                 instructions=t.instructions,
                 is_favorite=t.is_favorite,
                 is_global=t.practitioner_id is None,
@@ -138,7 +157,7 @@ async def match_template(
     diagnosis: str = Query(..., min_length=2, description="Diagnosis text to match"),
     db: AsyncSession = Depends(get_db),
     current_practitioner: Practitioner = Depends(get_current_practitioner),
-):
+) -> TemplateResponse:
     """
     Find best matching template for a diagnosis.
     
@@ -170,7 +189,7 @@ async def match_template(
         name=template.name,
         diagnosis_text=template.diagnosis_text,
         diagnosis_code=template.diagnosis_code,
-        medications=template.medications or [],
+        medications=_to_medication_items(template.medications),
         instructions=template.instructions,
         is_favorite=template.is_favorite,
         is_global=template.practitioner_id is None,
@@ -182,7 +201,7 @@ async def get_template(
     template_id: str,
     db: AsyncSession = Depends(get_db),
     current_practitioner: Practitioner = Depends(get_current_practitioner),
-):
+) -> TemplateResponse:
     """
     Get template by ID (incluye templates globales).
     """
@@ -208,7 +227,7 @@ async def get_template(
         name=template.name,
         diagnosis_text=template.diagnosis_text,
         diagnosis_code=template.diagnosis_code,
-        medications=template.medications or [],
+        medications=_to_medication_items(template.medications),
         instructions=template.instructions,
         is_favorite=template.is_favorite,
         is_global=template.practitioner_id is None,
@@ -220,7 +239,7 @@ async def create_template(
     data: TemplateCreate,
     db: AsyncSession = Depends(get_db),
     current_practitioner: Practitioner = Depends(get_current_practitioner),
-):
+) -> TemplateResponse:
     """
     Create new treatment template.
     """
@@ -229,7 +248,7 @@ async def create_template(
         name=data.name,
         diagnosis_text=data.diagnosis_text,
         diagnosis_code=data.diagnosis_code,
-        medications=[m.model_dump() for m in data.medications],
+        medications=_serialize_medications(data.medications),
         instructions=data.instructions,
         is_favorite=data.is_favorite,
     )
@@ -255,7 +274,7 @@ async def update_template(
     data: TemplateUpdate,
     db: AsyncSession = Depends(get_db),
     current_practitioner: Practitioner = Depends(get_current_practitioner),
-):
+) -> TemplateResponse:
     """
     Update template. Solo templates propios (no globales).
     """
@@ -294,7 +313,7 @@ async def update_template(
     if data.diagnosis_code is not None:
         template.diagnosis_code = data.diagnosis_code
     if data.medications is not None:
-        template.medications = [m.model_dump() for m in data.medications]
+        template.medications = _serialize_medications(data.medications)
     if data.instructions is not None:
         template.instructions = data.instructions
     if data.is_favorite is not None:
@@ -308,7 +327,7 @@ async def update_template(
         name=template.name,
         diagnosis_text=template.diagnosis_text,
         diagnosis_code=template.diagnosis_code,
-        medications=template.medications or [],
+        medications=_to_medication_items(template.medications),
         instructions=template.instructions,
         is_favorite=template.is_favorite,
     )
@@ -319,7 +338,7 @@ async def delete_template(
     template_id: str,
     db: AsyncSession = Depends(get_db),
     current_practitioner: Practitioner = Depends(get_current_practitioner),
-):
+) -> None:
     """
     Delete template. Solo templates propios (no globales).
     """

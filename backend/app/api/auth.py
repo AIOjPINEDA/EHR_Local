@@ -4,7 +4,7 @@ ConsultaMed Backend - Authentication Endpoints
 MVP simple: JWT local sin Supabase Auth para desarrollo rápido.
 """
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, cast
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, ConfigDict
@@ -45,7 +45,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return cast(str, jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM))
 
 
 async def get_current_practitioner(
@@ -79,7 +79,7 @@ async def get_current_practitioner(
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
-):
+) -> TokenResponse:
     """
     Login endpoint.
     
@@ -134,7 +134,7 @@ async def login(
 @router.get("/me", response_model=PractitionerResponse)
 async def get_me(
     current_user: Practitioner = Depends(get_current_practitioner)
-):
+) -> Practitioner:
     """
     Get current authenticated user.
     

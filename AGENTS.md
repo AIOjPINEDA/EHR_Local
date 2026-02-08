@@ -36,7 +36,8 @@
 ### Backend
 ```bash
 cd backend
-pytest tests/ -v --tb=short        # Run tests
+pytest tests/unit tests/contracts -v --tb=short  # Run fast test suite (default for PR)
+pytest tests/ -v --tb=short        # Run full suite (includes integration when present)
 ruff check .                        # Lint
 black .                             # Format
 isort .                             # Sort imports
@@ -51,6 +52,11 @@ npm test                            # Run tests
 npm run lint                        # ESLint
 npm run format                      # Prettier
 npm run dev                         # Dev server (port 3000)
+```
+
+### Unified Local Gate
+```bash
+./scripts/test_gate.sh              # Backend + Frontend gate before PR/commit
 ```
 
 ## Security Constraints
@@ -99,8 +105,7 @@ Data models follow FHIR nomenclature:
 ### Always
 - Run tests before committing:
   ```bash
-  cd backend && pytest tests/ -v
-  cd frontend && npm test
+  ./scripts/test_gate.sh
   ```
 - Validate all inputs in backend (frontend validation is only for UX)
 - Use type hints (Python) and strict mode (TypeScript)

@@ -3,6 +3,7 @@ ConsultaMed Backend - Prescriptions Endpoints (PDF Generation)
 """
 import io
 from datetime import date
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import StreamingResponse
@@ -38,7 +39,7 @@ async def get_prescription_preview(
     encounter_id: str,
     db: AsyncSession = Depends(get_db),
     current_practitioner: Practitioner = Depends(get_current_practitioner),
-):
+) -> dict[str, Any]:
     """
     Get prescription data for preview.
     
@@ -99,7 +100,7 @@ async def download_prescription_pdf(
     encounter_id: str,
     db: AsyncSession = Depends(get_db),
     current_practitioner: Practitioner = Depends(get_current_practitioner),
-):
+) -> StreamingResponse:
     """
     Generate and download prescription PDF.
     

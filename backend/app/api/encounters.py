@@ -1,7 +1,7 @@
 """
 ConsultaMed Backend - Encounters Endpoints
 """
-from typing import Optional, List
+from typing import Optional, List, cast
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -143,7 +143,7 @@ async def list_patient_encounters(
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> EncounterListResponse:
     """
     List all encounters for a patient.
     
@@ -176,7 +176,10 @@ async def list_patient_encounters(
     count_result = await db.execute(count_stmt)
     total = len(count_result.scalars().all())
     
-    return EncounterListResponse(items=list(encounters), total=total)
+    return EncounterListResponse(
+        items=cast(List[EncounterResponse], list(encounters)),
+        total=total,
+    )
 
 
 @router.get("/{encounter_id}", response_model=EncounterResponse)
@@ -184,7 +187,7 @@ async def get_encounter(
     encounter_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> EncounterResponse:
     """
     Get encounter by ID with full details.
     """
@@ -206,7 +209,7 @@ async def get_encounter(
             detail="Consulta no encontrada"
         )
     
-    return encounter
+    return cast(EncounterResponse, encounter)
 
 
 @router.post("/patient/{patient_id}", status_code=status.HTTP_201_CREATED, response_model=EncounterResponse)
@@ -215,7 +218,7 @@ async def create_encounter(
     encounter_data: EncounterCreate,
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
-):
+) -> EncounterResponse:
     """
     Create new encounter for patient.
     
@@ -298,4 +301,4 @@ async def create_encounter(
         .where(Encounter.id == encounter.id)
     )
     result = await db.execute(stmt)
-    return result.scalar_one()
+    return cast(EncounterResponse, result.scalar_one())

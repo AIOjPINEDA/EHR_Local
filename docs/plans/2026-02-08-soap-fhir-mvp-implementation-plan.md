@@ -206,9 +206,9 @@ ALTER TABLE encounters ADD COLUMN IF NOT EXISTS recommendations_text TEXT;
 ## Task 8: Tests and Contract Guards
 
 **Files:**
-- Modify: `backend/tests/test_encounter_contract.py`
+- Modify: `backend/tests/contracts/test_encounter_contract.py`
 - Modify: `frontend/scripts/contracts-smoke.mjs`
-- Optional create: `backend/tests/test_encounter_soap_payload.py`
+- Optional create: `backend/tests/unit/test_encounter_soap_payload.py`
 
 **Steps:**
 1. Extend backend contract test to assert SOAP fields exist in `EncounterResponse`.
@@ -309,7 +309,7 @@ Mitigation: Defer to a later phase; first stabilize SOAP v1 in current architect
 - `backend/app/models/condition.py`
 - `backend/app/models/medication_request.py`
 - `backend/app/api/prescriptions.py`
-- `backend/tests/test_encounter_contract.py`
+- `backend/tests/contracts/test_encounter_contract.py`
 - `frontend/scripts/contracts-smoke.mjs`
 
 ### External references

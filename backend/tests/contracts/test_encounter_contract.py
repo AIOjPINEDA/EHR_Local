@@ -3,6 +3,9 @@ ConsultaMed Backend - Encounter Contract Tests
 
 Validates that EncounterResponse schema meets frontend requirements.
 """
+import pytest
+
+pytestmark = pytest.mark.contract
 
 
 def test_encounter_response_has_subject_id():
