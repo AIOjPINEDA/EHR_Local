@@ -32,16 +32,20 @@
 
 ## 📚 Tabla de contenidos
 
-- [Estado actual](#-estado-actual)
-- [Quick Start](#-quick-start)
-- [Smoke Test](#-smoke-test)
-- [Arquitectura](#-arquitectura)
-- [Estructura del repositorio](#-estructura-del-repositorio)
-- [Seguridad MVP](#-seguridad-mvp)
-- [Testing y calidad](#-testing-y-calidad)
-- [Documentación adicional](#-documentación-adicional)
-- [Roadmap](#-roadmap)
-- [Licencia](#-licencia)
+- [🩺 ConsultaMed](#-consultamed)
+  - [✨ ¿Qué incluye?](#-qué-incluye)
+  - [📚 Tabla de contenidos](#-tabla-de-contenidos)
+  - [📌 Estado actual](#-estado-actual)
+  - [⚡ Acceso rápido (uso diario)](#-acceso-rápido-uso-diario)
+  - [🚀 Quick Start](#-quick-start)
+  - [✅ Smoke Test](#-smoke-test)
+  - [🏗️ Arquitectura](#️-arquitectura)
+  - [🗂️ Estructura del repositorio](#️-estructura-del-repositorio)
+  - [🔒 Seguridad MVP](#-seguridad-mvp)
+  - [🧪 Testing y calidad](#-testing-y-calidad)
+  - [📖 Documentación adicional](#-documentación-adicional)
+  - [🛣️ Roadmap](#️-roadmap)
+  - [📄 Licencia](#-licencia)
 
 ## 📌 Estado actual
 
@@ -53,6 +57,52 @@
 | Pacientes / Consultas / Templates | ✅ Funcional | Flujo clínico MVP |
 | Recetas PDF | ✅ Funcional | WeasyPrint |
 | CI | ✅ Activo | checks de backend y frontend |
+
+## ⚡ Acceso rápido (uso diario)
+
+Necesitas **backend + frontend** activos.
+
+<details>
+<summary><strong> Pasos rápidos de uso diario</strong></summary>
+
+1) Levanta backend:
+
+```bash
+cd backend
+uvicorn app.main:app --reload --port 8000
+```
+
+2) Levanta frontend (en otra terminal):
+
+```bash
+cd frontend
+npm run dev
+```
+
+3) Base de datos:
+
+- Si `backend/.env` usa `DATABASE_URL` de Supabase cloud/pooler, **no** necesitas `supabase start`.
+- Si `backend/.env` apunta a local (`127.0.0.1:54322`), ejecuta:
+
+```bash
+cd supabase
+supabase start
+```
+
+4) URLs de trabajo:
+
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- API: [http://localhost:8000](http://localhost:8000)
+- Docs API: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+5) Credenciales piloto:
+
+| Campo | Valor |
+|---|---|
+| Email | `sara@consultamed.es` |
+| Password | `piloto2026` |
+
+</details>
 
 ## 🚀 Quick Start
 
