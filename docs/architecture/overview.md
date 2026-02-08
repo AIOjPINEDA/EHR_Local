@@ -1,198 +1,107 @@
 # ConsultaMed Architecture Overview
 
-> Technical architecture document describing the current state of the system.
+> Current implemented architecture (source of truth for this repository state).
 
 ## System Context
 
-ConsultaMed is an Electronic Health Record (EHR) system designed for small private medical practices in Spain (1-2 physicians). The goal is to document a patient consultation in under 60 seconds.
+ConsultaMed is an EHR for small private practices in Spain (1-2 physicians), optimized for fast consultation documentation and prescription generation.
 
-## Architecture Diagram
+## Runtime Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Client ["Client Layer"]
-        Browser["🖥️ Desktop Browser"]
+    subgraph Client ["Client"]
+        Browser["Desktop Browser"]
     end
 
-    subgraph Frontend ["Frontend (Vercel)"]
-        NextJS["Next.js 14<br/>App Router<br/>TypeScript"]
+    subgraph Frontend ["Frontend"]
+        NextJS["Next.js 14 (App Router)<br/>TypeScript"]
     end
 
-    subgraph Backend ["Backend (Railway)"]
-        FastAPI["FastAPI<br/>Python 3.11+"]
-        Weasy["WeasyPrint<br/>PDF Generation"]
+    subgraph Backend ["Backend"]
+        FastAPI["FastAPI (REST API)"]
+        PDF["WeasyPrint (PDF service)"]
     end
 
-    subgraph Database ["Database (Supabase)"]
-        PG["PostgreSQL 15<br/>+ RLS"]
-        Auth["Supabase Auth<br/>JWT"]
+    subgraph Data ["Data"]
+        PG["PostgreSQL 15 (Supabase)"]
     end
 
     Browser --> NextJS
-    NextJS <-->|REST API<br/>JSON| FastAPI
-    FastAPI --> Weasy
+    NextJS <-->|JSON over HTTP| FastAPI
+    FastAPI --> PDF
     FastAPI <--> PG
-    FastAPI <--> Auth
 ```
 
-## Component Responsibilities
+## Authentication Model (Current)
 
-### Frontend (Next.js 14)
-| Component | Responsibility |
-|-----------|----------------|
-| App Router Pages | Page routing and server components |
-| TanStack Query | Server state management, caching |
-| Zustand | Client state management |
-| React Hook Form + Zod | Form handling and validation |
-| shadcn/ui + Tailwind | UI components and styling |
+- Login is handled by `POST /api/v1/auth/login` in FastAPI.
+- Backend validates practitioner credentials with bcrypt hash.
+- Backend issues JWT (HS256) and validates it on protected endpoints.
+- Frontend stores token in `localStorage` and sends `Authorization: Bearer <token>`.
 
-### Backend (FastAPI)
-| Component | Responsibility |
-|-----------|----------------|
-| `app/api/` | REST endpoints |
-| `app/models/` | SQLAlchemy models (FHIR-aligned) |
-| `app/schemas/` | Pydantic request/response schemas |
-| `app/services/` | Business logic layer |
-| `app/validators/` | DNI/NIE validation, clinical rules |
-| `app/templates/` | HTML templates for PDF generation |
-| WeasyPrint | Prescription PDF rendering |
+## Core Functional Flows
 
-### Database (PostgreSQL/Supabase)
-| Component | Responsibility |
-|-----------|----------------|
-| Tables | Patient, Encounter, Condition, etc. |
-| RLS Policies | Row-level access control |
-| Supabase Auth | JWT-based authentication |
+### 1. Login
+1. User submits email/password in frontend.
+2. Frontend calls backend `/api/v1/auth/login`.
+3. Backend returns JWT + practitioner profile.
+4. Frontend stores token and redirects to dashboard.
 
-## Data Flow
+### 2. Consultation Lifecycle
+1. Doctor opens patient record.
+2. Frontend requests encounters: `/api/v1/encounters/patient/{patient_id}`.
+3. Doctor creates encounter with diagnosis/medication payload.
+4. Backend persists `Encounter`, `Condition`, `MedicationRequest`.
+5. Doctor downloads PDF from `/api/v1/prescriptions/{encounter_id}/pdf`.
 
-### Authentication Flow
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as Frontend
-    participant B as Backend
-    participant A as Supabase Auth
+## Backend Responsibilities
 
-    U->>F: Login (email/password)
-    F->>A: Sign in request
-    A-->>F: JWT token
-    F->>B: API request + JWT
-    B->>A: Validate token
-    A-->>B: User context
-    B-->>F: Protected data
-```
+| Layer | Responsibility |
+|------|----------------|
+| `app/api/` | REST endpoints and contracts |
+| `app/models/` | SQLAlchemy entities (FHIR-aligned naming) |
+| `app/schemas/` | Patient-related Pydantic schemas |
+| `app/services/` | Business logic (`PatientService`, PDF service) |
+| `app/validators/` | DNI/NIE + clinical input validation |
 
-### Consultation Flow
-```mermaid
-sequenceDiagram
-    participant D as Doctor
-    participant F as Frontend
-    participant B as Backend
-    participant DB as Database
+## Frontend Responsibilities
 
-    D->>F: Search patient (DNI)
-    F->>B: GET /patients?dni=...
-    B->>DB: Query patient
-    DB-->>B: Patient data
-    B-->>F: Patient JSON
-    F-->>D: Display patient
+| Layer | Responsibility |
+|------|----------------|
+| `src/app/` | Route pages (dashboard, patients, encounters, templates) |
+| `src/lib/api/client.ts` | API wrapper with `/api/v1` prefix + auth header |
+| `src/lib/stores/auth-store.ts` | Lightweight auth state + persistence |
+| `src/components/ui/` | Shared UI primitives |
 
-    D->>F: Document consultation
-    F->>B: POST /encounters
-    B->>DB: Create encounter + diagnoses + medications
-    DB-->>B: Encounter ID
-    B-->>F: Success
+## FHIR R5 Naming Alignment
 
-    D->>F: Generate prescription
-    F->>B: GET /prescriptions/{id}/pdf
-    B->>B: WeasyPrint render
-    B-->>F: PDF binary
-    F-->>D: Download PDF
-```
+| Local Model | FHIR Resource |
+|-------------|---------------|
+| Patient | Patient |
+| Practitioner | Practitioner |
+| Encounter | Encounter |
+| Condition | Condition |
+| MedicationRequest | MedicationRequest |
+| AllergyIntolerance | AllergyIntolerance |
 
-## FHIR R5 Alignment
-
-Data models are designed to align with FHIR R5 resources for future interoperability:
-
-| Local Entity | FHIR Resource | Notes |
-|--------------|---------------|-------|
-| `patients` | [Patient](https://hl7.org/fhir/r5/patient.html) | Core demographics |
-| `practitioners` | [Practitioner](https://hl7.org/fhir/r5/practitioner.html) | Physician data |
-| `encounters` | [Encounter](https://hl7.org/fhir/r5/encounter.html) | Consultation events |
-| `conditions` | [Condition](https://hl7.org/fhir/r5/condition.html) | Diagnoses (ICD-10) |
-| `medication_requests` | [MedicationRequest](https://hl7.org/fhir/r5/medicationrequest.html) | Prescriptions |
-| `allergies` | [AllergyIntolerance](https://hl7.org/fhir/r5/allergyintolerance.html) | Patient allergies |
-
-## Current State vs Target
-
-| Aspect | Current (MVP) | Target (Production) |
-|--------|---------------|---------------------|
-| Auth | Supabase Auth, 8h JWT | 1h JWT, refresh tokens |
-| Hosting | localhost | Vercel + Railway + Supabase |
-| RLS | Partial | Full coverage |
-| Audit | Limited | Complete audit trail |
-| FHIR | Naming only | Full resource mapping |
-
-## Security Architecture
-
-```mermaid
-flowchart LR
-    subgraph Public
-        U["User"]
-    end
-
-    subgraph Edge ["Edge Security"]
-        HTTPS["HTTPS/TLS"]
-    end
-
-    subgraph App ["Application"]
-        JWT["JWT Auth"]
-        Val["Input Validation"]
-    end
-
-    subgraph Data ["Database"]
-        RLS["Row Level Security"]
-        Enc["Encryption at Rest"]
-    end
-
-    U --> HTTPS --> JWT --> Val --> RLS --> Enc
-```
-
-## File Structure
+## Repository Layout (Active)
 
 ```
-consultamed/
-├── AGENTS.md              # Agent contract (canonical)
-├── CLAUDE.md              # Claude shim
-├── README.md              # Project overview
-├── backend/               # FastAPI application
+EHR_Guadalix/
+├── backend/
 │   ├── app/
-│   │   ├── api/          # REST endpoints
-│   │   ├── models/       # SQLAlchemy models
-│   │   ├── schemas/      # Pydantic schemas
-│   │   ├── services/     # Business logic
-│   │   ├── validators/   # DNI, NIE, clinical
-│   │   └── templates/    # PDF templates
-│   ├── tests/            # Pytest tests
-│   └── pyproject.toml    # Python tooling config
-├── frontend/              # Next.js application
+│   └── tests/
+├── frontend/
 │   ├── src/
-│   │   ├── app/          # App Router pages
-│   │   ├── components/   # React components
-│   │   ├── lib/          # Utilities
-│   │   └── types/        # TypeScript types
-│   └── tests/            # Frontend tests
-├── database/              # SQL schema
-├── docs/                  # Documentation
-│   └── architecture/     # This directory
-├── specs/                 # Feature specifications
-│   └── 001-consultamed-mvp/
-└── .github/               # CI/CD and agent config
-    ├── workflows/
-    └── copilot-instructions.md
+│   └── scripts/
+├── supabase/
+│   └── migrations/
+├── scripts/
+├── docs/
+└── .archive/   # Historical specs/plans/reference material
 ```
 
 ---
 
-*Last updated: 2026-02-07*
+*Last updated: 2026-02-08*

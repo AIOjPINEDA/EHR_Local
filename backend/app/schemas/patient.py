@@ -3,7 +3,7 @@ ConsultaMed Backend - Patient Schemas
 """
 from datetime import date, datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class AllergyBase(BaseModel):
@@ -21,12 +21,11 @@ class AllergyCreate(AllergyBase):
 
 class AllergyResponse(AllergyBase):
     """Schema for allergy response."""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     clinical_status: str
     recorded_date: datetime
-    
-    class Config:
-        from_attributes = True
 
 
 class PatientBase(BaseModel):
@@ -57,6 +56,8 @@ class PatientUpdate(BaseModel):
 
 class PatientSummary(BaseModel):
     """Schema for patient in search results."""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     identifier_value: str
     name_given: str
@@ -67,21 +68,17 @@ class PatientSummary(BaseModel):
     telecom_phone: Optional[str]
     has_allergies: bool
     allergy_count: int
-    
-    class Config:
-        from_attributes = True
 
 
 class PatientResponse(PatientBase):
     """Full patient response with allergies and encounters."""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     age: int
     allergies: List[AllergyResponse] = []
     meta_created_at: datetime
     meta_updated_at: datetime
-    
-    class Config:
-        from_attributes = True
 
 
 class PatientListResponse(BaseModel):

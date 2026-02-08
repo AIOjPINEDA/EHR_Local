@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
@@ -26,7 +26,7 @@ interface MedicationDetail {
 
 interface EncounterDetail {
   id: string;
-  patient_id: string;
+  subject_id: string;
   reason_text: string | null;
   period_start: string;
   status: string;
@@ -53,6 +53,21 @@ export default function EncounterDetailPage() {
   const [error, setError] = useState("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   
+  const loadEncounter = useCallback(async () => {
+    try {
+      const encounterData = await api.get<EncounterDetail>(`/encounters/${encounterId}`);
+      setEncounter(encounterData);
+      
+      // Cargar datos básicos del paciente
+      const patientData = await api.get<PatientBasic>(`/patients/${encounterData.subject_id}`);
+      setPatient(patientData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cargar consulta");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [encounterId]);
+
   useEffect(() => {
     authStore.loadFromStorage();
     if (!authStore.isAuthenticated) {
@@ -60,24 +75,8 @@ export default function EncounterDetailPage() {
       return;
     }
     api.setToken(authStore.token);
-    
     loadEncounter();
-  }, [router, encounterId]);
-  
-  const loadEncounter = async () => {
-    try {
-      const encounterData = await api.get<EncounterDetail>(`/encounters/${encounterId}`);
-      setEncounter(encounterData);
-      
-      // Cargar datos básicos del paciente
-      const patientData = await api.get<PatientBasic>(`/patients/${encounterData.patient_id}`);
-      setPatient(patientData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar consulta");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [router, loadEncounter]);
   
   const handleGeneratePdf = async () => {
     if (!encounter || encounter.medications.length === 0) {
@@ -88,20 +87,8 @@ export default function EncounterDetailPage() {
     setIsGeneratingPdf(true);
     
     try {
-      // Llamar al endpoint de generación de PDF
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/prescriptions/${encounterId}/pdf`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${authStore.token}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error("Error al generar PDF");
-      }
-      
-      // Descargar el PDF
-      const blob = await response.blob();
+      // Usar el cliente API para mantener el prefijo /api/v1 y auth consistentes
+      const blob = await api.downloadPdf(`/prescriptions/${encounterId}/pdf`);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -162,7 +149,7 @@ export default function EncounterDetailPage() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href={`/patients/${encounter.patient_id}`} className="text-blue-600 hover:text-blue-700">
+            <Link href={`/patients/${encounter.subject_id}`} className="text-blue-600 hover:text-blue-700">
               ← Volver al paciente
             </Link>
             <h1 className="text-xl font-bold text-gray-800">Detalle de Consulta</h1>
@@ -326,7 +313,7 @@ export default function EncounterDetailPage() {
         {/* Actions */}
         <div className="flex gap-4">
           <Link
-            href={`/patients/${encounter.patient_id}`}
+            href={`/patients/${encounter.subject_id}`}
             className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 text-center"
           >
             ← Volver a ficha de paciente

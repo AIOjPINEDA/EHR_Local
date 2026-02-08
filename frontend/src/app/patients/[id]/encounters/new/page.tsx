@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
@@ -51,18 +51,7 @@ export default function NewEncounterPage() {
   }[]>([]);
   const [note, setNote] = useState("");
   
-  useEffect(() => {
-    authStore.loadFromStorage();
-    if (!authStore.isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    api.setToken(authStore.token);
-    
-    loadData();
-  }, [router, patientId]);
-  
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [patientData, templatesData] = await Promise.all([
         api.get<Patient>(`/patients/${patientId}`),
@@ -75,7 +64,17 @@ export default function NewEncounterPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [patientId]);
+
+  useEffect(() => {
+    authStore.loadFromStorage();
+    if (!authStore.isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    api.setToken(authStore.token);
+    loadData();
+  }, [router, loadData]);
   
   const handleTemplateSelect = (template: TreatmentTemplate) => {
     setSelectedTemplate(template);

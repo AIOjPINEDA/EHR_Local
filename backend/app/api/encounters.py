@@ -4,7 +4,7 @@ ConsultaMed Backend - Encounters Endpoints
 from typing import Optional, List
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,30 +48,30 @@ class EncounterCreate(BaseModel):
 
 class ConditionResponse(BaseModel):
     """Condition response."""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     code_text: str
     code_coding_code: Optional[str]
     clinical_status: str
-    
-    class Config:
-        from_attributes = True
 
 
 class MedicationResponse(BaseModel):
     """Medication response."""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     medication_text: str
     dosage_text: str
     duration_value: Optional[int]
     duration_unit: Optional[str]
     status: str
-    
-    class Config:
-        from_attributes = True
 
 
 class EncounterResponse(BaseModel):
     """Encounter response."""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     subject_id: str
     status: str
@@ -80,9 +80,6 @@ class EncounterResponse(BaseModel):
     note: Optional[str]
     conditions: List[ConditionResponse] = []
     medications: List[MedicationResponse] = []
-    
-    class Config:
-        from_attributes = True
 
 
 class EncounterListResponse(BaseModel):

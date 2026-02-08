@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
@@ -22,17 +22,7 @@ export default function PatientsListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 20;
   
-  useEffect(() => {
-    authStore.loadFromStorage();
-    if (!authStore.isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    api.setToken(authStore.token);
-    loadPatients();
-  }, [router, currentPage, searchQuery]);
-  
-  const loadPatients = async () => {
+  const loadPatients = useCallback(async () => {
     setIsLoading(true);
     try {
       const offset = (currentPage - 1) * limit;
@@ -48,7 +38,17 @@ export default function PatientsListPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, limit]);
+
+  useEffect(() => {
+    authStore.loadFromStorage();
+    if (!authStore.isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    api.setToken(authStore.token);
+    loadPatients();
+  }, [router, loadPatients]);
   
   const totalPages = Math.ceil(total / limit);
   

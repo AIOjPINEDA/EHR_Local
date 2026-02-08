@@ -127,7 +127,7 @@ Data models follow FHIR nomenclature:
 
 ## Active Specs
 
-- Primary: `specs/001-consultamed-mvp/spec.md`
+- Primary: `.archive/specs/001-consultamed-mvp/spec.md`
 
 ## Architecture
 
