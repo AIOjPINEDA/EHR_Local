@@ -26,7 +26,7 @@ echo "2) Authentication"
 LOGIN_RESPONSE=$(curl -sf -X POST "$API_URL/api/v1/auth/login" \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d "username=$TEST_EMAIL&password=$PILOT_PASSWORD")
-TOKEN=$(echo "$LOGIN_RESPONSE" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+TOKEN=$(echo "$LOGIN_RESPONSE" | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4 || true)
 
 if [ -z "$TOKEN" ]; then
     echo "   FAIL: login did not return access_token"
@@ -51,7 +51,7 @@ if ! echo "$PATIENTS_RESPONSE" | grep -q '"items"'; then
     echo "   FAIL: /patients response invalid"
     exit 1
 fi
-PATIENT_ID=$(echo "$PATIENTS_RESPONSE" | grep -o '"id":"[^"]*"' | head -n1 | cut -d'"' -f4)
+PATIENT_ID=$(echo "$PATIENTS_RESPONSE" | grep -o '"id":"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
 if [ -z "$PATIENT_ID" ]; then
     echo "   WARN: no patients found, skipping encounters check"
     WARNINGS=1
