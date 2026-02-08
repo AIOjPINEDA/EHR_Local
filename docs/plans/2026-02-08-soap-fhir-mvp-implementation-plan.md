@@ -10,6 +10,28 @@
 
 ---
 
+## Execution Status (Updated 2026-02-08)
+
+### Current outcome
+- SOAP v1 flow is implemented end-to-end (UI -> API -> DB -> patient history -> encounter detail -> prescription preview/PDF).
+- Contract and local quality gate are in place (`unit + contract + lint + type-check + frontend checks`).
+- Latest stabilization and test-structure update is committed in branch `codex/soap-v1-fhir-ready` (`20db468`).
+
+### Task completion snapshot
+- Task 0: Completed
+- Task 1: Completed
+- Task 2: Completed
+- Task 3: Completed
+- Task 4: Completed
+- Task 5: Completed
+- Task 6: Completed
+- Task 7: Completed
+- Task 8: Completed
+- Task 9: Completed
+- Task 10: Completed
+
+---
+
 ## Scope and Constraints
 
 ### In Scope (this implementation)
@@ -291,6 +313,38 @@ Mitigation: Defer to a later phase; first stabilize SOAP v1 in current architect
 - Add a read-only FHIR export endpoint for encounter bundle (`Encounter + Condition + MedicationRequest + Composition`).
 - Validate exported bundles against a local HAPI instance in shadow mode.
 - Do not make HAPI the system of record until usage and data model are stable.
+
+---
+
+## Next Practical Steps (Post-implementation)
+
+### Step 1: Pilot stabilization (high priority, low complexity)
+1. Apply `supabase/migrations/20260208_add_encounter_soap_fields.sql` in every active environment and verify schema parity.
+2. Run full local gate before each PR:
+   - `./scripts/test_gate.sh`
+3. Execute a manual clinical smoke run with 5 real-world scenarios (new patient, follow-up, polypharmacy, no meds, template-based visit).
+
+### Step 2: Close current branch cycle cleanly
+1. Push latest branch state and open PR to `main`.
+2. Keep PR scope limited to SOAP v1 + typing/testing/documentation updates.
+3. Merge and delete working branch once checks are green.
+
+### Step 3: Add one integration test for critical flow
+1. Add a backend integration test covering:
+   - create encounter with SOAP fields
+   - retrieve encounter detail
+   - fetch prescription preview and verify instruction fallback
+2. Keep it minimal (single happy path) to avoid heavy test maintenance.
+
+### Step 4: UX productivity pass (MVP-safe)
+1. Add lightweight draft autosave in consultation form (local only).
+2. Add quick recommendation snippets (editable text, no extra backend model).
+3. Keep existing SOAP structure and avoid new domain entities in this phase.
+
+### Step 5: FHIR evolution without replatforming
+1. Defer HAPI FHIR server as system of record.
+2. Optionally add a read-only encounter export endpoint (`FHIR Bundle`) for interoperability experiments.
+3. Re-evaluate HAPI adoption only after pilot usage is stable and data patterns are validated.
 
 ---
 

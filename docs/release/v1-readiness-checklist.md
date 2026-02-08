@@ -58,6 +58,7 @@ Expected result: script finaliza con "Smoke test passed".
 1. **Apply SQL Migration**
    ```bash
    psql $DATABASE_URL < supabase/migrations/20260208_add_password_hash.sql
+   psql $DATABASE_URL < supabase/migrations/20260208_add_encounter_soap_fields.sql
    ```
 
 2. **Deploy Backend**

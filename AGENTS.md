@@ -50,6 +50,7 @@ uvicorn app.main:app --reload       # Dev server (port 8000)
 cd frontend
 npm test                            # Run tests
 npm run lint                        # ESLint
+npm run type-check                  # TypeScript check
 npm run format                      # Prettier
 npm run dev                         # Dev server (port 3000)
 ```
@@ -147,4 +148,4 @@ See `docs/architecture/overview.md` for system design.
 
 ---
 
-*Last updated: 2026-02-07*
+*Last updated: 2026-02-08*

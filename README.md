@@ -10,8 +10,6 @@
 
 <p align="left">
   <img src="https://img.shields.io/github/actions/workflow/status/AIOjPINEDA/EHR_Local/ci.yml?branch=main&style=for-the-badge&label=CI" alt="CI" />
-  <img src="https://img.shields.io/github/actions/workflow/status/AIOjPINEDA/EHR_Local/backend.yml?branch=main&style=for-the-badge&label=Backend%20CI" alt="Backend CI" />
-  <img src="https://img.shields.io/github/actions/workflow/status/AIOjPINEDA/EHR_Local/frontend.yml?branch=main&style=for-the-badge&label=Frontend%20CI" alt="Frontend CI" />
 </p>
 
 <p align="left">
@@ -140,10 +138,11 @@ ENVIRONMENT=development
 DEBUG=true
 ```
 
-Aplica migración inicial de password hash:
+Aplica migraciones iniciales:
 
 ```bash
 psql -d consultamed -f ../supabase/migrations/20260208_add_password_hash.sql
+psql -d consultamed -f ../supabase/migrations/20260208_add_encounter_soap_fields.sql
 ```
 
 Inicia backend:
