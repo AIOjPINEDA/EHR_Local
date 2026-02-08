@@ -1,26 +1,36 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { HospitalBrand } from "@/components/branding/hospital-brand";
+import { APP_NAME } from "@/lib/branding/constants";
+import { PrimaryNav } from "@/components/navigation/primary-nav";
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
+import {
+  PATIENT_SEARCH_MIN_LENGTH,
+  buildPatientsDirectoryUrl,
+  formatLastEncounterDate,
+  formatPatientGender,
+  normalizePatientSearchQuery,
+} from "@/lib/patients/directory";
 import { authStore } from "@/lib/stores/auth-store";
-import { PatientSummary } from "@/types/api";
-
-interface SearchResult {
-  items: PatientSummary[];
-  total: number;
-}
+import type { PaginatedResponse, PatientSummary } from "@/types/api";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState(authStore.practitioner);
+  const [isSessionReady, setIsSessionReady] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<PatientSummary[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+  const [patients, setPatients] = useState<PatientSummary[]>([]);
+  const [totalPatients, setTotalPatients] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoadingPatients, setIsLoadingPatients] = useState(false);
+  const [error, setError] = useState("");
+  const pageSize = 8;
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 250);
   
-  // Check auth on mount
   useEffect(() => {
     authStore.loadFromStorage();
     
@@ -31,43 +41,59 @@ export default function DashboardPage() {
     
     setUser(authStore.practitioner);
     api.setToken(authStore.token);
+    setIsSessionReady(true);
   }, [router]);
   
-  // Debounced search
-  const searchPatients = useCallback(async (query: string) => {
-    if (query.length < 2) {
-      setSearchResults([]);
-      setShowResults(false);
+  const loadPatients = useCallback(async (query: string, page: number) => {
+    if (!isSessionReady) {
       return;
     }
-    
-    setIsSearching(true);
+    setIsLoadingPatients(true);
+    setError("");
+
     try {
-      const result = await api.get<SearchResult>(`/patients?search=${encodeURIComponent(query)}&limit=10`);
-      setSearchResults(result.items);
-      setShowResults(true);
-    } catch (error) {
-      console.error("Error searching patients:", error);
-      setSearchResults([]);
+      const offset = (page - 1) * pageSize;
+      const url = buildPatientsDirectoryUrl({
+        limit: pageSize,
+        offset,
+        query,
+      });
+      const result = await api.get<PaginatedResponse<PatientSummary>>(url);
+      setPatients(result.items);
+      setTotalPatients(result.total);
+    } catch {
+      setPatients([]);
+      setTotalPatients(0);
+      setError("No se pudo cargar el listado de pacientes.");
     } finally {
-      setIsSearching(false);
+      setIsLoadingPatients(false);
     }
-  }, []);
+  }, [isSessionReady]);
   
-  // Debounce search
   useEffect(() => {
-    const timer = setTimeout(() => {
-      searchPatients(searchQuery);
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, [searchQuery, searchPatients]);
+    if (!isSessionReady) {
+      return;
+    }
+    void loadPatients(normalizePatientSearchQuery(debouncedSearchQuery), currentPage);
+  }, [currentPage, debouncedSearchQuery, isSessionReady, loadPatients]);
   
   const handleLogout = () => {
     authStore.logout();
     api.setToken(null);
     router.push("/login");
   };
+
+  const totalPages = Math.max(1, Math.ceil(totalPatients / pageSize));
+  const normalizedQuery = normalizePatientSearchQuery(searchQuery);
+  const searchSummary = useMemo(() => {
+    if (normalizedQuery.length === 1) {
+      return `Tip: escribe al menos ${PATIENT_SEARCH_MIN_LENGTH} caracteres para filtrar por nombre o DNI.`;
+    }
+    if (normalizedQuery.length >= PATIENT_SEARCH_MIN_LENGTH) {
+      return `Resultados para “${normalizedQuery}”.`;
+    }
+    return "Mostrando pacientes recientes para acceso rápido.";
+  }, [normalizedQuery]);
   
   if (!user) {
     return (
@@ -79,12 +105,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-blue-600">ConsultaMed</h1>
-          </div>
+      <header className="border-b bg-white shadow-sm">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-4">
+          <HospitalBrand title={APP_NAME} subtitle="Dashboard clínico" />
           
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">
@@ -98,143 +121,134 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+        <div className="mx-auto max-w-[1400px] px-4 pb-4">
+          <PrimaryNav showTitle={false} />
+        </div>
       </header>
       
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Welcome */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-800">
-            Bienvenido/a, Dr/Dra. {user.name_family}
-          </h2>
-          <p className="text-gray-600">
-            {user.qualification_code || "Médico"}
-          </p>
-        </div>
-        
-        {/* Search Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            🔍 Buscar Paciente
-          </h3>
-          
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => searchQuery.length >= 2 && setShowResults(true)}
-              placeholder="Buscar por nombre o DNI (mínimo 2 caracteres)..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-lg"
-            />
-            
-            {isSearching && (
-              <div className="absolute right-4 top-4">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-              </div>
-            )}
-            
-            {/* Search Results Dropdown */}
-            {showResults && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
-                {searchResults.length > 0 ? (
-                  <>
-                    {searchResults.map((patient) => (
-                      <Link
-                        key={patient.id}
-                        href={`/patients/${patient.id}`}
-                        className="block px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
-                        onClick={() => setShowResults(false)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="font-medium text-gray-800">
-                              {patient.name_given} {patient.name_family}
-                            </span>
-                            <span className="ml-2 text-sm text-gray-500">
-                              {patient.identifier_value}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">
-                              {patient.age} años
-                            </span>
-                            {patient.has_allergies && (
-                              <span className="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">
-                                Alergias
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </>
-                ) : searchQuery.length >= 2 ? (
-                  <div className="px-4 py-6 text-center">
-                    <p className="text-gray-500 mb-4">No se encontraron pacientes</p>
-                    <Link
-                      href="/patients/new"
-                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      + Crear nuevo paciente
-                    </Link>
-                  </div>
-                ) : null}
-              </div>
-            )}
+      <main className="mx-auto max-w-[1400px] space-y-6 px-4 py-6">
+        <section>
+          <article className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-900">Buscar paciente</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Encuentra pacientes por nombre o DNI y abre su ficha clínica en un clic.
+            </p>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Buscar por nombre o DNI..."
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+              />
+              <Link
+                href="/patients/new"
+                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700"
+              >
+                + Nuevo paciente
+              </Link>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">{searchSummary}</p>
+          </article>
+        </section>
+
+        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-gray-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Listado rápido de pacientes</h3>
+              <p className="text-sm text-gray-500">
+                {isLoadingPatients
+                  ? "Cargando pacientes..."
+                  : `${totalPatients} paciente${totalPatients === 1 ? "" : "s"} disponible${
+                      totalPatients === 1 ? "" : "s"
+                    }`}
+              </p>
+            </div>
           </div>
-        </div>
-        
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link
-            href="/patients/new"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition group"
-          >
-            <div className="text-3xl mb-3">👤</div>
-            <h3 className="font-semibold text-gray-800 group-hover:text-blue-600">
-              Nuevo Paciente
-            </h3>
-            <p className="text-sm text-gray-500">
-              Registrar un paciente nuevo
-            </p>
-          </Link>
-          
-          <Link
-            href="/patients"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition group"
-          >
-            <div className="text-3xl mb-3">📋</div>
-            <h3 className="font-semibold text-gray-800 group-hover:text-blue-600">
-              Lista de Pacientes
-            </h3>
-            <p className="text-sm text-gray-500">
-              Ver todos los pacientes
-            </p>
-          </Link>
-          
-          <Link
-            href="/settings/templates"
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition group"
-          >
-            <div className="text-3xl mb-3">⚙️</div>
-            <h3 className="font-semibold text-gray-800 group-hover:text-blue-600">
-              Templates
-            </h3>
-            <p className="text-sm text-gray-500">
-              Gestionar tratamientos predefinidos
-            </p>
-          </Link>
-        </div>
+
+          {error && <div className="border-b border-red-100 bg-red-50 px-6 py-3 text-sm text-red-700">{error}</div>}
+
+          {isLoadingPatients ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+            </div>
+          ) : patients.length === 0 ? (
+            <div className="px-6 py-10 text-center">
+              <p className="text-sm text-gray-500">No hay pacientes para mostrar con ese filtro.</p>
+              <Link href="/patients/new" className="mt-4 inline-flex text-sm font-medium text-blue-600 hover:text-blue-700">
+                Crear nuevo paciente
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-gray-600">
+                  <tr>
+                    <th className="px-6 py-3 text-left font-semibold">Paciente</th>
+                    <th className="px-6 py-3 text-left font-semibold">ID</th>
+                    <th className="px-6 py-3 text-left font-semibold">Edad</th>
+                    <th className="px-6 py-3 text-left font-semibold">Género</th>
+                    <th className="px-6 py-3 text-left font-semibold">Consultas</th>
+                    <th className="px-6 py-3 text-left font-semibold">Última consulta</th>
+                    <th className="px-6 py-3 text-left font-semibold">Alergias</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {patients.map((patient) => (
+                    <tr key={patient.id} className="border-t border-gray-100 hover:bg-gray-50">
+                      <td className="px-6 py-4 font-medium">
+                        <Link href={`/patients/${patient.id}`} className="text-blue-600 hover:text-blue-700">
+                          {patient.name_given} {patient.name_family}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-gray-600">{patient.identifier_value}</td>
+                      <td className="px-6 py-4 text-gray-600">{patient.age} años</td>
+                      <td className="px-6 py-4 text-gray-600">{formatPatientGender(patient.gender)}</td>
+                      <td className="px-6 py-4 text-gray-700">{patient.encounter_count}</td>
+                      <td className="px-6 py-4 text-gray-600">{formatLastEncounterDate(patient.last_encounter_at)}</td>
+                      <td className="px-6 py-4">
+                        {patient.has_allergies ? (
+                          <span className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-700">
+                            {patient.allergy_count} alergia{patient.allergy_count === 1 ? "" : "s"}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-500">Sin registro</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {totalPatients > pageSize && (
+            <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3">
+              <button
+                onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))}
+                disabled={currentPage === 1}
+                className="rounded-lg border border-gray-300 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ← Anterior
+              </button>
+              <span className="text-sm text-gray-600">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((previous) => Math.min(totalPages, previous + 1))}
+                disabled={currentPage >= totalPages}
+                className="rounded-lg border border-gray-300 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
+        </section>
       </main>
-      
-      {/* Click outside to close results */}
-      {showResults && (
-        <div 
-          className="fixed inset-0 z-0" 
-          onClick={() => setShowResults(false)}
-        />
-      )}
     </div>
   );
 }

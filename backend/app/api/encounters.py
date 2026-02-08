@@ -5,7 +5,7 @@ from typing import Optional, List, cast
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -57,6 +57,15 @@ def _build_legacy_note(
     ]
     lines = [f"{title}: {content}" for title, content in sections if content]
     return "\n".join(lines) if lines else None
+
+
+async def _ensure_patient_exists(db: AsyncSession, patient_id: str) -> None:
+    """Verifica que el paciente exista antes de operar sobre sus consultas."""
+    patient_stmt = select(Patient.id).where(Patient.id == patient_id)
+    patient_result = await db.execute(patient_stmt)
+    if patient_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+
 
 class ConditionCreate(BaseModel):
     """Schema for creating a condition."""
@@ -149,11 +158,7 @@ async def list_patient_encounters(
     
     Returns encounters with conditions and medications.
     """
-    # Verify patient exists
-    patient_stmt = select(Patient).where(Patient.id == patient_id)
-    patient_result = await db.execute(patient_stmt)
-    if not patient_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    await _ensure_patient_exists(db, patient_id)
     
     # Get encounters with related data
     stmt = (
@@ -172,9 +177,9 @@ async def list_patient_encounters(
     encounters = result.scalars().all()
     
     # Get total count
-    count_stmt = select(Encounter).where(Encounter.subject_id == patient_id)
+    count_stmt = select(func.count(Encounter.id)).where(Encounter.subject_id == patient_id)
     count_result = await db.execute(count_stmt)
-    total = len(count_result.scalars().all())
+    total = int(count_result.scalar_one() or 0)
     
     return EncounterListResponse(
         items=cast(List[EncounterResponse], list(encounters)),
@@ -227,13 +232,7 @@ async def create_encounter(
     - Condition(s) for diagnoses
     - MedicationRequest(s) for prescriptions
     """
-    # Verify patient exists
-    patient_stmt = select(Patient).where(Patient.id == patient_id)
-    patient_result = await db.execute(patient_stmt)
-    patient = patient_result.scalar_one_or_none()
-    
-    if not patient:
-        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+    await _ensure_patient_exists(db, patient_id)
     
     # Create encounter
     reason_text = _clean_text(encounter_data.reason_text)

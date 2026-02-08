@@ -4,13 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { HospitalBrand } from "@/components/branding/hospital-brand";
+import { formatPatientGender } from "@/lib/patients/directory";
 import { authStore } from "@/lib/stores/auth-store";
-import { Patient, Allergy, EncounterSummary } from "@/types/api";
-
-interface EncountersResponse {
-  items: EncounterSummary[];
-  total: number;
-}
+import type { Patient, EncounterListResponse } from "@/types/api";
 
 export default function PatientDetailPage() {
   const router = useRouter();
@@ -18,9 +15,10 @@ export default function PatientDetailPage() {
   const patientId = params.id as string;
   
   const [patient, setPatient] = useState<Patient | null>(null);
-  const [encounters, setEncounters] = useState<EncounterSummary[]>([]);
+  const [encounters, setEncounters] = useState<EncounterListResponse["items"]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [encountersError, setEncountersError] = useState("");
   
   // Modal para añadir alergia
   const [showAllergyModal, setShowAllergyModal] = useState(false);
@@ -30,6 +28,7 @@ export default function PatientDetailPage() {
     criticality: "low",
   });
   const [savingAllergy, setSavingAllergy] = useState(false);
+  const [confirmDeleteAllergyId, setConfirmDeleteAllergyId] = useState<string | null>(null);
   
   const loadPatient = useCallback(async () => {
     try {
@@ -44,10 +43,12 @@ export default function PatientDetailPage() {
 
   const loadEncounters = useCallback(async () => {
     try {
-      const data = await api.get<EncountersResponse>(`/encounters/patient/${patientId}?limit=20`);
+      const data = await api.get<EncounterListResponse>(`/encounters/patient/${patientId}?limit=20`);
       setEncounters(data.items);
-    } catch (err) {
-      console.error("Error loading encounters:", err);
+      setEncountersError("");
+    } catch {
+      setEncounters([]);
+      setEncountersError("No se pudo cargar el historial de consultas.");
     }
   }, [patientId]);
 
@@ -67,25 +68,32 @@ export default function PatientDetailPage() {
     setSavingAllergy(true);
     
     try {
+      setError("");
       await api.post(`/patients/${patientId}/allergies`, allergyForm);
       await loadPatient();
       setShowAllergyModal(false);
       setAllergyForm({ code_text: "", category: "medication", criticality: "low" });
+      setConfirmDeleteAllergyId(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al añadir alergia");
+      setError(err instanceof Error ? err.message : "Error al añadir alergia");
     } finally {
       setSavingAllergy(false);
     }
   };
   
   const handleDeleteAllergy = async (allergyId: string) => {
-    if (!confirm("¿Eliminar esta alergia?")) return;
+    if (confirmDeleteAllergyId !== allergyId) {
+      setConfirmDeleteAllergyId(allergyId);
+      return;
+    }
     
     try {
+      setError("");
       await api.delete(`/patients/${patientId}/allergies/${allergyId}`);
       await loadPatient();
+      setConfirmDeleteAllergyId(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al eliminar alergia");
+      setError(err instanceof Error ? err.message : "Error al eliminar alergia");
     }
   };
   
@@ -117,7 +125,7 @@ export default function PatientDetailPage() {
             <Link href="/dashboard" className="text-blue-600 hover:text-blue-700">
               ← Dashboard
             </Link>
-            <h1 className="text-xl font-bold text-gray-800">Ficha de Paciente</h1>
+            <HospitalBrand title="Ficha de Paciente" />
           </div>
           
           <Link
@@ -141,12 +149,8 @@ export default function PatientDetailPage() {
                 <span>{patient.identifier_value}</span>
                 <span>•</span>
                 <span>{patient.age} años</span>
-                {patient.gender && (
-                  <>
-                    <span>•</span>
-                    <span>{patient.gender === "male" ? "Masculino" : patient.gender === "female" ? "Femenino" : patient.gender}</span>
-                  </>
-                )}
+                <span>•</span>
+                <span>{formatPatientGender(patient.gender)}</span>
               </div>
               {(patient.telecom_phone || patient.telecom_email) && (
                 <div className="mt-2 text-sm text-gray-500">
@@ -195,9 +199,13 @@ export default function PatientDetailPage() {
                     </div>
                     <button
                       onClick={() => handleDeleteAllergy(allergy.id)}
-                      className="text-gray-400 hover:text-red-600 text-sm"
+                      className={`text-sm transition ${
+                        confirmDeleteAllergyId === allergy.id
+                          ? "text-red-700 font-semibold"
+                          : "text-gray-400 hover:text-red-600"
+                      }`}
                     >
-                      ✕
+                      {confirmDeleteAllergyId === allergy.id ? "Confirmar" : "✕"}
                     </button>
                   </div>
                 ))}
@@ -212,6 +220,11 @@ export default function PatientDetailPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-800">📋 Historial de Consultas</h3>
             </div>
+            {encountersError && (
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                {encountersError}
+              </div>
+            )}
             
             {encounters.length > 0 ? (
               <div className="space-y-4">

@@ -4,48 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { HospitalBrand } from "@/components/branding/hospital-brand";
+import { openBlobInNewTab } from "@/lib/files/download";
+import { formatPatientGender } from "@/lib/patients/directory";
 import { authStore } from "@/lib/stores/auth-store";
+import type { EncounterDetail, Patient } from "@/types/api";
 
-interface ConditionDetail {
-  id: string;
-  code_text: string;
-  code_coding_code: string | null;
-  clinical_status: string;
-  recorded_date: string;
-}
-
-interface MedicationDetail {
-  id: string;
-  medication_text: string;
-  dosage_text: string;
-  duration_value: number | null;
-  duration_unit: string | null;
-  status: string;
-  authored_on: string;
-}
-
-interface EncounterDetail {
-  id: string;
-  subject_id: string;
-  reason_text: string | null;
-  subjective_text: string | null;
-  objective_text: string | null;
-  assessment_text: string | null;
-  plan_text: string | null;
-  recommendations_text: string | null;
-  period_start: string;
-  status: string;
-  note: string | null;
-  conditions: ConditionDetail[];
-  medications: MedicationDetail[];
-}
-
-interface PatientBasic {
-  name_given: string;
-  name_family: string;
-  identifier_value: string;
-  age: number;
-}
+type PatientBasic = Pick<
+  Patient,
+  "name_given" | "name_family" | "identifier_value" | "age" | "gender"
+>;
 
 export default function EncounterDetailPage() {
   const router = useRouter();
@@ -80,30 +48,23 @@ export default function EncounterDetailPage() {
       return;
     }
     api.setToken(authStore.token);
-    loadEncounter();
+    void loadEncounter();
   }, [router, loadEncounter]);
   
-  const handleGeneratePdf = async () => {
+  const handleOpenPrescription = async () => {
     if (!encounter || encounter.medications.length === 0) {
-      alert("No hay medicamentos para generar la receta");
+      setError("No hay medicamentos para generar la receta.");
       return;
     }
     
+    setError("");
     setIsGeneratingPdf(true);
     
     try {
-      // Usar el cliente API para mantener el prefijo /api/v1 y auth consistentes
       const blob = await api.downloadPdf(`/prescriptions/${encounterId}/pdf`);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `receta_${encounterId.slice(0, 8)}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      openBlobInNewTab(blob);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al generar PDF");
+      setError(err instanceof Error ? err.message : "Error al abrir receta");
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -152,36 +113,17 @@ export default function EncounterDetailPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href={`/patients/${encounter.subject_id}`} className="text-blue-600 hover:text-blue-700">
               ← Volver al paciente
             </Link>
-            <h1 className="text-xl font-bold text-gray-800">Detalle de Consulta</h1>
+            <HospitalBrand title="Detalle de Consulta" />
           </div>
-          
-          {encounter.medications.length > 0 && (
-            <button
-              onClick={handleGeneratePdf}
-              disabled={isGeneratingPdf}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50"
-            >
-              {isGeneratingPdf ? (
-                <>
-                  <span className="animate-spin">⏳</span>
-                  Generando...
-                </>
-              ) : (
-                <>
-                  📄 Generar Receta PDF
-                </>
-              )}
-            </button>
-          )}
         </div>
       </header>
       
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-[1400px] mx-auto px-4 py-8 space-y-6">
         {/* Error */}
         {error && (
           <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg">
@@ -196,8 +138,34 @@ export default function EncounterDetailPage() {
               {patient.name_given} {patient.name_family}
             </span>
             <span className="text-blue-600 ml-4">
-              {patient.identifier_value} · {patient.age} años
+              {patient.identifier_value} · {patient.age} años · {formatPatientGender(patient.gender)}
             </span>
+          </div>
+        )}
+
+        {/* Prescription Summary */}
+        {encounter.medications.length > 0 && patient && (
+          <div className="bg-white border rounded-lg shadow-md p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Resumen para receta</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Incluye datos del paciente, tratamiento prescrito, recomendaciones e identificación médica.
+                </p>
+                <div className="mt-3 text-sm text-gray-700">
+                  <p><span className="font-medium">Paciente:</span> {patient.name_given} {patient.name_family}</p>
+                  <p><span className="font-medium">ID:</span> {patient.identifier_value} · <span className="font-medium">Edad:</span> {patient.age} años · <span className="font-medium">Género:</span> {formatPatientGender(patient.gender)}</p>
+                  <p><span className="font-medium">Medicamentos:</span> {encounter.medications.length}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleOpenPrescription}
+                disabled={isGeneratingPdf}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
+              >
+                {isGeneratingPdf ? "Abriendo..." : "Abrir receta para imprimir"}
+              </button>
+            </div>
           </div>
         )}
         
@@ -342,28 +310,10 @@ export default function EncounterDetailPage() {
         <div className="flex gap-4">
           <Link
             href={`/patients/${encounter.subject_id}`}
-            className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 text-center"
+            className="w-full py-3 px-4 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 text-center"
           >
             ← Volver a ficha de paciente
           </Link>
-          
-          {encounter.medications.length > 0 && (
-            <>
-              <button
-                onClick={handleGeneratePdf}
-                disabled={isGeneratingPdf}
-                className="flex-1 py-3 px-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 text-center"
-              >
-                📄 Descargar Receta PDF
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="py-3 px-4 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50"
-              >
-                🖨️ Imprimir
-              </button>
-            </>
-          )}
         </div>
       </main>
     </div>

@@ -29,6 +29,8 @@ export interface PatientSummary {
   telecom_phone: string | null;
   has_allergies: boolean;
   allergy_count: number;
+  encounter_count: number;
+  last_encounter_at: string | null;
 }
 
 export interface Patient extends PatientSummary {
@@ -59,12 +61,21 @@ export interface Condition {
   clinical_status: string;
 }
 
+export interface ConditionDetail extends Condition {
+  recorded_date: string;
+}
+
 export interface MedicationRequest {
   id: string;
   medication_text: string;
   dosage_text: string;
   duration_value: number | null;
   duration_unit: string | null;
+}
+
+export interface MedicationDetail extends MedicationRequest {
+  status: string;
+  authored_on: string;
 }
 
 export interface EncounterSummary {
@@ -88,6 +99,16 @@ export interface Encounter extends EncounterSummary {
     name_given: string;
     name_family: string;
   };
+}
+
+export interface EncounterDetail extends Omit<Encounter, "conditions" | "medications"> {
+  conditions: ConditionDetail[];
+  medications: MedicationDetail[];
+}
+
+export interface EncounterListResponse {
+  items: EncounterSummary[];
+  total: number;
 }
 
 export interface EncounterCreate {
@@ -128,6 +149,12 @@ export interface Template {
   medications: TemplateMedication[];
   instructions: string | null;
   is_favorite: boolean;
+  is_global: boolean;
+}
+
+export interface TemplateListResponse {
+  items: Template[];
+  total: number;
 }
 
 export interface TemplateCreate {
@@ -149,6 +176,7 @@ export interface Practitioner {
   name_given: string;
   name_family: string;
   qualification_code: string | null;
+  telecom_email: string | null;
 }
 
 export interface LoginResponse {
@@ -179,6 +207,7 @@ export interface PrescriptionPreview {
     full_name: string;
     identifier_value: string;
     age: number;
+    gender: string;
   };
   practitioner: {
     full_name: string;

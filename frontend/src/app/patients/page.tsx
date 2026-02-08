@@ -4,13 +4,17 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { HospitalBrand } from "@/components/branding/hospital-brand";
+import { PrimaryNav } from "@/components/navigation/primary-nav";
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
+import {
+  buildPatientsDirectoryUrl,
+  formatLastEncounterDate,
+  formatPatientGender,
+  normalizePatientSearchQuery,
+} from "@/lib/patients/directory";
 import { authStore } from "@/lib/stores/auth-store";
-import { PatientSummary } from "@/types/api";
-
-interface PatientListResponse {
-  items: PatientSummary[];
-  total: number;
-}
+import type { PaginatedResponse, PatientSummary } from "@/types/api";
 
 export default function PatientsListPage() {
   const router = useRouter();
@@ -21,16 +25,19 @@ export default function PatientsListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 20;
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 250);
   
   const loadPatients = useCallback(async () => {
     setIsLoading(true);
+    setError("");
     try {
       const offset = (currentPage - 1) * limit;
-      let url = `/patients?limit=${limit}&offset=${offset}`;
-      if (searchQuery.length >= 2) {
-        url += `&search=${encodeURIComponent(searchQuery)}`;
-      }
-      const data = await api.get<PatientListResponse>(url);
+      const url = buildPatientsDirectoryUrl({
+        limit,
+        offset,
+        query: normalizePatientSearchQuery(debouncedSearchQuery),
+      });
+      const data = await api.get<PaginatedResponse<PatientSummary>>(url);
       setPatients(data.items);
       setTotal(data.total);
     } catch (err) {
@@ -38,7 +45,7 @@ export default function PatientsListPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, searchQuery, limit]);
+  }, [currentPage, debouncedSearchQuery, limit]);
 
   useEffect(() => {
     authStore.loadFromStorage();
@@ -54,27 +61,33 @@ export default function PatientsListPage() {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-blue-600 hover:text-blue-700">
-              ← Volver
+      <header className="border-b bg-white shadow-sm">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-4">
+          <HospitalBrand title="Lista de Pacientes" />
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/settings/templates"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Templates
             </Link>
-            <h1 className="text-xl font-bold text-gray-800">📋 Lista de Pacientes</h1>
+            <Link
+              href="/patients/new"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              + Nuevo Paciente
+            </Link>
           </div>
-          <Link
-            href="/patients/new"
-            className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
-          >
-            + Nuevo Paciente
-          </Link>
+        </div>
+        <div className="mx-auto max-w-[1400px] px-4 pb-4">
+          <PrimaryNav showTitle={false} />
         </div>
       </header>
       
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Search */}
-        <div className="mb-6">
+      <main className="mx-auto max-w-[1400px] px-4 py-8">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <p className="mb-3 text-sm font-medium text-gray-700">Búsqueda en directorio de pacientes</p>
           <input
             type="text"
             value={searchQuery}
@@ -83,7 +96,7 @@ export default function PatientsListPage() {
               setCurrentPage(1);
             }}
             placeholder="Buscar por nombre o DNI..."
-            className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full max-w-xl rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
           />
         </div>
         
@@ -118,6 +131,9 @@ export default function PatientsListPage() {
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">DNI</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Nombre</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Edad</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Género</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Consultas</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Última consulta</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Teléfono</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Alergias</th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600"></th>
@@ -139,6 +155,15 @@ export default function PatientsListPage() {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {patient.age} años
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {formatPatientGender(patient.gender)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {patient.encounter_count}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {formatLastEncounterDate(patient.last_encounter_at)}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {patient.telecom_phone || "-"}

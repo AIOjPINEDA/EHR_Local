@@ -1,32 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { HospitalBrand } from "@/components/branding/hospital-brand";
+import { PrimaryNav } from "@/components/navigation/primary-nav";
 import { authStore } from "@/lib/stores/auth-store";
+import type { Template, TemplateListResponse, TemplateMedication } from "@/types/api";
 
-interface MedicationItem {
-  medication: string;
-  dosage: string;
-  duration: string;
-}
-
-interface Template {
-  id: string;
-  name: string;
-  diagnosis_text: string;
-  diagnosis_code: string | null;
-  medications: MedicationItem[];
-  instructions: string | null;
-  is_favorite: boolean;
-  is_global: boolean;
-}
-
-interface TemplateListResponse {
-  items: Template[];
-  total: number;
-}
+type MedicationItem = TemplateMedication;
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -48,6 +31,35 @@ export default function TemplatesPage() {
     { medication: "", dosage: "", duration: "" }
   ]);
   const [isSaving, setIsSaving] = useState(false);
+  const [pendingDeleteTemplateId, setPendingDeleteTemplateId] = useState<string | null>(null);
+
+  const groupedTemplates = useMemo(() => {
+    const systemFavorites = templates.filter((template) => template.is_global && template.is_favorite);
+    const systemOthers = templates.filter((template) => template.is_global && !template.is_favorite);
+    const personalFavorites = templates.filter((template) => !template.is_global && template.is_favorite);
+    const personalOthers = templates.filter((template) => !template.is_global && !template.is_favorite);
+    return {
+      systemFavorites,
+      systemOthers,
+      personalFavorites,
+      personalOthers,
+      hasSystem: systemFavorites.length + systemOthers.length > 0,
+      hasPersonal: personalFavorites.length + personalOthers.length > 0,
+    };
+  }, [templates]);
+
+  const loadTemplates = useCallback(async () => {
+    setError("");
+    try {
+      const data = await api.get<TemplateListResponse>("/templates");
+      setTemplates(data.items);
+      setPendingDeleteTemplateId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cargar templates");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     authStore.loadFromStorage();
@@ -56,19 +68,8 @@ export default function TemplatesPage() {
       return;
     }
     api.setToken(authStore.token);
-    loadTemplates();
-  }, [router]);
-
-  const loadTemplates = async () => {
-    try {
-      const data = await api.get<TemplateListResponse>("/templates");
-      setTemplates(data.items);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar templates");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    void loadTemplates();
+  }, [loadTemplates, router]);
 
   const openCreateModal = () => {
     setEditingTemplate(null);
@@ -89,7 +90,7 @@ export default function TemplatesPage() {
     }
     setEditingTemplate(template);
     setFormName(template.name);
-    setFormDiagnosis(template.diagnosis_text);
+    setFormDiagnosis(template.diagnosis_text ?? "");
     setFormDiagnosisCode(template.diagnosis_code || "");
     setFormInstructions(template.instructions || "");
     setFormIsFavorite(template.is_favorite);
@@ -124,7 +125,13 @@ export default function TemplatesPage() {
     setError("");
 
     try {
-      const validMedications = formMedications.filter(m => m.medication && m.dosage);
+      const validMedications = formMedications
+        .map((medication) => ({
+          medication: medication.medication.trim(),
+          dosage: medication.dosage.trim(),
+          duration: medication.duration.trim(),
+        }))
+        .filter((medication) => medication.medication && medication.dosage);
 
       const payload = {
         name: formName,
@@ -142,7 +149,7 @@ export default function TemplatesPage() {
       }
 
       setIsModalOpen(false);
-      loadTemplates();
+      await loadTemplates();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar template");
     } finally {
@@ -156,11 +163,15 @@ export default function TemplatesPage() {
       setError("Los templates del sistema no se pueden eliminar");
       return;
     }
-    if (!confirm("¿Eliminar este template?")) return;
+    if (pendingDeleteTemplateId !== template.id) {
+      setPendingDeleteTemplateId(template.id);
+      return;
+    }
 
     try {
       await api.delete(`/templates/${template.id}`);
-      loadTemplates();
+      await loadTemplates();
+      setPendingDeleteTemplateId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al eliminar template");
     }
@@ -174,10 +185,9 @@ export default function TemplatesPage() {
     }
     try {
       await api.put(`/templates/${template.id}`, {
-        ...template,
         is_favorite: !template.is_favorite,
       });
-      loadTemplates();
+      await loadTemplates();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al actualizar template");
     }
@@ -193,25 +203,30 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-blue-600 hover:text-blue-700">
-              ← Volver
+      <header className="border-b bg-white shadow-sm">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-4">
+          <HospitalBrand title="Templates de Tratamiento" />
+          <div className="flex items-center gap-2">
+            <Link
+              href="/patients"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Pacientes
             </Link>
-            <h1 className="text-xl font-bold text-gray-800">📋 Templates de Tratamiento</h1>
+            <button
+              onClick={openCreateModal}
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+            >
+              + Nuevo Template
+            </button>
           </div>
-          <button
-            onClick={openCreateModal}
-            className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
-          >
-            + Nuevo Template
-          </button>
+        </div>
+        <div className="mx-auto max-w-[1400px] px-4 pb-4">
+          <PrimaryNav showTitle={false} />
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="mx-auto max-w-[1400px] px-4 py-8">
         {error && (
           <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-6">
             {error}
@@ -236,28 +251,32 @@ export default function TemplatesPage() {
         ) : (
           <div className="space-y-6">
             {/* Templates del Sistema (Globales) */}
-            {templates.filter(t => t.is_global).length > 0 && (
+            {groupedTemplates.hasSystem && (
               <div>
                 <h2 className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3 flex items-center gap-2">
                   🏥 Templates del Sistema
                   <span className="text-xs font-normal text-gray-400">(no editables)</span>
                 </h2>
                 <div className="space-y-3">
-                  {templates.filter(t => t.is_global && t.is_favorite).map(template => (
+                  {groupedTemplates.systemFavorites.map(template => (
                     <TemplateCard
                       key={template.id}
                       template={template}
                       onEdit={() => openEditModal(template)}
                       onDelete={() => handleDeleteTemplate(template)}
+                      onCancelDelete={() => setPendingDeleteTemplateId(null)}
+                      isDeletePending={pendingDeleteTemplateId === template.id}
                       onToggleFavorite={() => handleToggleFavorite(template)}
                     />
                   ))}
-                  {templates.filter(t => t.is_global && !t.is_favorite).map(template => (
+                  {groupedTemplates.systemOthers.map(template => (
                     <TemplateCard
                       key={template.id}
                       template={template}
                       onEdit={() => openEditModal(template)}
                       onDelete={() => handleDeleteTemplate(template)}
+                      onCancelDelete={() => setPendingDeleteTemplateId(null)}
+                      isDeletePending={pendingDeleteTemplateId === template.id}
                       onToggleFavorite={() => handleToggleFavorite(template)}
                     />
                   ))}
@@ -266,27 +285,31 @@ export default function TemplatesPage() {
             )}
 
             {/* Mis Templates (Personales) */}
-            {templates.filter(t => !t.is_global).length > 0 && (
+            {groupedTemplates.hasPersonal && (
               <div>
                 <h2 className="text-sm font-semibold text-green-600 uppercase tracking-wide mb-3 flex items-center gap-2">
                   👤 Mis Templates
                 </h2>
                 <div className="space-y-3">
-                  {templates.filter(t => !t.is_global && t.is_favorite).map(template => (
+                  {groupedTemplates.personalFavorites.map(template => (
                     <TemplateCard
                       key={template.id}
                       template={template}
                       onEdit={() => openEditModal(template)}
                       onDelete={() => handleDeleteTemplate(template)}
+                      onCancelDelete={() => setPendingDeleteTemplateId(null)}
+                      isDeletePending={pendingDeleteTemplateId === template.id}
                       onToggleFavorite={() => handleToggleFavorite(template)}
                     />
                   ))}
-                  {templates.filter(t => !t.is_global && !t.is_favorite).map(template => (
+                  {groupedTemplates.personalOthers.map(template => (
                     <TemplateCard
                       key={template.id}
                       template={template}
                       onEdit={() => openEditModal(template)}
                       onDelete={() => handleDeleteTemplate(template)}
+                      onCancelDelete={() => setPendingDeleteTemplateId(null)}
+                      isDeletePending={pendingDeleteTemplateId === template.id}
                       onToggleFavorite={() => handleToggleFavorite(template)}
                     />
                   ))}
@@ -295,7 +318,7 @@ export default function TemplatesPage() {
             )}
 
             {/* Si no hay templates personales, mostrar mensaje */}
-            {templates.filter(t => !t.is_global).length === 0 && (
+            {!groupedTemplates.hasPersonal && (
               <div className="bg-gray-50 rounded-lg p-6 text-center">
                 <p className="text-gray-500 mb-3">
                   Aún no has creado templates personalizados.
@@ -479,11 +502,15 @@ function TemplateCard({
   template,
   onEdit,
   onDelete,
+  onCancelDelete,
+  isDeletePending,
   onToggleFavorite,
 }: {
   template: Template;
   onEdit: () => void;
   onDelete: () => void;
+  onCancelDelete: () => void;
+  isDeletePending: boolean;
   onToggleFavorite: () => void;
 }) {
   const isGlobal = template.is_global;
@@ -548,12 +575,29 @@ function TemplateCard({
             >
               ✏️ Editar
             </button>
-            <button
-              onClick={onDelete}
-              className="text-red-600 hover:text-red-700 text-sm"
-            >
-              🗑️
-            </button>
+            {isDeletePending ? (
+              <>
+                <button
+                  onClick={onDelete}
+                  className="text-red-700 hover:text-red-800 text-sm font-semibold"
+                >
+                  Confirmar
+                </button>
+                <button
+                  onClick={onCancelDelete}
+                  className="text-gray-500 hover:text-gray-700 text-sm"
+                >
+                  Cancelar
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={onDelete}
+                className="text-red-600 hover:text-red-700 text-sm"
+              >
+                🗑️
+              </button>
+            )}
           </div>
         )}
       </div>

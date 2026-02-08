@@ -37,27 +37,31 @@ async def list_patients(
     - Paginated results
     """
     service = PatientService(db)
-    
-    if search:
-        patients, total = await service.search(search, limit, offset)
-    else:
-        patients, total = await service.search("", limit, offset)
-    
-    # Convert to response format
+    patients, total = await service.search(search or "", limit, offset)
+
+    encounter_stats = await service.get_encounter_stats([p.id for p in patients])
+
     items = []
-    for p in patients:
-        items.append(PatientSummary(
-            id=p.id,
-            identifier_value=p.identifier_value,
-            name_given=p.name_given,
-            name_family=p.name_family,
-            birth_date=p.birth_date,
-            age=p.age,
-            gender=p.gender,
-            telecom_phone=p.telecom_phone,
-            has_allergies=p.has_allergies,
-            allergy_count=len([a for a in p.allergies if a.clinical_status == "active"]),
-        ))
+    for patient in patients:
+        encounter_count, last_encounter_at = encounter_stats.get(patient.id, (0, None))
+        items.append(
+            PatientSummary(
+                id=patient.id,
+                identifier_value=patient.identifier_value,
+                name_given=patient.name_given,
+                name_family=patient.name_family,
+                birth_date=patient.birth_date,
+                age=patient.age,
+                gender=patient.gender,
+                telecom_phone=patient.telecom_phone,
+                has_allergies=patient.has_allergies,
+                allergy_count=sum(
+                    1 for allergy in patient.allergies if allergy.clinical_status == "active"
+                ),
+                encounter_count=encounter_count,
+                last_encounter_at=last_encounter_at,
+            )
+        )
     
     return PatientListResponse(
         items=items,

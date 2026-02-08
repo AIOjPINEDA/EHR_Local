@@ -5,245 +5,307 @@
     <title>Receta Médica</title>
     <style>
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
-        
+
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 11pt;
-            line-height: 1.5;
-            color: #333;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            font-size: 10pt;
+            color: #111827;
+            line-height: 1.4;
         }
-        
-        .container {
-            max-width: 100%;
-            padding: 0;
+
+        .page {
+            border: 1px solid #111827;
+            padding: 6mm;
         }
-        
-        /* Header */
+
         .header {
-            border-bottom: 2px solid #2563eb;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
+            display: table;
+            width: 100%;
+            border-bottom: 2px solid #111827;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
         }
-        
-        .practitioner-info {
+
+        .logo-cell,
+        .meta-cell {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .logo-cell {
+            width: 48%;
+        }
+
+        .logo-box {
+            border: 1px solid #d1d5db;
+            padding: 8px;
+            max-width: 95%;
+            min-height: 66px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: #ffffff;
+        }
+
+        .logo-image {
+            max-width: 100%;
+            max-height: 58px;
+            object-fit: contain;
+            filter: grayscale(100%);
+        }
+
+        .logo-placeholder-title {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .logo-placeholder-subtitle {
+            margin-top: 4px;
+            font-size: 8.5pt;
+            color: #6b7280;
+        }
+
+        .meta-cell {
+            width: 52%;
             text-align: right;
         }
-        
-        .practitioner-name {
-            font-size: 14pt;
-            font-weight: bold;
-            color: #1e40af;
-        }
-        
-        .practitioner-details {
-            font-size: 10pt;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        /* Title */
-        .title {
+
+        .doc-title {
             font-size: 18pt;
-            color: #1e40af;
-            margin-bottom: 20px;
-            text-align: center;
+            letter-spacing: 1px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            font-weight: 700;
+            margin-bottom: 6px;
         }
-        
-        /* Patient Info */
-        .patient-box {
-            background-color: #f1f5f9;
-            border-left: 4px solid #2563eb;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .patient-box .label {
-            font-weight: bold;
-            color: #1e40af;
-        }
-        
-        .patient-row {
-            margin-bottom: 5px;
-        }
-        
-        /* Diagnosis */
-        .diagnosis-section {
-            margin-bottom: 25px;
-        }
-        
-        .section-title {
-            font-size: 12pt;
-            font-weight: bold;
-            color: #1e40af;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 5px;
-        }
-        
-        /* Medications */
-        .medications-section {
-            margin-bottom: 25px;
-        }
-        
-        .medication-item {
-            border-left: 3px solid #10b981;
-            padding: 10px 15px;
-            margin-bottom: 15px;
-            background-color: #f0fdf4;
-        }
-        
-        .medication-name {
-            font-weight: bold;
-            font-size: 12pt;
-            color: #065f46;
-        }
-        
-        .medication-dosage {
-            margin-top: 5px;
-        }
-        
-        .medication-duration {
-            font-style: italic;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        /* Instructions */
-        .instructions-section {
-            background-color: #fef3c7;
-            border-left: 4px solid #f59e0b;
-            padding: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .instructions-title {
-            font-weight: bold;
-            color: #92400e;
-            margin-bottom: 10px;
-        }
-        
-        /* Footer */
-        .footer {
-            margin-top: 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-        
-        .date-section {
-            font-size: 10pt;
-        }
-        
-        .signature-section {
-            text-align: center;
-        }
-        
-        .signature-line {
-            border-top: 1px solid #333;
-            width: 200px;
-            margin-bottom: 5px;
-        }
-        
-        .signature-label {
+
+        .doc-subtitle {
             font-size: 9pt;
-            color: #666;
+            color: #374151;
         }
-        
-        /* Watermark */
-        .watermark {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
+
+        .section {
+            margin-bottom: 10px;
+            border: 1px solid #d1d5db;
+        }
+
+        .section-header {
+            background: #f3f4f6;
+            border-bottom: 1px solid #d1d5db;
+            padding: 6px 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 8.5pt;
+            letter-spacing: 0.6px;
+        }
+
+        .section-body {
+            padding: 8px;
+        }
+
+        .patient-label {
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .patient-inline {
+            color: #374151;
+            font-size: 9pt;
+            line-height: 1.45;
+        }
+
+        .patient-inline .separator {
+            margin: 0 6px;
+            color: #9ca3af;
+        }
+
+        .diagnosis-row {
+            border: 1px solid #d1d5db;
+            border-radius: 2px;
+            padding: 6px;
+            white-space: pre-wrap;
+            min-height: 24px;
+        }
+
+        .medications-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .medications-table th,
+        .medications-table td {
+            border: 1px solid #d1d5db;
+            padding: 6px;
+            vertical-align: top;
+            word-wrap: break-word;
+        }
+
+        .medications-table th {
+            background: #f9fafb;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            text-align: left;
+        }
+
+        .notes {
+            white-space: pre-wrap;
+            min-height: 24px;
+        }
+
+        .footer {
+            margin-top: 12px;
+            border-top: 2px solid #111827;
+            padding-top: 8px;
+        }
+
+        .footer-grid {
+            display: table;
+            width: 100%;
+        }
+
+        .footer-left,
+        .footer-right {
+            display: table-cell;
+            vertical-align: bottom;
+        }
+
+        .footer-left {
+            width: 58%;
+        }
+
+        .footer-right {
+            width: 42%;
+            text-align: right;
+        }
+
+        .doctor-name {
+            font-size: 12pt;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .doctor-meta {
+            color: #374151;
+            font-size: 9.5pt;
+        }
+
+        .signature-line {
+            border-top: 1px solid #111827;
+            width: 200px;
+            margin: 18px 0 4px auto;
+        }
+
+        .signature-label {
+            font-size: 8.5pt;
+            color: #4b5563;
+        }
+
+        .page-footnote {
+            margin-top: 8px;
             font-size: 8pt;
-            color: #ccc;
+            color: #6b7280;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header with Practitioner Info -->
+    <div class="page">
         <div class="header">
-            <div class="practitioner-info">
-                <div class="practitioner-name">{{ practitioner.full_name }}</div>
-                <div class="practitioner-details">
-                    Nº Colegiado: {{ practitioner.identifier_value }}<br>
-                    {{ practitioner.qualification_code }}
-                </div>
-            </div>
-        </div>
-        
-        <!-- Title -->
-        <h1 class="title">Receta Médica</h1>
-        
-        <!-- Patient Information -->
-        <div class="patient-box">
-            <div class="patient-row">
-                <span class="label">Paciente:</span> {{ patient.full_name }}
-            </div>
-            <div class="patient-row">
-                <span class="label">DNI:</span> {{ patient.identifier_value }}
-                &nbsp;&nbsp;&nbsp;
-                <span class="label">Edad:</span> {{ patient.age }} años
-            </div>
-        </div>
-        
-        <!-- Diagnosis -->
-        <div class="diagnosis-section">
-            <div class="section-title">Diagnóstico</div>
-            <p>{{ encounter.diagnosis }}</p>
-        </div>
-        
-        <!-- Medications -->
-        <div class="medications-section">
-            <div class="section-title">Tratamiento</div>
-            
-            {% for med in medications %}
-            <div class="medication-item">
-                <div class="medication-name">{{ med.medication_text }}</div>
-                <div class="medication-dosage">{{ med.dosage_text }}</div>
-                {% if med.duration_value and med.duration_unit %}
-                <div class="medication-duration">
-                    Duración: {{ med.duration_value }} 
-                    {% if med.duration_unit == 'd' %}días
-                    {% elif med.duration_unit == 'wk' %}semanas
-                    {% elif med.duration_unit == 'mo' %}meses
-                    {% elif med.duration_unit == 'h' %}horas
-                    {% else %}{{ med.duration_unit }}
+            <div class="logo-cell">
+                <div class="logo-box">
+                    {% if logo_data_uri %}
+                    <img src="{{ logo_data_uri }}" alt="Logo Hospital de Guadalix de la Sierra" class="logo-image" />
+                    {% else %}
+                    <div>
+                        <div class="logo-placeholder-title">Logo del Hospital</div>
+                        <div class="logo-placeholder-subtitle">Espacio reservado para imagen institucional</div>
+                    </div>
                     {% endif %}
                 </div>
-                {% endif %}
             </div>
-            {% endfor %}
-        </div>
-        
-        <!-- Instructions -->
-        {% if instructions %}
-        <div class="instructions-section">
-            <div class="instructions-title">Indicaciones adicionales:</div>
-            <p>{{ instructions }}</p>
-        </div>
-        {% endif %}
-        
-        <!-- Footer -->
-        <div class="footer">
-            <div class="date-section">
-                <strong>Fecha:</strong> {{ encounter.date }}
-            </div>
-            
-            <div class="signature-section">
-                <div class="signature-line"></div>
-                <div class="signature-label">Firma del médico</div>
+            <div class="meta-cell">
+                <div class="doc-title">Receta Médica</div>
+                <div class="doc-subtitle">Hospital de Guadalix de la Sierra</div>
+                <div class="doc-subtitle">Fecha de emisión: {{ encounter.date }}</div>
             </div>
         </div>
-        
-        <!-- Watermark -->
-        <div class="watermark">ConsultaMed</div>
+
+        <section class="section">
+            <div class="section-header">Datos del paciente</div>
+            <div class="section-body">
+                <div class="patient-inline">
+                    <span><span class="patient-label">Nombre:</span> {{ patient.full_name }}</span>
+                    <span class="separator">|</span>
+                    <span><span class="patient-label">ID:</span> {{ patient.identifier_value }}</span>
+                    <span class="separator">|</span>
+                    <span><span class="patient-label">Edad:</span> {{ patient.age }} años</span>
+                    <span class="separator">|</span>
+                    <span><span class="patient-label">Género:</span> {{ patient.gender or "No especificado" }}</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">Diagnóstico</div>
+            <div class="section-body">
+                <div class="diagnosis-row">{{ encounter.diagnosis or "No especificado" }}</div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">Prescripción</div>
+            <div class="section-body">
+                <table class="medications-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Medicamento</th>
+                            <th style="width: 52%;">Pauta / Posología</th>
+                            <th style="width: 18%;">Duración</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for med in medications %}
+                        <tr>
+                            <td>{{ med.name or "-" }}</td>
+                            <td>{{ med.dosage or "-" }}</td>
+                            <td>{{ med.duration or "-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">Recomendaciones / Notas para el paciente</div>
+            <div class="section-body">
+                <div class="notes">{{ instructions if instructions else "Sin recomendaciones adicionales." }}</div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="footer-grid">
+                <div class="footer-left">
+                    <div class="doctor-name">{{ practitioner.full_name }}</div>
+                    <div class="doctor-meta">ID Profesional: {{ practitioner.identifier_value }}</div>
+                    <div class="doctor-meta">{{ practitioner.qualification_code or "Médico/a colegiado/a" }}</div>
+                </div>
+                <div class="footer-right">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Firma y sello médico</div>
+                </div>
+            </div>
+            <div class="page-footnote">
+                Documento clínico generado por ConsultaMed · Uso asistencial interno
+            </div>
+        </footer>
     </div>
 </body>
 </html>

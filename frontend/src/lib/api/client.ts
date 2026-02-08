@@ -68,6 +68,33 @@ class ApiClient {
     });
   }
 
+  async postForm<T>(endpoint: string, formData: URLSearchParams): Promise<T> {
+    const url = `${this.baseUrl}/api/v1${endpoint}`;
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData.toString(),
+    });
+
+    if (!response.ok) {
+      const error: ApiError = await response.json().catch(() => ({
+        detail: 'Error desconocido',
+      }));
+      throw new Error(error.detail);
+    }
+
+    return response.json();
+  }
+
   async put<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',

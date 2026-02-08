@@ -3,13 +3,15 @@ ConsultaMed Backend - Patient Service
 
 Lógica de negocio para gestión de pacientes.
 """
-from typing import Optional, List
-from sqlalchemy import select, or_
+from datetime import datetime
+from typing import Optional, List, Dict, Tuple, Any
+from sqlalchemy import select, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.patient import Patient
 from app.models.allergy import AllergyIntolerance
+from app.models.encounter import Encounter
 from app.validators.dni import validate_documento_identidad, format_dni
 from app.validators.clinical import validate_birth_date, validate_gender
 
@@ -19,6 +21,22 @@ class PatientService:
     
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    @staticmethod
+    def _build_search_conditions(query: str) -> List[Any]:
+        """Construye condiciones SQL para listado/búsqueda de pacientes activos."""
+        conditions: List[Any] = [Patient.active.is_(True)]
+        normalized_query = query.strip()
+        if normalized_query:
+            search_term = f"%{normalized_query}%"
+            conditions.append(
+                or_(
+                    Patient.name_given.ilike(search_term),
+                    Patient.name_family.ilike(search_term),
+                    Patient.identifier_value.ilike(search_term),
+                )
+            )
+        return conditions
     
     async def search(
         self,
@@ -37,18 +55,12 @@ class PatientService:
         Returns:
             Tuple of (patients list, total count)
         """
-        # Build search conditions
+        conditions = self._build_search_conditions(query)
+
         stmt = (
             select(Patient)
             .options(selectinload(Patient.allergies))
-            .where(
-                Patient.active.is_(True),
-                or_(
-                    Patient.name_given.ilike(f"%{query}%"),
-                    Patient.name_family.ilike(f"%{query}%"),
-                    Patient.identifier_value.ilike(f"%{query}%"),
-                )
-            )
+            .where(*conditions)
             .order_by(Patient.name_family, Patient.name_given)
             .limit(limit)
             .offset(offset)
@@ -57,20 +69,9 @@ class PatientService:
         result = await self.db.execute(stmt)
         patients = result.scalars().all()
         
-        # Get total count
-        count_stmt = (
-            select(Patient)
-            .where(
-                Patient.active.is_(True),
-                or_(
-                    Patient.name_given.ilike(f"%{query}%"),
-                    Patient.name_family.ilike(f"%{query}%"),
-                    Patient.identifier_value.ilike(f"%{query}%"),
-                )
-            )
-        )
+        count_stmt = select(func.count(Patient.id)).where(*conditions)
         count_result = await self.db.execute(count_stmt)
-        total = len(count_result.scalars().all())
+        total = int(count_result.scalar_one() or 0)
         
         return list(patients), total
     
@@ -87,6 +88,34 @@ class PatientService:
         
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_encounter_stats(
+        self,
+        patient_ids: List[str],
+    ) -> Dict[str, Tuple[int, Optional[datetime]]]:
+        """Obtiene total y última consulta por paciente en una sola consulta agregada."""
+        if not patient_ids:
+            return {}
+
+        stmt = (
+            select(
+                Encounter.subject_id.label("patient_id"),
+                func.count(Encounter.id).label("encounter_count"),
+                func.max(Encounter.period_start).label("last_encounter_at"),
+            )
+            .where(Encounter.subject_id.in_(patient_ids))
+            .group_by(Encounter.subject_id)
+        )
+        result = await self.db.execute(stmt)
+
+        stats: Dict[str, Tuple[int, Optional[datetime]]] = {}
+        for row in result:
+            stats[row.patient_id] = (
+                int(row.encounter_count or 0),
+                row.last_encounter_at,
+            )
+
+        return stats
     
     async def get_by_dni(self, dni: str) -> Optional[Patient]:
         """Get patient by DNI/NIE."""
@@ -110,7 +139,7 @@ class PatientService:
             ValueError: If validation fails
         """
         # Validate DNI/NIE
-        is_valid, doc_type = validate_documento_identidad(data["identifier_value"])
+        is_valid, _ = validate_documento_identidad(data["identifier_value"])
         if not is_valid:
             raise ValueError("DNI/NIE inválido: la letra no corresponde")
         

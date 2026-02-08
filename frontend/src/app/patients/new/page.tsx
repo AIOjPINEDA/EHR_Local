@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { HospitalBrand } from "@/components/branding/hospital-brand";
 import { authStore } from "@/lib/stores/auth-store";
 import { Patient, PatientCreate } from "@/types/api";
 
@@ -75,7 +76,7 @@ export default function NewPatientPage() {
           <Link href="/dashboard" className="text-blue-600 hover:text-blue-700">
             ← Volver
           </Link>
-          <h1 className="text-xl font-bold text-gray-800">Nuevo Paciente</h1>
+          <HospitalBrand title="Nuevo Paciente" />
         </div>
       </header>
       

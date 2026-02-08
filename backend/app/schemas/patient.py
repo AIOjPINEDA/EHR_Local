@@ -68,6 +68,8 @@ class PatientSummary(BaseModel):
     telecom_phone: Optional[str]
     has_allergies: bool
     allergy_count: int
+    encounter_count: int
+    last_encounter_at: Optional[datetime]
 
 
 class PatientResponse(PatientBase):

@@ -4,25 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
 import { authStore } from "@/lib/stores/auth-store";
+import { HospitalBrand } from "@/components/branding/hospital-brand";
+import { APP_NAME } from "@/lib/branding/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { User, Stethoscope, Lock, Mail } from "lucide-react";
+import { User, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface LoginResponse {
-  access_token: string;
-  token_type: string;
-  practitioner: {
-    id: string;
-    identifier_value: string;
-    name_given: string;
-    name_family: string;
-    qualification_code: string | null;
-    telecom_email: string | null;
-  };
-}
+import type { LoginResponse } from "@/types/api";
 
 interface AvailableUser {
   email: string;
@@ -65,23 +55,7 @@ export default function LoginPage() {
       formData.append("username", email);
       formData.append("password", password);
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: formData.toString(),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Error de autenticación");
-      }
-
-      const data: LoginResponse = await response.json();
+      const data = await api.postForm<LoginResponse>("/auth/login", formData);
 
       authStore.login(data.access_token, data.practitioner);
       api.setToken(data.access_token);
@@ -102,10 +76,12 @@ export default function LoginPage() {
 
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2">
-            <Stethoscope className="h-6 w-6" />
+          <div className="flex justify-center">
+            <HospitalBrand
+              title={APP_NAME}
+              className="text-left"
+            />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">ConsultaMed</h1>
           <p className="text-sm text-muted-foreground">Gestión Clínica Inteligente</p>
         </div>
 

@@ -4,14 +4,7 @@
  * Estado de autenticación del usuario.
  */
 
-interface Practitioner {
-  id: string;
-  identifier_value: string;
-  name_given: string;
-  name_family: string;
-  qualification_code: string | null;
-  telecom_email: string | null;
-}
+import type { Practitioner } from "@/types/api";
 
 interface AuthState {
   token: string | null;
