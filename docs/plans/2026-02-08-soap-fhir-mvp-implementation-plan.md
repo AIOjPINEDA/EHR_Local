@@ -319,10 +319,14 @@ Mitigation: Defer to a later phase; first stabilize SOAP v1 in current architect
 ## Next Practical Steps (Post-implementation)
 
 ### Step 1: Pilot stabilization (high priority, low complexity)
-1. Apply `supabase/migrations/20260208_add_encounter_soap_fields.sql` in every active environment and verify schema parity.
+1. Apply SOAP migrations in every active environment and verify schema parity:
+   - `supabase/migrations/20260208090000_add_password_hash.sql`
+   - `supabase/migrations/20260208090100_add_encounter_soap_fields.sql`
 2. Run full local gate before each PR:
    - `./scripts/test_gate.sh`
-3. Execute a manual clinical smoke run with 5 real-world scenarios (new patient, follow-up, polypharmacy, no meds, template-based visit).
+3. Execute the 5-scenario clinical smoke run with automatic cleanup:
+   - `./scripts/smoke_step13_clinical.sh`
+   - Scenarios: new patient, follow-up, polypharmacy, no meds, template-based visit.
 
 ### Step 2: Close current branch cycle cleanly
 1. Push latest branch state and open PR to `main`.
