@@ -72,6 +72,11 @@ export interface EncounterSummary {
   subject_id: string;
   period_start: string;
   reason_text: string | null;
+  subjective_text: string | null;
+  objective_text: string | null;
+  assessment_text: string | null;
+  plan_text: string | null;
+  recommendations_text: string | null;
   conditions: Condition[];
   medications: MedicationRequest[];
 }
@@ -87,6 +92,11 @@ export interface Encounter extends EncounterSummary {
 
 export interface EncounterCreate {
   reason_text?: string;
+  subjective_text?: string;
+  objective_text?: string;
+  assessment_text?: string;
+  plan_text?: string;
+  recommendations_text?: string;
   conditions: {
     code_text: string;
     code_coding_code?: string;

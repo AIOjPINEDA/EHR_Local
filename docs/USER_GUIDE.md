@@ -62,7 +62,7 @@ Las alergias son **críticas** para la seguridad del paciente:
    - Sustancia (ej: Penicilina)
    - Tipo (medicamento, alimento, ambiental)
    - Criticidad (alta o baja)
-4. Pulsa **"Guardar"**
+5. Pulsa **"Guardar"**
 
 > ⚠️ Las alergias se muestran con **badge rojo** en todas las vistas del paciente.
 
@@ -74,11 +74,14 @@ Las alergias son **críticas** para la seguridad del paciente:
 
 1. Abre la ficha del paciente
 2. Pulsa **"Nueva Consulta"**
-3. Completa:
-   - **Motivo de consulta**: Síntomas principales
-   - **Diagnóstico**: Texto libre o código CIE-10
-   - **Tratamiento**: Medicamentos (se pueden cargar desde template)
-   - **Notas**: Observaciones adicionales
+3. Completa la nota clínica en orden **SOAP**:
+   - **Motivo de consulta**
+   - **Subjetivo (S)**: lo que refiere el paciente
+   - **Objetivo (O)**: hallazgos de exploración/mediciones
+   - **Análisis (A)**: impresión clínica
+   - **Plan (P)**: conducta terapéutica
+   - **Recomendaciones**: indicaciones al paciente
+4. Añade **diagnósticos** (texto o CIE-10) y, si aplica, **tratamiento farmacológico**
 4. Pulsa **"Guardar"**
 
 ### Usar Templates
@@ -87,7 +90,7 @@ Los templates aceleran la documentación de diagnósticos frecuentes:
 
 1. Al crear una consulta, pulsa **"Cargar Template"**
 2. Selecciona el template apropiado
-3. Se autocompletarán diagnóstico y medicamentos
+3. Se autocompletarán diagnóstico y medicamentos; las instrucciones del template se cargan en **Recomendaciones**
 4. Ajusta las dosis o duración si es necesario
 5. Guarda la consulta
 

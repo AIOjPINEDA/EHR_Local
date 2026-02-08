@@ -20,6 +20,19 @@ router = APIRouter()
 pdf_service = PDFService()
 
 
+def _resolve_encounter_instructions(encounter: Encounter) -> str:
+    """Resolve instructions with SOAP-aware fallback priority."""
+    candidates = [
+        encounter.recommendations_text,
+        encounter.plan_text,
+        encounter.note,
+    ]
+    for value in candidates:
+        if value and value.strip():
+            return value.strip()
+    return ""
+
+
 @router.get("/{encounter_id}/preview")
 async def get_prescription_preview(
     encounter_id: str,
@@ -77,7 +90,7 @@ async def get_prescription_preview(
             }
             for m in encounter.medications
         ],
-        instructions=encounter.note or "",
+        instructions=_resolve_encounter_instructions(encounter),
     )
 
 
@@ -145,7 +158,7 @@ async def download_prescription_pdf(
             }
             for m in encounter.medications
         ],
-        instructions=encounter.note or "",
+        instructions=_resolve_encounter_instructions(encounter),
     )
     
     # Nombre de archivo: receta_DNI_fecha.pdf
