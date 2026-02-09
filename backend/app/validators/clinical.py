@@ -71,40 +71,6 @@ def validate_gender(gender: Optional[str]) -> tuple[bool, Optional[str]]:
     return True, None
 
 
-def validate_criticality(criticality: Optional[str]) -> tuple[bool, Optional[str]]:
-    """
-    Valida la criticidad de una alergia según FHIR.
-    
-    Valores permitidos: low, high, unable-to-assess
-    """
-    if criticality is None:
-        return True, None
-    
-    valid_values = {"low", "high", "unable-to-assess"}
-    
-    if criticality.lower() not in valid_values:
-        return False, f"Criticidad inválida. Valores permitidos: {', '.join(valid_values)}"
-    
-    return True, None
-
-
-def validate_allergy_category(category: Optional[str]) -> tuple[bool, Optional[str]]:
-    """
-    Valida la categoría de una alergia según FHIR.
-    
-    Valores permitidos: food, medication, environment, biologic
-    """
-    if category is None:
-        return True, None
-    
-    valid_values = {"food", "medication", "environment", "biologic"}
-    
-    if category.lower() not in valid_values:
-        return False, f"Categoría inválida. Valores permitidos: {', '.join(valid_values)}"
-    
-    return True, None
-
-
 # =============================================================================
 # FUTURO: Validaciones de interacciones medicamentosas
 # =============================================================================
