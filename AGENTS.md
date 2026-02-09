@@ -12,24 +12,31 @@
 
 ## Technology Stack
 
-### Frontend (Vercel)
+### Active in codebase
+
+#### Frontend (Vercel)
 - Next.js 14 (App Router)
 - TypeScript 5.x (strict mode)
 - Tailwind CSS 3.x + shadcn/ui
-- TanStack Query 5.x, Zustand
-- React Hook Form + Zod
 
-### Backend (Railway)
+#### Backend (Railway)
 - FastAPI 0.109+
 - Python 3.11+
 - SQLAlchemy 2.x (async)
 - Pydantic 2.x
 - WeasyPrint 60+
+- JWT + bcrypt authentication
 
-### Database (Supabase)
+#### Database (Supabase)
 - PostgreSQL 15.x
-- Supabase Auth
-- Row Level Security (RLS)
+- Supabase-managed infrastructure
+- Security model aligned to RLS-required production target
+
+### Planned / Not yet adopted
+- Supabase Auth as primary runtime auth provider (current runtime auth is JWT in FastAPI).
+- Full end-to-end RLS enforcement in all production deployment paths.
+- TanStack Query and Zustand as default frontend state/data layer.
+- React Hook Form + Zod as unified frontend form/validation standard.
 
 ## Executable Commands
 
@@ -113,6 +120,8 @@ Data models follow FHIR nomenclature:
 - Follow FHIR R5 naming for data models
 - Comply with GDPR/LOPD-GDD for patient data
 - Use RLS for tables with patient data
+- Keep Next.js route groups free of dead wrappers: no route-group `layout.tsx` without at least one route consumer.
+- Keep backend validators free of dead APIs: no unreferenced clinical validators in `backend/app/validators/`.
 
 ### Ask First
 - Adding new dependencies to `requirements.txt` or `package.json`
@@ -131,6 +140,13 @@ Data models follow FHIR nomenclature:
 - Remove existing tests
 - Commit without running tests
 
+## Definition of Done
+
+- `./scripts/test_gate.sh` passes locally.
+- `cd backend && pytest tests/unit/test_architecture_dead_code_guards.py -v` passes.
+- New infrastructural abstractions (routing wrappers, validators, service helpers) have at least one runtime consumer and one automated test.
+- Architecture and agent contract documentation reflect implemented state (not aspirational state).
+
 ## Active Specs
 
 - Primary: `.archive/specs/001-consultamed-mvp/spec.md`
@@ -148,4 +164,4 @@ See `docs/architecture/overview.md` for system design.
 
 ---
 
-*Last updated: 2026-02-08*
+*Last updated: 2026-02-09*

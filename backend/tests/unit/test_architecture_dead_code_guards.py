@@ -52,3 +52,12 @@ def test_no_known_unused_clinical_validators() -> None:
     assert "def validate_criticality(" not in content, (
         "validate_criticality is currently dead code and should be removed or integrated with real usage"
     )
+
+
+def test_agents_stack_distinguishes_active_vs_planned() -> None:
+    """Agent contract must separate active stack from planned stack."""
+    repo_root = _repo_root()
+    content = (repo_root / "AGENTS.md").read_text(encoding="utf-8")
+
+    assert "Active in codebase" in content
+    assert "Planned / Not yet adopted" in content

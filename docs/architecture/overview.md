@@ -74,6 +74,21 @@ flowchart TB
 | `src/lib/stores/auth-store.ts` | Lightweight auth state + persistence |
 | `src/components/ui/` | Shared UI primitives |
 
+## Architecture Integrity Guardrails
+
+ConsultaMed enforces architecture integrity through explicit guardrails that run both locally and in CI:
+
+1. Local developer gate: `./scripts/test_gate.sh`
+2. Backend architecture checks: `backend/tests/unit/test_architecture_dead_code_guards.py`
+3. CI backend test execution: `pytest tests/ -v --tb=short`
+
+These controls prevent drift between declared architecture and implemented behavior. In particular:
+- Route-group wrappers in Next.js must have an active routing consumer (`page.tsx`, `route.ts`, or `default.tsx`).
+- Domain validators must be either consumed by runtime code or removed.
+- Any new infrastructural abstraction (routing wrapper, validation API, service facade, cross-cutting helper) must ship with:
+  - at least one consuming runtime path, and
+  - at least one automated test covering that path.
+
 ## FHIR R5 Naming Alignment
 
 | Local Model | FHIR Resource |
