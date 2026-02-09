@@ -48,8 +48,9 @@ def test_no_known_unused_clinical_validators() -> None:
     repo_root = _repo_root()
     clinical_file = repo_root / "backend" / "app" / "validators" / "clinical.py"
     content = clinical_file.read_text(encoding="utf-8")
+    function_name = "validate_" + "criticality"
 
-    assert "def validate_criticality(" not in content, (
+    assert f"def {function_name}(" not in content, (
         "validate_criticality is currently dead code and should be removed or integrated with real usage"
     )
 

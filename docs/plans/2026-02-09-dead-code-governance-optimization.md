@@ -281,3 +281,22 @@ Expected: concise, auditable change set.
 ```bash
 git commit --allow-empty -m "chore: ready for PR review dead-code governance optimization"
 ```
+
+---
+
+## Execution Notes (2026-02-09)
+
+- Task 1 completed.
+  - Commit: `48cf15a`
+  - Notes: Fixed repository-root detection in architecture guard tests; ensured RED state fails for actual debt; wired gate visibility in `scripts/test_gate.sh`.
+- Task 2 completed.
+  - Commit: `dbe878e`
+  - Notes: Removed orphan route-group layout `frontend/src/app/(main)/layout.tsx`; frontend lint/type-check remained green.
+- Task 3 completed.
+  - Commit: `4780789`
+  - Notes: Removed dead clinical validators (`validate_criticality`, `validate_allergy_category`); backend unit/contracts + ruff + mypy passed.
+- Task 4 completed.
+  - Commit: `750b133`
+  - Notes: Added doc-governance guard test; updated AGENTS and architecture governance docs; updated MVP spec implementation integrity notes.
+- Task 5 in progress at this point in plan log.
+  - Notes: Running full verification suite and generating release evidence.
