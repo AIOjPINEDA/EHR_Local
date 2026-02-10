@@ -36,7 +36,7 @@ elif command -v mypy >/dev/null 2>&1; then
   MYPY_BIN="$(command -v mypy)"
 fi
 
-echo "[1/6] Backend unit + contract tests"
+echo "[1/6] Backend unit + contract tests (includes architecture dead-code guardrails)"
 if ! "$PYTHON_BIN" -c "import pytest" >/dev/null 2>&1; then
   echo "pytest is not available in $PYTHON_BIN."
   echo "Bootstrap backend deps:"

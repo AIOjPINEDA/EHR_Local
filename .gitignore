@@ -92,7 +92,8 @@ frontend/test-output.css
 # ============================================
 # IDE & Editors
 # ============================================
-.vscode/
+.vscode/*
+!.vscode/
 !.vscode/settings.json
 !.vscode/extensions.json
 .idea/

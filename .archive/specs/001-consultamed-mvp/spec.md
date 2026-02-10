@@ -2,7 +2,8 @@
 
 **Feature Branch**: `001-consultamed-mvp`  
 **Created**: 2024-12-30  
-**Status**: Ready for Implementation  
+**Status**: ✅ MVP COMPLETE - Ready for merge  
+**Last Updated**: 2024-12-30  
 **Input**: Sistema de Historia Clínica Electrónica para consultorio médico privado en España
 
 ## Overview
@@ -192,7 +193,7 @@ Como médico, quiero configurar mis datos profesionales para que aparezcan corre
 - **Paciente sin alergias**: Sección visible pero vacía, sin badges
 - **Template sin match**: Usuario puede escribir tratamiento manualmente
 - **PDF con muchos medicamentos**: Layout se adapta sin cortar contenido
-- **Sesión expirada durante edición**: Guarda localmente y pide re-login
+- **Sesión expirada**: Redirige a login (MVP); guardar localmente (futuro)
 - **Doble submit**: Backend idempotente, evita duplicados
 
 ---
@@ -233,10 +234,10 @@ Como médico, quiero configurar mis datos profesionales para que aparezcan corre
 
 | ID | Requisito | Prioridad | Story |
 |----|-----------|-----------|-------|
-| FR-030 | Sistema DEBE autenticar usuarios via Supabase Auth | Must | US-1 |
-| FR-031 | Sistema DEBE manejar refresh de tokens automáticamente | Must | US-1 |
+| FR-030 | Sistema DEBE autenticar usuarios via JWT (MVP: local, producción: Supabase Auth) | Must | US-1 |
+| FR-031 | Sistema DEBE manejar refresh de tokens automáticamente | Should | US-1 |
 | FR-032 | Sistema DEBE redirigir a login si sesión expira | Must | US-1 |
-| FR-033 | Sistema DEBE aplicar RLS en todas las tablas de datos | Must | US-1 |
+| FR-033 | Sistema DEBE aplicar RLS en todas las tablas de datos (producción) | Should | US-1 |
 
 ### Key Entities
 
@@ -278,3 +279,11 @@ Explícitamente **NO** se implementará en esta fase:
 - ❌ Informes estadísticos
 - ❌ Soporte offline completo
 - ❌ Verificación automática de interacciones medicamentosas
+
+---
+
+## Implementation Integrity Notes (Post-MVP Governance)
+
+- Route wrappers must not be dormant: no Next.js route-group `layout.tsx` without at least one active route consumer.
+- Domain validation APIs must not be dormant: remove backend validators that are not referenced by runtime paths.
+- At the end of each milestone, execute a debt-pruning pass and keep architecture guard tests green before merge.
