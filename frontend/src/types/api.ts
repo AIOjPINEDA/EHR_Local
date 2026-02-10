@@ -1,198 +1,94 @@
 /**
- * ConsultaMed Frontend - Type Definitions
- * 
- * Tipos compartidos con el backend.
+ * ConsultaMed Frontend – API Type Bridge
+ *
+ * Re-exports auto-generated types from `api.generated.ts` with
+ * consumer-friendly aliases so existing imports stay intact.
+ *
+ * ⚠️  Do NOT add hand-written types for backend schemas here.
+ *     Modify the Pydantic model → re-run `npm run generate:types`.
+ *
+ * @see ../../../backend/scripts/export-openapi.py
+ * @see ./api.generated.ts
  */
+
+import type { components } from "./api.generated";
+
+// ============================================
+// Shorthand helper
+// ============================================
+type Schema = components["schemas"];
 
 // ============================================
 // Patient Types
 // ============================================
+export type Allergy = Schema["AllergyResponse"];
+export type AllergyCreate = Schema["AllergyCreate"];
+export type PatientSummary = Schema["PatientSummary"];
+export type PatientCreate = Schema["PatientCreate"];
+export type PatientUpdate = Schema["PatientUpdate"];
+export type PatientListResponse = Schema["PatientListResponse"];
 
-export interface Allergy {
-  id: string;
-  code_text: string;
-  type: 'allergy' | 'intolerance' | null;
-  category: 'food' | 'medication' | 'environment' | 'biologic' | null;
-  criticality: 'low' | 'high' | 'unable-to-assess' | null;
-  clinical_status: 'active' | 'inactive' | 'resolved';
-  recorded_date: string;
-}
-
-export interface PatientSummary {
-  id: string;
-  identifier_value: string;
-  name_given: string;
-  name_family: string;
-  birth_date: string;
-  age: number;
-  gender: 'male' | 'female' | 'other' | 'unknown' | null;
-  telecom_phone: string | null;
-  has_allergies: boolean;
-  allergy_count: number;
-  encounter_count: number;
-  last_encounter_at: string | null;
-}
-
-export interface Patient extends PatientSummary {
-  telecom_email: string | null;
-  allergies: Allergy[];
-  meta_created_at: string;
-  meta_updated_at: string;
-}
-
-export interface PatientCreate {
-  identifier_value: string;
-  name_given: string;
-  name_family: string;
-  birth_date: string;
-  gender?: 'male' | 'female' | 'other' | 'unknown';
-  telecom_phone?: string;
-  telecom_email?: string;
-}
+/**
+ * Full patient detail.
+ * FE alias: `Patient` → backend `PatientResponse`.
+ */
+export type Patient = Schema["PatientResponse"];
 
 // ============================================
 // Encounter Types
 // ============================================
-
-export interface Condition {
-  id: string;
-  code_text: string;
-  code_coding_code: string | null;
-  clinical_status: string;
-}
-
-export interface ConditionDetail extends Condition {
-  recorded_date: string;
-}
-
-export interface MedicationRequest {
-  id: string;
-  medication_text: string;
-  dosage_text: string;
-  duration_value: number | null;
-  duration_unit: string | null;
-  status: string;
-}
+export type Condition = Schema["ConditionResponse"];
+export type MedicationRequest = Schema["MedicationResponse"];
+export type EncounterCreate = Schema["EncounterCreate"];
+export type EncounterListResponse = Schema["EncounterListResponse"];
 
 /**
- * Extended medication fields for future use (e.g. authored_on).
- * Currently identical to MedicationRequest.
+ * Combined encounter summary + detail.
+ * The backend `EncounterResponse` already includes all fields.
  */
-export type MedicationDetail = MedicationRequest;
+export type Encounter = Schema["EncounterResponse"];
+export type EncounterSummary = Schema["EncounterResponse"];
+export type EncounterDetail = Schema["EncounterResponse"];
 
-export interface EncounterSummary {
-  id: string;
-  subject_id: string;
-  period_start: string;
-  reason_text: string | null;
-  subjective_text: string | null;
-  objective_text: string | null;
-  assessment_text: string | null;
-  plan_text: string | null;
-  recommendations_text: string | null;
-  conditions: Condition[];
-  medications: MedicationRequest[];
-}
-
-export interface Encounter extends EncounterSummary {
-  status: string;
-  note: string | null;
-}
-
-export interface EncounterDetail extends Omit<Encounter, "conditions" | "medications"> {
-  conditions: ConditionDetail[];
-  medications: MedicationDetail[];
-}
-
-export interface EncounterListResponse {
-  items: EncounterSummary[];
-  total: number;
-}
-
-export interface EncounterCreate {
-  reason_text?: string;
-  subjective_text?: string;
-  objective_text?: string;
-  assessment_text?: string;
-  plan_text?: string;
-  recommendations_text?: string;
-  conditions: {
-    code_text: string;
-    code_coding_code?: string;
-  }[];
-  medications: {
-    medication_text: string;
-    dosage_text: string;
-    duration_value?: number;
-    duration_unit?: string;
-  }[];
-  note?: string;
-}
+/**
+ * Alias kept for backward compat.
+ * ConditionDetail was identical to Condition in practice.
+ */
+export type ConditionDetail = Schema["ConditionResponse"];
+export type MedicationDetail = Schema["MedicationResponse"];
 
 // ============================================
 // Template Types
 // ============================================
-
-export interface TemplateMedication {
-  medication: string;
-  dosage: string;
-  duration: string;
-}
-
-export interface Template {
-  id: string;
-  name: string;
-  diagnosis_text: string | null;
-  diagnosis_code: string | null;
-  medications: TemplateMedication[];
-  instructions: string | null;
-  is_favorite: boolean;
-  is_global: boolean;
-}
-
-export interface TemplateListResponse {
-  items: Template[];
-  total: number;
-}
-
-export interface TemplateCreate {
-  name: string;
-  diagnosis_text?: string;
-  diagnosis_code?: string;
-  medications: TemplateMedication[];
-  instructions?: string;
-  is_favorite?: boolean;
-}
+export type TemplateMedication = Schema["MedicationItem"];
+export type Template = Schema["TemplateResponse"];
+export type TemplateCreate = Schema["TemplateCreate"];
+export type TemplateUpdate = Schema["TemplateUpdate"];
+export type TemplateListResponse = Schema["TemplateListResponse"];
 
 // ============================================
 // Auth Types
 // ============================================
+export type Practitioner = Schema["PractitionerResponse"];
+export type LoginResponse = Schema["TokenResponse"];
 
-export interface Practitioner {
-  id: string;
-  identifier_value: string;
-  name_given: string;
-  name_family: string;
-  qualification_code: string | null;
-  telecom_email: string | null;
-}
+// ============================================
+// FE-Only Types (no backend equivalent)
+// ============================================
 
-export interface LoginResponse {
-  access_token: string;
-  token_type: string;
-  practitioner: Practitioner;
-}
-
+/**
+ * Frontend-only type representing the logged-in user session.
+ * Not generated from the backend API.
+ */
 export interface User {
   id: string;
   email: string;
   practitioner: Practitioner;
 }
 
-// ============================================
-// API Response Types
-// ============================================
-
+/**
+ * Generic pagination wrapper (FE convenience type).
+ */
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
@@ -200,6 +96,11 @@ export interface PaginatedResponse<T> {
   offset: number;
 }
 
+/**
+ * Prescription preview data.
+ * Backend returns `dict[str, Any]` (untyped). Typed here until
+ * a Pydantic schema is added in v1.1.
+ */
 export interface PrescriptionPreview {
   patient: {
     full_name: string;

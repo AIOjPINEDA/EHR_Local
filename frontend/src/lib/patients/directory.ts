@@ -43,7 +43,7 @@ export function formatLastEncounterDate(value: string | null): string {
   }).format(parsedDate);
 }
 
-export function formatPatientGender(gender: "male" | "female" | "other" | "unknown" | null): string {
+export function formatPatientGender(gender: string | null | undefined): string {
   switch (gender) {
     case "male":
       return "Masculino";

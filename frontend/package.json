@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "test": "node scripts/contracts-smoke.mjs"
+    "test": "node scripts/contracts-smoke.mjs",
+    "generate:types": "cd ../backend && PYTHONPATH=. python3.11 scripts/export-openapi.py ../frontend/openapi.json && cd ../frontend && npx openapi-typescript openapi.json -o src/types/api.generated.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -37,6 +38,7 @@
     "autoprefixer": "^10.4.17",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
+    "openapi-typescript": "^7.12.0",
     "postcss": "^8.4.33",
     "typescript": "^5.3.3"
   }
