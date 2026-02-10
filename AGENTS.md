@@ -149,7 +149,18 @@ Data models follow FHIR nomenclature:
 
 ## Active Specs
 
-- Primary: `.archive/specs/001-consultamed-mvp/spec.md`
+- Primary legacy spec: `.archive/specs/001-consultamed-mvp/spec.md`
+- New active specs: `docs/specs/`
+
+## Agentic Workflow Mode (Current)
+
+- Canonical workflow for this repo is:
+  1. `AGENTS.md`
+  2. `docs/architecture/overview.md`
+  3. `docs/playbooks/agentic-repo-bootstrap.md`
+- `.archive/` is historical reference material.
+- `.specify/` is optional/experimental in this repository and is not part of the required delivery gate.
+- Documentation drift checks run in warning mode during MVP hardening (signal without blocking).
 
 ## Architecture
 
@@ -164,4 +175,4 @@ See `docs/architecture/overview.md` for system design.
 
 ---
 
-*Last updated: 2026-02-09*
+*Last updated: 2026-02-10*

@@ -2,6 +2,9 @@
 
 Sistema de Historia Clínica Electrónica para consultorio médico privado en España.
 
+> Note: This constitution is used only for optional Speckit flows in this repository.
+> Canonical day-to-day operational contract is `AGENTS.md`.
+
 ## Core Principles
 
 ### I. FHIR R5 Alignment (NON-NEGOTIABLE)

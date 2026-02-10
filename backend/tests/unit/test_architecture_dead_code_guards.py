@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import re
+import warnings
 
 import pytest
 
@@ -112,3 +113,38 @@ def test_agents_stack_distinguishes_active_vs_planned() -> None:
 
     assert "Active in codebase" in content
     assert "Planned / Not yet adopted" in content
+
+
+def test_documentation_alignment_warning_only() -> None:
+    """Emit warnings when core setup docs drift; warning-only during MVP."""
+    repo_root = _repo_root()
+    agents = (repo_root / "AGENTS.md").read_text(encoding="utf-8")
+    copilot = (repo_root / ".github" / "copilot-instructions.md").read_text(encoding="utf-8")
+    architecture = (repo_root / "docs" / "architecture" / "overview.md").read_text(encoding="utf-8")
+    settings = (repo_root / ".vscode" / "settings.json").read_text(encoding="utf-8")
+    issues: list[str] = []
+
+    if "New active specs: `docs/specs/`" not in agents:
+        issues.append("AGENTS.md should declare docs/specs as new active specs location.")
+
+    if ".specify/" not in agents or "optional/experimental" not in agents:
+        issues.append("AGENTS.md should explicitly mark .specify as optional/experimental.")
+
+    if "docs/specs/" not in copilot:
+        issues.append(".github/copilot-instructions.md should reference docs/specs/ for active specs.")
+
+    if ".specify/" not in copilot or "optional" not in copilot:
+        issues.append(".github/copilot-instructions.md should mark .specify as optional.")
+
+    if "docs/" not in architecture or "specs/" not in architecture:
+        issues.append("docs/architecture/overview.md should reflect docs/specs in repository layout.")
+
+    if "chat.promptFilesRecommendations" in settings and "speckit." in settings:
+        issues.append(".vscode/settings.json should not force Speckit prompts in workspace defaults.")
+
+    if issues:
+        warnings.warn(
+            "Documentation alignment warnings (warning-only in MVP):\n- " + "\n- ".join(issues),
+            UserWarning,
+            stacklevel=1,
+        )

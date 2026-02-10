@@ -301,6 +301,8 @@ npm run type-check
 - [docs/API.md](./docs/API.md): contratos de endpoints
 - [docs/USER_GUIDE.md](./docs/USER_GUIDE.md): guía de uso clínico
 - [docs/architecture/overview.md](./docs/architecture/overview.md): arquitectura implementada
+- [docs/specs/README.md](./docs/specs/README.md): política y ubicación de specs activas
+- [docs/playbooks/agentic-repo-bootstrap.md](./docs/playbooks/agentic-repo-bootstrap.md): guía base agent-first reutilizable
 - [docs/release/DEPLOYMENT_GUIDE.md](./docs/release/DEPLOYMENT_GUIDE.md): despliegue
 - [docs/release/v1-readiness-checklist.md](./docs/release/v1-readiness-checklist.md): checklist release
 

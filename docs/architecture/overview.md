@@ -85,6 +85,7 @@ ConsultaMed enforces architecture integrity through explicit guardrails that run
 These controls prevent drift between declared architecture and implemented behavior. In particular:
 - Route-group wrappers in Next.js must have an active UI routing consumer (`page.tsx` or `default.tsx`).
 - Domain validators must be either consumed by runtime code or removed.
+- Canonical agent/setup docs are monitored with warning-only drift checks during MVP.
 - Any new infrastructural abstraction (routing wrapper, validation API, service facade, cross-cutting helper) must ship with:
   - at least one consuming runtime path, and
   - at least one automated test covering that path.
@@ -114,9 +115,13 @@ EHR_Guadalix/
 │   └── migrations/
 ├── scripts/
 ├── docs/
-└── .archive/   # Historical specs/plans/reference material
+│   ├── architecture/
+│   ├── plans/
+│   ├── playbooks/
+│   └── specs/       # New active specs
+└── .archive/        # Historical specs/plans/reference material
 ```
 
 ---
 
-*Last updated: 2026-02-09*
+*Last updated: 2026-02-10*

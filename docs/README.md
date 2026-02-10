@@ -13,6 +13,8 @@ Este índice centraliza la documentación vigente para evitar información dispe
 
 - `docs/API.md`: contratos y endpoints API.
 - `docs/architecture/overview.md`: arquitectura implementada actualmente.
+- `docs/specs/`: specs activas nuevas.
+- `docs/playbooks/agentic-repo-bootstrap.md`: guía base agent-first.
 
 ## Testing
 
@@ -34,5 +36,5 @@ Este índice centraliza la documentación vigente para evitar información dispe
 
 Si hay conflicto entre documentos, priorizar:
 1. `AGENTS.md`
-2. `docs/API.md`
-3. `docs/architecture/overview.md`
+2. `docs/architecture/overview.md`
+3. `docs/playbooks/agentic-repo-bootstrap.md`

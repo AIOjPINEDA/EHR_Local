@@ -3,7 +3,7 @@
 > Canonical source of truth: `AGENTS.md` at repo root.
 > Keep this file as a short operational summary for GitHub Copilot.
 
-Last updated: 2026-02-09
+Last updated: 2026-02-10
 
 ## Project Context
 
@@ -63,6 +63,13 @@ Recommended local gate:
 ```bash
 ./scripts/test_gate.sh
 ```
+
+## Workflow Alignment
+
+- New active specs live in `docs/specs/`.
+- `.archive/` is historical reference only.
+- `.specify/` is optional in this repository and not required for the default delivery workflow.
+- If documentation drift is detected by guardrails during MVP, treat it as warning-first and resolve before release hardening.
 
 ## Coding Requirements
 
