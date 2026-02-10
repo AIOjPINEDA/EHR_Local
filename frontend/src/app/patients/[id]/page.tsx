@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
-import { HospitalBrand } from "@/components/branding/hospital-brand";
-import { formatPatientGender } from "@/lib/patients/directory";
+import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
+import { PatientHeader } from "@/components/patients/patient-header";
 import { authStore } from "@/lib/stores/auth-store";
 import type { Patient, EncounterListResponse } from "@/types/api";
 
@@ -122,10 +122,13 @@ export default function PatientDetailPage() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-blue-600 hover:text-blue-700">
-              ← Dashboard
-            </Link>
-            <HospitalBrand title="Ficha de Paciente" />
+            <Breadcrumbs
+              items={[
+                { label: "Inicio", href: "/dashboard" },
+                { label: "Pacientes", href: "/patients" },
+                { label: `${patient.name_given} ${patient.name_family}` },
+              ]}
+            />
           </div>
           
           <Link
@@ -139,29 +142,7 @@ export default function PatientDetailPage() {
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Patient Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                {patient.name_given} {patient.name_family}
-              </h2>
-              <div className="flex items-center gap-4 mt-2 text-gray-600">
-                <span>{patient.identifier_value}</span>
-                <span>•</span>
-                <span>{patient.age} años</span>
-                <span>•</span>
-                <span>{formatPatientGender(patient.gender)}</span>
-              </div>
-              {(patient.telecom_phone || patient.telecom_email) && (
-                <div className="mt-2 text-sm text-gray-500">
-                  {patient.telecom_phone && <span>📞 {patient.telecom_phone}</span>}
-                  {patient.telecom_phone && patient.telecom_email && <span className="mx-2">|</span>}
-                  {patient.telecom_email && <span>✉️ {patient.telecom_email}</span>}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <PatientHeader patient={patient} className="mb-6" />
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Alergias */}

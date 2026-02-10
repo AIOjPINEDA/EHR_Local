@@ -4,16 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
-import { HospitalBrand } from "@/components/branding/hospital-brand";
+import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
+import { PatientHeader } from "@/components/patients/patient-header";
 import { openBlobInNewTab } from "@/lib/files/download";
 import { formatPatientGender } from "@/lib/patients/directory";
 import { authStore } from "@/lib/stores/auth-store";
 import type { EncounterDetail, Patient } from "@/types/api";
-
-type PatientBasic = Pick<
-  Patient,
-  "name_given" | "name_family" | "identifier_value" | "age" | "gender"
->;
 
 export default function EncounterDetailPage() {
   const router = useRouter();
@@ -21,7 +17,7 @@ export default function EncounterDetailPage() {
   const encounterId = params.id as string;
   
   const [encounter, setEncounter] = useState<EncounterDetail | null>(null);
-  const [patient, setPatient] = useState<PatientBasic | null>(null);
+  const [patient, setPatient] = useState<Patient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -32,7 +28,7 @@ export default function EncounterDetailPage() {
       setEncounter(encounterData);
       
       // Cargar datos básicos del paciente
-      const patientData = await api.get<PatientBasic>(`/patients/${encounterData.subject_id}`);
+      const patientData = await api.get<Patient>(`/patients/${encounterData.subject_id}`);
       setPatient(patientData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar consulta");
@@ -115,10 +111,16 @@ export default function EncounterDetailPage() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-[1400px] mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href={`/patients/${encounter.subject_id}`} className="text-blue-600 hover:text-blue-700">
-              ← Volver al paciente
-            </Link>
-            <HospitalBrand title="Detalle de Consulta" />
+            <Breadcrumbs
+              items={[
+                { label: "Inicio", href: "/dashboard" },
+                { label: "Pacientes", href: "/patients" },
+                ...(patient
+                  ? [{ label: `${patient.name_given} ${patient.name_family}`, href: `/patients/${encounter.subject_id}` }]
+                  : []),
+                { label: `Consulta ${new Date(encounter.period_start).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}` },
+              ]}
+            />
           </div>
         </div>
       </header>
@@ -133,14 +135,7 @@ export default function EncounterDetailPage() {
         
         {/* Patient Info Bar */}
         {patient && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <span className="font-semibold text-blue-800">
-              {patient.name_given} {patient.name_family}
-            </span>
-            <span className="text-blue-600 ml-4">
-              {patient.identifier_value} · {patient.age} años · {formatPatientGender(patient.gender)}
-            </span>
-          </div>
+          <PatientHeader patient={patient} variant="compact" />
         )}
 
         {/* Prescription Summary */}

@@ -14,7 +14,7 @@ import {
   type MedicationSuggestion,
 } from "@/lib/encounters/suggestions";
 import { api } from "@/lib/api/client";
-import { HospitalBrand } from "@/components/branding/hospital-brand";
+import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
 import { openBlobInNewTab } from "@/lib/files/download";
 import { useAutocompleteList } from "@/lib/hooks/useAutocompleteList";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
@@ -503,19 +503,13 @@ export default function NewEncounterPage() {
       <header className="sticky top-0 z-10 border-b bg-white shadow-sm">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-3">
           <div className="flex items-center gap-4">
-            <Link href={`/patients/${patientId}`} className="text-gray-500 hover:text-gray-700">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-            </Link>
-            <HospitalBrand
-              title="Nueva Consulta"
-              subtitle={`${patient.name_given} ${patient.name_family} · ${patient.identifier_value}`}
+            <Breadcrumbs
+              items={[
+                { label: "Inicio", href: "/dashboard" },
+                { label: "Pacientes", href: "/patients" },
+                { label: `${patient.name_given} ${patient.name_family}`, href: `/patients/${patientId}` },
+                { label: "Nueva Consulta" },
+              ]}
             />
           </div>
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
-import { HospitalBrand } from "@/components/branding/hospital-brand";
+import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
 import { authStore } from "@/lib/stores/auth-store";
 import { Patient, PatientCreate } from "@/types/api";
 
@@ -73,10 +73,13 @@ export default function NewPatientPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/dashboard" className="text-blue-600 hover:text-blue-700">
-            ← Volver
-          </Link>
-          <HospitalBrand title="Nuevo Paciente" />
+          <Breadcrumbs
+            items={[
+              { label: "Inicio", href: "/dashboard" },
+              { label: "Pacientes", href: "/patients" },
+              { label: "Nuevo Paciente" },
+            ]}
+          />
         </div>
       </header>
       
