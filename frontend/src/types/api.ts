@@ -71,12 +71,14 @@ export interface MedicationRequest {
   dosage_text: string;
   duration_value: number | null;
   duration_unit: string | null;
+  status: string;
 }
 
-export interface MedicationDetail extends MedicationRequest {
-  status: string;
-  authored_on: string;
-}
+/**
+ * Extended medication fields for future use (e.g. authored_on).
+ * Currently identical to MedicationRequest.
+ */
+export type MedicationDetail = MedicationRequest;
 
 export interface EncounterSummary {
   id: string;
@@ -95,10 +97,6 @@ export interface EncounterSummary {
 export interface Encounter extends EncounterSummary {
   status: string;
   note: string | null;
-  practitioner: {
-    name_given: string;
-    name_family: string;
-  };
 }
 
 export interface EncounterDetail extends Omit<Encounter, "conditions" | "medications"> {
