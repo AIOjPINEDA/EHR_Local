@@ -11,8 +11,8 @@ if [[ ! -d "$BACKEND_DIR" || ! -d "$FRONTEND_DIR" ]]; then
 fi
 
 POSSIBLE_PYTHONS=(
-  "/tmp/consultamed_venv/bin/python"
   "$BACKEND_DIR/.venv/bin/python"
+  "/tmp/consultamed_venv/bin/python"
   "$(command -v python3.11 || true)"
   "$(command -v python3 || true)"
 )
