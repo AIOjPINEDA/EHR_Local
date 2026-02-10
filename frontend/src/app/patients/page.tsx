@@ -6,11 +6,10 @@ import Link from "next/link";
 import { api } from "@/lib/api/client";
 import { HospitalBrand } from "@/components/branding/hospital-brand";
 import { PrimaryNav } from "@/components/navigation/primary-nav";
+import { PatientList } from "@/components/patients/patient-list";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import {
   buildPatientsDirectoryUrl,
-  formatLastEncounterDate,
-  formatPatientGender,
   normalizePatientSearchQuery,
 } from "@/lib/patients/directory";
 import { authStore } from "@/lib/stores/auth-store";
@@ -125,70 +124,7 @@ export default function PatientsListPage() {
         ) : (
           <>
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">DNI</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Nombre</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Edad</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Género</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Consultas</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Última consulta</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Teléfono</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">Alergias</th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {patients.map((patient) => (
-                    <tr key={patient.id} className="border-b hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-mono text-gray-600">
-                        {patient.identifier_value}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Link
-                          href={`/patients/${patient.id}`}
-                          className="font-medium text-gray-800 hover:text-blue-600"
-                        >
-                          {patient.name_given} {patient.name_family}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {patient.age} años
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {formatPatientGender(patient.gender)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">
-                        {patient.encounter_count}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {formatLastEncounterDate(patient.last_encounter_at)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {patient.telecom_phone || "-"}
-                      </td>
-                      <td className="px-6 py-4">
-                        {patient.has_allergies ? (
-                          <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full">
-                            {patient.allergy_count} alergia{patient.allergy_count !== 1 ? "s" : ""}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Link
-                          href={`/patients/${patient.id}`}
-                          className="text-blue-600 hover:text-blue-700 text-sm"
-                        >
-                          Ver ficha →
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <PatientList patients={patients} showPhone showActionLink />
             </div>
             
             {/* Pagination */}

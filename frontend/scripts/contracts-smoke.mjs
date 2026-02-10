@@ -26,6 +26,8 @@ async function run() {
   const patientsDirectorySource = await readFile(patientsDirectoryPath, "utf8");
   const autocompleteHookPath = join(projectRoot, "src", "lib", "hooks", "useAutocompleteList.ts");
   const autocompleteHookSource = await readFile(autocompleteHookPath, "utf8");
+  const patientListComponentPath = join(projectRoot, "src", "components", "patients", "patient-list.tsx");
+  const patientListComponentSource = await readFile(patientListComponentPath, "utf8");
   const newEncounterPath = join(
     projectRoot,
     "src",
@@ -126,10 +128,19 @@ async function run() {
     "dashboard no debe mostrar columna redundante de abrir ficha."
   );
   assert(
-    dashboardSource.includes(
-      "<Link href={`/patients/${patient.id}`} className=\"text-blue-600 hover:text-blue-700\">",
-    ),
-    "dashboard debe abrir la ficha al hacer clic en el nombre del paciente."
+    dashboardSource.includes("<PatientList"),
+    "dashboard debe usar componente PatientList reutilizable."
+  );
+  assert(
+    patientsListSource.includes("<PatientList") &&
+      patientsListSource.includes("showPhone") &&
+      patientsListSource.includes("showActionLink"),
+    "patients/page debe usar componente PatientList con showPhone y showActionLink."
+  );
+  assert(
+    patientListComponentSource.includes("href={`/patients/${patient.id}`}") &&
+      patientListComponentSource.includes("text-blue-600 hover:text-blue-700"),
+    "PatientList debe abrir la ficha al hacer clic en el nombre del paciente."
   );
   assert(
     dashboardSource.includes("<PrimaryNav"),
@@ -153,34 +164,20 @@ async function run() {
     "la navegación superior no debe duplicar botón de nuevo paciente."
   );
   assert(
-    dashboardSource.includes("Consultas") &&
-      dashboardSource.includes("Última consulta") &&
-      dashboardSource.includes("last_encounter_at"),
-    "dashboard debe mostrar consultas y última consulta por paciente."
+    patientListComponentSource.includes("Consultas") &&
+      patientListComponentSource.includes("Última consulta") &&
+      patientListComponentSource.includes("last_encounter_at"),
+    "PatientList debe mostrar consultas y última consulta por paciente."
   );
   assert(
-    dashboardSource.includes("Género") && dashboardSource.includes("patient.gender"),
-    "dashboard debe mostrar género del paciente en el listado."
+    patientListComponentSource.includes("Género") &&
+      patientListComponentSource.includes("patient.gender"),
+    "PatientList debe mostrar género del paciente en el listado."
   );
   assert(
-    patientsListSource.includes("Consultas") &&
-      patientsListSource.includes("Última consulta") &&
-      patientsListSource.includes("last_encounter_at"),
-    "patients/page debe mostrar consultas y última consulta por paciente."
-  );
-  assert(
-    patientsListSource.includes("Género") && patientsListSource.includes("patient.gender"),
-    "patients/page debe mostrar género del paciente en el listado."
-  );
-  assert(
-    dashboardSource.includes("formatLastEncounterDate(") &&
-      !dashboardSource.includes("function formatLastEncounterDate("),
-    "dashboard debe reutilizar formatter compartido para última consulta."
-  );
-  assert(
-    patientsListSource.includes("formatLastEncounterDate(") &&
-      !patientsListSource.includes("function formatLastEncounterDate("),
-    "patients/page debe reutilizar formatter compartido para última consulta."
+    patientListComponentSource.includes("formatLastEncounterDate(") &&
+      !patientListComponentSource.includes("function formatLastEncounterDate("),
+    "PatientList debe reutilizar formatter compartido para última consulta."
   );
   assert(
     patientsDirectorySource.includes("export function formatLastEncounterDate"),

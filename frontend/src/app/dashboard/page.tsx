@@ -7,12 +7,11 @@ import { api } from "@/lib/api/client";
 import { HospitalBrand } from "@/components/branding/hospital-brand";
 import { APP_NAME } from "@/lib/branding/constants";
 import { PrimaryNav } from "@/components/navigation/primary-nav";
+import { PatientList } from "@/components/patients/patient-list";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import {
   PATIENT_SEARCH_MIN_LENGTH,
   buildPatientsDirectoryUrl,
-  formatLastEncounterDate,
-  formatPatientGender,
   normalizePatientSearchQuery,
 } from "@/lib/patients/directory";
 import { authStore } from "@/lib/stores/auth-store";
@@ -184,46 +183,7 @@ export default function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-semibold">Paciente</th>
-                    <th className="px-6 py-3 text-left font-semibold">ID</th>
-                    <th className="px-6 py-3 text-left font-semibold">Edad</th>
-                    <th className="px-6 py-3 text-left font-semibold">Género</th>
-                    <th className="px-6 py-3 text-left font-semibold">Consultas</th>
-                    <th className="px-6 py-3 text-left font-semibold">Última consulta</th>
-                    <th className="px-6 py-3 text-left font-semibold">Alergias</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {patients.map((patient) => (
-                    <tr key={patient.id} className="border-t border-gray-100 hover:bg-gray-50">
-                      <td className="px-6 py-4 font-medium">
-                        <Link href={`/patients/${patient.id}`} className="text-blue-600 hover:text-blue-700">
-                          {patient.name_given} {patient.name_family}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 font-mono text-xs text-gray-600">{patient.identifier_value}</td>
-                      <td className="px-6 py-4 text-gray-600">{patient.age} años</td>
-                      <td className="px-6 py-4 text-gray-600">{formatPatientGender(patient.gender)}</td>
-                      <td className="px-6 py-4 text-gray-700">{patient.encounter_count}</td>
-                      <td className="px-6 py-4 text-gray-600">{formatLastEncounterDate(patient.last_encounter_at)}</td>
-                      <td className="px-6 py-4">
-                        {patient.has_allergies ? (
-                          <span className="rounded-full bg-red-100 px-2 py-1 text-xs text-red-700">
-                            {patient.allergy_count} alergia{patient.allergy_count === 1 ? "" : "s"}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-500">Sin registro</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <PatientList patients={patients} />
           )}
 
           {totalPatients > pageSize && (
