@@ -121,7 +121,6 @@ def test_documentation_alignment_warning_only() -> None:
     agents = (repo_root / "AGENTS.md").read_text(encoding="utf-8")
     copilot = (repo_root / ".github" / "copilot-instructions.md").read_text(encoding="utf-8")
     architecture = (repo_root / "docs" / "architecture" / "overview.md").read_text(encoding="utf-8")
-    settings = (repo_root / ".vscode" / "settings.json").read_text(encoding="utf-8")
     issues: list[str] = []
 
     if "New active specs: `docs/specs/`" not in agents:
@@ -139,8 +138,12 @@ def test_documentation_alignment_warning_only() -> None:
     if "docs/" not in architecture or "specs/" not in architecture:
         issues.append("docs/architecture/overview.md should reflect docs/specs in repository layout.")
 
-    if "chat.promptFilesRecommendations" in settings and "speckit." in settings:
-        issues.append(".vscode/settings.json should not force Speckit prompts in workspace defaults.")
+    try:
+        settings = (repo_root / ".vscode" / "settings.json").read_text(encoding="utf-8")
+        if "chat.promptFilesRecommendations" in settings and "speckit." in settings:
+            issues.append(".vscode/settings.json should not force Speckit prompts in workspace defaults.")
+    except (PermissionError, OSError):
+        warnings.warn("Could not read .vscode/settings.json due to lock; skipping check.", UserWarning)
 
     if issues:
         warnings.warn(

@@ -7,9 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit --incremental false",
     "test": "node scripts/contracts-smoke.mjs",
-    "generate:types": "cd ../backend && PYTHONPATH=. python3.11 scripts/export-openapi.py ../frontend/openapi.json && cd ../frontend && npx openapi-typescript openapi.json -o src/types/api.generated.ts"
+    "generate:types": "../scripts/generate-types.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
