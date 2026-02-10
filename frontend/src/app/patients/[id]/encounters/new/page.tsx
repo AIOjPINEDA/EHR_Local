@@ -15,6 +15,7 @@ import {
 } from "@/lib/encounters/suggestions";
 import { api } from "@/lib/api/client";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
+import { PatientHeader } from "@/components/patients/patient-header";
 import { openBlobInNewTab } from "@/lib/files/download";
 import { useAutocompleteList } from "@/lib/hooks/useAutocompleteList";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
@@ -513,27 +514,11 @@ export default function NewEncounterPage() {
             />
           </div>
 
-          {patient.allergies.length > 0 && (
-            <div className="flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5">
-              <span className="text-sm font-medium text-red-600">⚠️ Alergias:</span>
-              {patient.allergies.map((allergy) => (
-                <span
-                  key={allergy.id}
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    allergy.criticality === "high"
-                      ? "bg-red-200 text-red-800"
-                      : "bg-orange-200 text-orange-800"
-                  }`}
-                >
-                  {allergy.code_text}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </header>
 
       <main className="mx-auto max-w-[1400px] px-4 py-6">
+        <PatientHeader patient={patient} variant="compact" className="mb-5" />
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5">
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <label className="mb-2 block text-sm font-semibold text-gray-700">Motivo de Consulta</label>
