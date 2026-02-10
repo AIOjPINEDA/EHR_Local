@@ -16,7 +16,7 @@ Use this checklist for every functional change.
 ## 3) Frontend
 
 - [ ] `frontend/scripts/contracts-smoke.mjs` updated when route contract changed.
-- [ ] If backend Schema changed: Run `npm run generate:types` in frontend.
+- [ ] If backend schema changed: run `npm run generate:types` in frontend.
 - [ ] `./scripts/verify-schema-hash.sh` passes (no schema drift).
 
 ## 4) Local Verification

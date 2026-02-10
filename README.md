@@ -56,7 +56,7 @@
 | Pacientes / Consultas / Templates | ✅ Funcional | Flujo clínico MVP |
 | Recetas PDF | ✅ Funcional | WeasyPrint |
 | CI | ✅ Activo | checks de backend y frontend |
-| Tipos API | ✅ Auto | OpenAPI → TypeScript |
+| Tipos API | ✅ Automáticos | OpenAPI → TypeScript |
 
 ## ⚡ Acceso rápido (uso diario)
 

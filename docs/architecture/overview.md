@@ -73,6 +73,7 @@ flowchart TB
 | `src/lib/api/client.ts` | API wrapper with `/api/v1` prefix + auth header |
 | `src/lib/stores/auth-store.ts` | Lightweight auth state + persistence |
 | `src/components/ui/` | Shared UI primitives |
+| `src/types/api.ts` | Manual bridge and FE-only API types |
 | `src/types/api.generated.ts` | Auto-generated types from OpenAPI schema |
 
 ## Architecture Integrity Guardrails
