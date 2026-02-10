@@ -45,6 +45,8 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_functions = "test_*"
 addopts = "--strict-markers -ra"
+norecursedirs = [".venv", ".venv2", ".git", "__pycache__", "alembic", "node_modules"]
+collect_ignore_glob = ["*.env", ".env*"]
 markers = [
     "unit: Fast unit tests for pure logic and model/schema behavior",
     "contract: API schema/contract tests between backend and frontend",

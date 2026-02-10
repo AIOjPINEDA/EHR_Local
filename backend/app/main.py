@@ -4,13 +4,14 @@ ConsultaMed Backend - FastAPI Application Entry Point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.__version__ import __version__
 from app.config import settings
 from app.api.router import api_router
 
 app = FastAPI(
     title="ConsultaMed API",
     description="API para gestión de consultas médicas",
-    version="1.0.0",
+    version=__version__,
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -42,7 +43,7 @@ async def root() -> dict[str, str]:
     return {
         "status": "ok",
         "app": "ConsultaMed API",
-        "version": "1.0.0",
+        "version": __version__,
     }
 
 
