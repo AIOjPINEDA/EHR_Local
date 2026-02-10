@@ -3,16 +3,21 @@
 > Canonical source of truth: `AGENTS.md` at repo root.
 > Keep this file as a short operational summary for GitHub Copilot.
 
-Last updated: 2026-02-08
+Last updated: 2026-02-09
 
 ## Project Context
 
 - Product: ConsultaMed (EHR for private medical practices in Spain)
 - Phase: `mvp-complete` (pre-production hardening)
-- Core stack:
+- Stack (active in codebase):
   - Frontend: Next.js 14 + TypeScript strict + Tailwind/shadcn
-  - Backend: FastAPI + SQLAlchemy async + Pydantic v2
-  - Database: PostgreSQL 15 (Supabase) with RLS
+  - Backend: FastAPI + SQLAlchemy async + Pydantic v2 + JWT/bcrypt auth
+  - Database: PostgreSQL 15 (Supabase-managed)
+- Planned / not yet adopted as primary runtime:
+  - Supabase Auth
+  - Full end-to-end RLS enforcement in all production paths
+  - TanStack Query + Zustand default data/state layer
+  - React Hook Form + Zod as unified frontend form standard
 
 ## Run Commands
 
@@ -79,6 +84,8 @@ Always:
 - Validate all inputs in backend
 - Keep FHIR-style naming (`Patient`, `Encounter`, `Condition`, etc.)
 - Run tests before merge
+- Keep Next.js route groups free of dead wrappers (`layout.tsx` must have at least one UI route consumer)
+- Keep backend validators free of dead APIs (no unreferenced clinical validators)
 
 Ask first before:
 

@@ -83,7 +83,7 @@ ConsultaMed enforces architecture integrity through explicit guardrails that run
 3. CI backend test execution: `pytest tests/ -v --tb=short`
 
 These controls prevent drift between declared architecture and implemented behavior. In particular:
-- Route-group wrappers in Next.js must have an active routing consumer (`page.tsx`, `route.ts`, or `default.tsx`).
+- Route-group wrappers in Next.js must have an active UI routing consumer (`page.tsx` or `default.tsx`).
 - Domain validators must be either consumed by runtime code or removed.
 - Any new infrastructural abstraction (routing wrapper, validation API, service facade, cross-cutting helper) must ship with:
   - at least one consuming runtime path, and
@@ -119,4 +119,4 @@ EHR_Guadalix/
 
 ---
 
-*Last updated: 2026-02-08*
+*Last updated: 2026-02-09*
