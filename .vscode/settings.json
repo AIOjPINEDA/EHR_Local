@@ -3,5 +3,6 @@
     "github.copilot.chat.codeGeneration.useInstructionFiles": true,
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
     "python.terminal.activateEnvironment": true,
-    "chat.agent.maxRequests": 50
+    "chat.agent.maxRequests": 50,
+    "chat.tools.terminal.autoApprove": false
 }

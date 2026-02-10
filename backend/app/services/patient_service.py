@@ -187,6 +187,17 @@ class PatientService:
         if not patient:
             return None
         
+        # Validate clinical fields before applying
+        if "birth_date" in data:
+            is_valid, error = validate_birth_date(data["birth_date"])
+            if not is_valid:
+                raise ValueError(error)
+
+        if "gender" in data:
+            is_valid, error = validate_gender(data.get("gender"))
+            if not is_valid:
+                raise ValueError(error)
+
         # Update allowed fields
         allowed_fields = [
             "name_given", "name_family", "birth_date", "gender",

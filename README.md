@@ -26,6 +26,7 @@
 - 🧾 Templates de tratamiento por diagnóstico
 - 📄 Generación de receta PDF con un clic
 - 🔐 Login con JWT + bcrypt
+- 🤖 Tipos TypeScript auto-generados desde OpenAPI
 - 🧪 Smoke tests y CI para validación de flujo MVP
 
 ## 📚 Tabla de contenidos
@@ -55,6 +56,7 @@
 | Pacientes / Consultas / Templates | ✅ Funcional | Flujo clínico MVP |
 | Recetas PDF | ✅ Funcional | WeasyPrint |
 | CI | ✅ Activo | checks de backend y frontend |
+| Tipos API | ✅ Auto | OpenAPI → TypeScript |
 
 ## ⚡ Acceso rápido (uso diario)
 
@@ -282,6 +284,7 @@ cd frontend
 npm test
 npm run lint
 npm run type-check
+npm run generate:types
 ```
 
 </details>

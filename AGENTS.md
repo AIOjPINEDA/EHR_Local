@@ -58,6 +58,7 @@ cd frontend
 npm test                            # Run tests
 npm run lint                        # ESLint
 npm run type-check                  # TypeScript check
+npm run generate:types              # Regenerate types from OpenAPI
 npm run format                      # Prettier
 npm run dev                         # Dev server (port 3000)
 ```
@@ -104,7 +105,8 @@ Data models follow FHIR nomenclature:
 ### TypeScript
 - Strict mode enabled
 - No `any` types
-- Interfaces for API responses
+- Types auto-generated from OpenAPI (`npm run generate:types`)
+- FE-only types manually defined in `src/types/api.ts`
 - Components in PascalCase
 - Custom hooks prefixed with `use`
 
@@ -126,6 +128,7 @@ Data models follow FHIR nomenclature:
 ### Ask First
 - Adding new dependencies to `requirements.txt` or `package.json`
 - Modifying database schema or RLS policies
+- Changing Pydantic schemas (triggers type regeneration)
 - Creating new API endpoints
 - Changing authentication flow
 - Modifying PDF templates
@@ -142,7 +145,7 @@ Data models follow FHIR nomenclature:
 
 ## Definition of Done
 
-- `./scripts/test_gate.sh` passes locally.
+- `./scripts/test_gate.sh` passes locally (includes schema hash check).
 - `cd backend && pytest tests/unit/test_architecture_dead_code_guards.py -v` passes.
 - New infrastructural abstractions (routing wrappers, validators, service helpers) have at least one runtime consumer and one automated test.
 - Architecture and agent contract documentation reflect implemented state (not aspirational state).

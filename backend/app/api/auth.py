@@ -21,13 +21,6 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
-class TokenResponse(BaseModel):
-    """Token response schema."""
-    access_token: str
-    token_type: str = "bearer"
-    practitioner: dict
-
-
 class PractitionerResponse(BaseModel):
     """Practitioner response schema."""
     model_config = ConfigDict(from_attributes=True)
@@ -38,6 +31,16 @@ class PractitionerResponse(BaseModel):
     name_family: str
     qualification_code: Optional[str]
     telecom_email: Optional[str]
+
+
+class TokenResponse(BaseModel):
+    """Token response schema."""
+    access_token: str
+    token_type: str = "bearer"
+    practitioner: PractitionerResponse
+
+
+
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -120,14 +123,7 @@ async def login(
     
     return TokenResponse(
         access_token=access_token,
-        practitioner={
-            "id": practitioner.id,
-            "identifier_value": practitioner.identifier_value,
-            "name_given": practitioner.name_given,
-            "name_family": practitioner.name_family,
-            "qualification_code": practitioner.qualification_code,
-            "telecom_email": practitioner.telecom_email,
-        }
+        practitioner=PractitionerResponse.model_validate(practitioner),
     )
 
 

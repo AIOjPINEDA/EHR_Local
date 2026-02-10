@@ -135,7 +135,13 @@ async def update_patient(
     # Filter out None values
     update_data = {k: v for k, v in patient_data.model_dump().items() if v is not None}
     
-    patient = await service.update(patient_id, update_data)
+    try:
+        patient = await service.update(patient_id, update_data)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     
     if not patient:
         raise HTTPException(

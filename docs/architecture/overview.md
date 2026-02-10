@@ -73,6 +73,7 @@ flowchart TB
 | `src/lib/api/client.ts` | API wrapper with `/api/v1` prefix + auth header |
 | `src/lib/stores/auth-store.ts` | Lightweight auth state + persistence |
 | `src/components/ui/` | Shared UI primitives |
+| `src/types/api.generated.ts` | Auto-generated types from OpenAPI schema |
 
 ## Architecture Integrity Guardrails
 
@@ -81,6 +82,7 @@ ConsultaMed enforces architecture integrity through explicit guardrails that run
 1. Local developer gate: `./scripts/test_gate.sh`
 2. Backend architecture checks: `backend/tests/unit/test_architecture_dead_code_guards.py`
 3. CI backend test execution: `pytest tests/ -v --tb=short`
+4. OpenAPI schema hash verification: `./scripts/verify-schema-hash.sh`
 
 These controls prevent drift between declared architecture and implemented behavior. In particular:
 - Route-group wrappers in Next.js must have an active UI routing consumer (`page.tsx` or `default.tsx`).
@@ -114,6 +116,9 @@ EHR_Guadalix/
 ├── supabase/
 │   └── migrations/
 ├── scripts/
+│   ├── generate-types.sh
+│   ├── verify-schema-hash.sh
+│   └── test_gate.sh
 ├── docs/
 │   ├── architecture/
 │   ├── plans/
