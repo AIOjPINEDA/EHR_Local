@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { formatLastEncounterDate, formatPatientGender } from "@/lib/patients/directory";
 import { cn } from "@/lib/utils";
 import type { PatientSummary } from "@/types/api";
@@ -10,6 +11,7 @@ export interface PatientListProps {
   showPhone?: boolean;
   showActionLink?: boolean;
   actionLinkText?: string;
+  showNewEncounterAction?: boolean;
   className?: string;
 }
 
@@ -24,6 +26,7 @@ export interface PatientListProps {
  * @param showPhone - Whether to display the phone column (default: false)
  * @param showActionLink - Whether to display the action link column (default: false)
  * @param actionLinkText - Custom text for the action link (default: "Ver ficha →")
+ * @param showNewEncounterAction - Whether to display the new encounter quick action (default: false)
  * @param className - Additional CSS classes for the table wrapper
  */
 export function PatientList({
@@ -31,6 +34,7 @@ export function PatientList({
   showPhone = false,
   showActionLink = false,
   actionLinkText = "Ver ficha →",
+  showNewEncounterAction = false,
   className,
 }: PatientListProps) {
   return (
@@ -52,6 +56,7 @@ export function PatientList({
               <th className="px-6 py-3 text-left font-semibold">Teléfono</th>
             )}
             <th className="px-6 py-3 text-left font-semibold">Alergias</th>
+            {showNewEncounterAction && <th className="px-6 py-3 text-left"></th>}
             {showActionLink && <th className="px-6 py-3 text-left"></th>}
           </tr>
         </thead>
@@ -108,6 +113,16 @@ export function PatientList({
                   <span className="text-xs text-gray-500">Sin registro</span>
                 )}
               </td>
+              {showNewEncounterAction && (
+                <td className="px-6 py-4">
+                  <Link
+                    href={`/patients/${patient.id}/encounters/new`}
+                    className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-sm font-medium"
+                  >
+                    <Plus className="h-4 w-4" /> Nueva Consulta
+                  </Link>
+                </td>
+              )}
               {showActionLink && (
                 <td className="px-6 py-4">
                   <Link

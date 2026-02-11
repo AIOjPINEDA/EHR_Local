@@ -124,7 +124,7 @@ export default function PatientsListPage() {
         ) : (
           <>
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <PatientList patients={patients} showPhone showActionLink />
+              <PatientList patients={patients} showPhone showActionLink showNewEncounterAction />
             </div>
             
             {/* Pagination */}

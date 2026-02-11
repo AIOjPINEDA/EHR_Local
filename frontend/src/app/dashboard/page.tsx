@@ -183,7 +183,7 @@ export default function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <PatientList patients={patients} />
+            <PatientList patients={patients} showNewEncounterAction />
           )}
 
           {totalPatients > pageSize && (
