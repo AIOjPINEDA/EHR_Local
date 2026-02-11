@@ -111,13 +111,39 @@ supabase start
 
 - Python 3.11+
 - Node.js 18+
-- PostgreSQL (local o Supabase)
+- Docker Desktop / Docker Engine + Docker Compose
 - WeasyPrint (macOS: `brew install weasyprint`)
 
 </details>
 
 <details>
-<summary><strong>2) Backend (FastAPI)</strong></summary>
+<summary><strong>2) Base de datos local (Docker - recomendado)</strong></summary>
+
+Usa este setup para tener un entorno 100% local en macOS con PostgreSQL 15.
+
+**macOS**
+
+```bash
+./scripts/setup-local-db.sh
+```
+
+El script:
+- levanta `consultamed-db` con PostgreSQL 15
+- espera healthcheck de la base con progreso visible
+- aplica `supabase/migrations/*.sql` en orden
+- evita duplicados usando `schema_migrations` (idempotente)
+- permite ajustar timeout con `READINESS_TIMEOUT_SECONDS` (default: `180`)
+
+En `backend/.env` configura:
+
+```env
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+```
+
+</details>
+
+<details>
+<summary><strong>3) Backend (FastAPI)</strong></summary>
 
 ```bash
 cd backend
@@ -140,12 +166,7 @@ ENVIRONMENT=development
 DEBUG=true
 ```
 
-Aplica migraciones iniciales:
-
-```bash
-psql -d consultamed -f ../supabase/migrations/20260208_add_password_hash.sql
-psql -d consultamed -f ../supabase/migrations/20260208_add_encounter_soap_fields.sql
-```
+Si ya ejecutaste el setup local de Docker, las migraciones ya están aplicadas.
 
 Inicia backend:
 
@@ -159,7 +180,7 @@ Docs OpenAPI: [http://localhost:8000/docs](http://localhost:8000/docs)
 </details>
 
 <details>
-<summary><strong>3) Frontend (Next.js)</strong></summary>
+<summary><strong>4) Frontend (Next.js)</strong></summary>
 
 ```bash
 cd frontend
@@ -183,7 +204,7 @@ Frontend: [http://localhost:3000](http://localhost:3000)
 </details>
 
 <details>
-<summary><strong>4) Login piloto</strong></summary>
+<summary><strong>5) Login piloto</strong></summary>
 
 | Campo | Valor |
 |---|---|
