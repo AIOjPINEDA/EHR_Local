@@ -111,7 +111,9 @@ export interface UseEncounterFormReturn {
 
   // Diagnosis autocomplete
   activeDiagnosisIndex: number | null;
+  setActiveDiagnosisIndex: (index: number | null) => void;
   diagnosisInputValue: string;
+  setDiagnosisInputValue: (value: string) => void;
   debouncedDiagnosisQuery: string;
   diagnosisSuggestions: DiagnosisSuggestion[];
   isDiagnosisSuggestionsOpen: boolean;
@@ -125,7 +127,9 @@ export interface UseEncounterFormReturn {
 
   // Medication autocomplete
   activeMedicationIndex: number | null;
+  setActiveMedicationIndex: (index: number | null) => void;
   medicationInputValue: string;
+  setMedicationInputValue: (value: string) => void;
   debouncedMedicationQuery: string;
   medicationSuggestions: MedicationSuggestion[];
   isMedicationSuggestionsOpen: boolean;
@@ -613,7 +617,9 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
 
     // Diagnosis autocomplete
     activeDiagnosisIndex,
+    setActiveDiagnosisIndex,
     diagnosisInputValue,
+    setDiagnosisInputValue,
     debouncedDiagnosisQuery,
     diagnosisSuggestions,
     isDiagnosisSuggestionsOpen,
@@ -627,7 +633,9 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
 
     // Medication autocomplete
     activeMedicationIndex,
+    setActiveMedicationIndex,
     medicationInputValue,
+    setMedicationInputValue,
     debouncedMedicationQuery,
     medicationSuggestions,
     isMedicationSuggestionsOpen,
