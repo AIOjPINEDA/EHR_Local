@@ -26,6 +26,8 @@ async function run() {
   const patientsDirectorySource = await readFile(patientsDirectoryPath, "utf8");
   const autocompleteHookPath = join(projectRoot, "src", "lib", "hooks", "useAutocompleteList.ts");
   const autocompleteHookSource = await readFile(autocompleteHookPath, "utf8");
+  const debouncedValueHookPath = join(projectRoot, "src", "lib", "hooks", "useDebouncedValue.ts");
+  const debouncedValueHookSource = await readFile(debouncedValueHookPath, "utf8");
   const patientListComponentPath = join(projectRoot, "src", "components", "patients", "patient-list.tsx");
   const patientListComponentSource = await readFile(patientListComponentPath, "utf8");
   const newEncounterPath = join(
@@ -39,6 +41,12 @@ async function run() {
     "page.tsx",
   );
   const newEncounterSource = await readFile(newEncounterPath, "utf8");
+  const useEncounterFormPath = join(projectRoot, "src", "lib", "hooks", "use-encounter-form.ts");
+  const useEncounterFormSource = await readFile(useEncounterFormPath, "utf8");
+  const medicationSectionPath = join(projectRoot, "src", "components", "encounters", "medication-section.tsx");
+  const medicationSectionSource = await readFile(medicationSectionPath, "utf8");
+  const encounterFormActionsPath = join(projectRoot, "src", "components", "encounters", "encounter-form-actions.tsx");
+  const encounterFormActionsSource = await readFile(encounterFormActionsPath, "utf8");
 
   assert(source.includes("subject_id"), "encounters/[id] debe usar subject_id en el contrato.");
   assert(!source.includes("patient_id:"), "encounters/[id] no debe tipar patient_id en EncounterDetail.");
@@ -56,12 +64,12 @@ async function run() {
   );
 
   assert(
-    newEncounterSource.includes("useDebouncedValue"),
-    "patients/[id]/encounters/new debe usar debounce para autocompletado."
+    useEncounterFormSource.includes("useDebouncedValue"),
+    "use-encounter-form hook debe usar debounce para autocompletado."
   );
   assert(
-    newEncounterSource.includes("useAutocompleteList"),
-    "patients/[id]/encounters/new debe usar navegación por teclado en listas de sugerencias."
+    useEncounterFormSource.includes("useAutocompleteList"),
+    "use-encounter-form hook debe usar navegación por teclado en listas de sugerencias."
   );
   assert(
     newEncounterSource.includes("diagnosisSuggestions"),
@@ -88,17 +96,20 @@ async function run() {
     "patients/[id]/encounters/new debe aprovechar mejor pantallas widescreen."
   );
   assert(
-    newEncounterSource.includes("h-8 w-8") && newEncounterSource.includes("Eliminar tratamiento"),
-    "patients/[id]/encounters/new debe tener control de borrado de tratamiento más grande y claro."
+    medicationSectionSource.includes("h-8 w-8") && medicationSectionSource.includes("Eliminar tratamiento"),
+    "MedicationSection debe tener control de borrado de tratamiento más grande y claro."
   );
   assert(
-    newEncounterSource.includes("Receta para el paciente") &&
-      newEncounterSource.includes("Guardar y abrir receta para imprimir"),
-    "patients/[id]/encounters/new debe mostrar flujo visible de receta para impresión."
+    newEncounterSource.includes("Receta para el paciente"),
+    "patients/[id]/encounters/new debe mostrar información de receta para el paciente."
   );
   assert(
-    !newEncounterSource.includes("Guardar y descargar receta PDF"),
-    "patients/[id]/encounters/new no debe usar acción de descarga como flujo principal."
+    encounterFormActionsSource.includes("Guardar y abrir receta para imprimir"),
+    "EncounterFormActions debe mostrar flujo visible de receta para impresión."
+  );
+  assert(
+    !encounterFormActionsSource.includes("Guardar y descargar receta PDF"),
+    "EncounterFormActions no debe usar acción de descarga como flujo principal."
   );
 
   assert(
