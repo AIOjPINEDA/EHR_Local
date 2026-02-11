@@ -35,10 +35,25 @@ flowchart TB
 
 ## Authentication Model (Current)
 
-- Login is handled by `POST /api/v1/auth/login` in FastAPI.
-- Backend validates practitioner credentials with bcrypt hash.
-- Backend issues JWT (HS256) and validates it on protected endpoints.
-- Frontend stores token in `localStorage` and sends `Authorization: Bearer <token>`.
+### Authentication Flow
+Authentication is implemented using JWT tokens with bcrypt password hashing:
+
+**1. Login Request**
+- Frontend submits `username` (email) and `password` via `OAuth2PasswordRequestForm`.
+- Backend queries `Practitioner` by `telecom_email`.
+- Backend verifies password using `bcrypt.checkpw()` against stored `password_hash`.
+
+**2. Token Issuance**
+- Backend generates JWT token using `jose.jwt.encode()` with HS256 algorithm.
+- Token payload: `{"sub": practitioner_id, "exp": utc_timestamp + 8h}`.
+
+**3. Session Start**
+- Frontend stores token in `localStorage`.
+
+**4. Authenticated Requests**
+- Frontend sends `Authorization: Bearer <token>` header on all API requests.
+- Backend dependency `get_current_practitioner()` decodes JWT.
+- If valid, request proceeds with `Practitioner` context.
 
 ## Core Functional Flows
 

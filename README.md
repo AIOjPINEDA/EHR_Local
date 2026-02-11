@@ -6,11 +6,11 @@
   <img src="https://img.shields.io/badge/Status-V1%20Pilot-22c55e?style=for-the-badge" alt="Status" />
   <img src="https://img.shields.io/badge/Version-1.0.0-0ea5e9?style=for-the-badge" alt="Version" />
   <img src="https://img.shields.io/badge/License-Private-f43f5e?style=for-the-badge" alt="License" />
-</p>
-
-<p align="left">
+  <a href="https://deepwiki.com/AIOjPINEDA/EHR_Local/2.1-development-setup"><img src="https://img.shields.io/badge/Docs-DeepWiki-563d7c?style=for-the-badge&logo=read-the-docs&logoColor=white" alt="DeepWiki Documentation" /></a>
   <img src="https://img.shields.io/github/actions/workflow/status/AIOjPINEDA/EHR_Local/ci.yml?branch=main&style=for-the-badge&label=CI" alt="CI" />
 </p>
+
+
 
 <p align="left">
   <img src="https://img.shields.io/badge/Next.js-14-111827?style=flat-square&logo=nextdotjs" alt="Next.js" />
