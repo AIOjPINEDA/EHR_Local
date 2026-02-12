@@ -6,15 +6,13 @@ services:
   - type: web
     name: consultamed-backend
     runtime: python
+    rootDir: backend
     plan: free
     envVars:
-      # IMPORTANT: DATABASE_URL will be updated after database creation
-      # For now, using a temporary value - USER MUST UPDATE THIS
-      - key: DATABASE_URL
+      # IMPORTANT: RENDER_DATABASE_URL must be updated after database creation
+      # Use the INTERNAL Render DB URL for runtime and add +asyncpg.
+      - key: RENDER_DATABASE_URL
         value: "postgresql+asyncpg://temp:temp@localhost:5432/temp"
-        # fromDatabase:
-        #   name: consultamed-db
-        #   property: connectionString
       - key: DATABASE_MODE
         value: render_cloud
       - key: JWT_SECRET_KEY
@@ -36,6 +34,7 @@ services:
   - type: web
     name: consultamed-frontend
     runtime: node
+    rootDir: frontend
     plan: free
     envVars:
       - key: NEXT_PUBLIC_API_URL
