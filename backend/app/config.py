@@ -13,9 +13,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
     # Database
-    DATABASE_MODE: Literal["local_pg17", "supabase_cloud"] = "local_pg17"
+    DATABASE_MODE: Literal["local_pg17", "supabase_cloud", "render_cloud"] = "local_pg17"
     LOCAL_DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/consultamed"
     SUPABASE_DATABASE_URL: str = ""
+    RENDER_DATABASE_URL: str = ""
     DATABASE_URL: str = ""
 
     # JWT Authentication
@@ -48,6 +49,15 @@ class Settings(BaseSettings):
                     "and DATABASE_URL is empty."
                 )
             self.DATABASE_URL = self.SUPABASE_DATABASE_URL
+            return self
+
+        if self.DATABASE_MODE == "render_cloud":
+            if not self.RENDER_DATABASE_URL:
+                raise ValueError(
+                    "RENDER_DATABASE_URL must be set when DATABASE_MODE=render_cloud "
+                    "and DATABASE_URL is empty."
+                )
+            self.DATABASE_URL = self.RENDER_DATABASE_URL
             return self
 
         self.DATABASE_URL = self.LOCAL_DATABASE_URL

@@ -8,10 +8,15 @@ services:
     runtime: python
     plan: free
     envVars:
+      # IMPORTANT: DATABASE_URL will be updated after database creation
+      # For now, using a temporary value - USER MUST UPDATE THIS
       - key: DATABASE_URL
-        fromDatabase:
-          name: consultamed-db
-          property: connectionString
+        value: "postgresql+asyncpg://temp:temp@localhost:5432/temp"
+        # fromDatabase:
+        #   name: consultamed-db
+        #   property: connectionString
+      - key: DATABASE_MODE
+        value: render_cloud
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: JWT_ALGORITHM
