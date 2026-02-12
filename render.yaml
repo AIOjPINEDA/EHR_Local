@@ -49,4 +49,3 @@ databases:
   - name: consultamed-db
     plan: free
     databaseName: consultamed
-    user: postgres
