@@ -1,43 +1,47 @@
 # Deploy Frontend Next.js to Render
 
 ## Summary
-Configured Next.js frontend for static export deployment on Render as a Web Service.
+Configured Next.js frontend for Server-Side Rendering (SSR) deployment on Render as a Node Web Service.
 
-## Changes Made
+## Configuration
 
-### 1. Updated `frontend/next.config.js`
-- Added `output: 'export'` for static generation
-- Added `trailingSlash: true` for proper routing
-- Added `distDir: 'out'` to specify output directory
-- Set `images.unoptimized: true` for static export compatibility
+### 1. `render.yaml` - Single Source of Truth
+The main `render.yaml` file at the repository root contains the configuration for both backend and frontend services.
 
-### 2. Created `render-frontend.yaml`
-- Render configuration file for Web Service deployment
-- Static site configuration with Node.js 18
-- Environment variables:
-  - `NEXT_PUBLIC_API_URL` → Backend URL (update with actual URL)
-  - `NEXT_PUBLIC_APP_NAME` → ConsultaMed
-- Security headers configured
-- API proxy routing for backend calls
+**Frontend Service Configuration:**
+- Type: Web Service (Node.js)
+- Runtime: node
+- Plan: free
+- Build Command: `npm run build`
+- Start Command: `npm start`
+- Environment Variables:
+  - `NEXT_PUBLIC_API_URL` → Backend URL
+  - `NEXT_PUBLIC_ENVIRONMENT` → production
+
+### 2. `frontend/next.config.js` - SSR Configuration
+The Next.js configuration is set up for Server-Side Rendering:
+- No `output: 'export'` (allows SSR)
+- `reactStrictMode: true` for best practices
+- Image optimization enabled
 
 ## Deployment Instructions
 
-### Option A: Using Render Dashboard (Recommended)
+### Using render.yaml (Recommended)
+1. Ensure `render.yaml` is in your repository root
+2. Connect your repository to Render
+3. Render will automatically detect and configure both services
+
+### Manual Setup (Alternative)
 1. Go to [Render Dashboard](https://dashboard.render.com)
-2. Click **New** → **Static Site**
+2. Click **New** → **Web Service**
 3. Connect your GitHub repository
 4. Configure:
    - **Name**: `consultamed-frontend`
    - **Branch**: `main`
    - **Root Directory**: `frontend`
+   - **Runtime**: Node
    - **Build Command**: `npm install && npm run build`
-   - **Publish Directory**: `out`
-   - **Node Version**: `18`
-
-### Option B: Using render.yaml
-1. Push `render-frontend.yaml` to your repository
-2. Connect your repository to Render
-3. Render will auto-configure using the YAML file
+   - **Start Command**: `npm start`
 
 ## Environment Variables to Set in Render
 
@@ -76,9 +80,9 @@ NEXT_PUBLIC_APP_NAME=ConsultaMed
 ## Troubleshooting
 
 ### Build Fails with Image Errors
-The `images.unoptimized: true` setting should resolve this. If issues persist:
-- Check if any components are using `next/image` with external domains
-- Consider using regular `<img>` tags for static export
+If issues persist:
+- Check if any components are using `next/image` with unconfigured external domains
+- Add allowed domains to `images.domains` in next.config.js if needed
 
 ### API Calls Fail
 1. Verify `NEXT_PUBLIC_API_URL` is correctly set in Render
@@ -86,9 +90,10 @@ The `images.unoptimized: true` setting should resolve this. If issues persist:
 3. Ensure backend is deployed and accessible
 
 ### Routes Not Working
-The `trailingSlash: true` configuration ensures proper routing for static exports.
+SSR handles routing automatically. Ensure all routes work without client-side configuration.
 
 ## Notes
-- Static export means the frontend is pre-built at deploy time
-- No server-side features available (must use client-side only)
-- Perfect for cost-effective hosting on Render's free tier
+- SSR enables dynamic data fetching for medical records
+- Server-side rendering provides better security for sensitive healthcare data
+- Real-time patient data updates without page reloads
+- Better SEO and initial load performance for medical dashboard
