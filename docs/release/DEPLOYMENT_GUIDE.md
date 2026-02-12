@@ -2,6 +2,8 @@
 
 > **Versión:** V1 Pilot  
 > **Fecha:** 2026-02-07
+> 
+> **Migración PG17:** Para guía académica completa de migración desde Supabase a PostgreSQL 17 local, ver [docs/playbooks/pg17-migration-readme.md](../playbooks/pg17-migration-readme.md)
 
 ---
 
@@ -51,8 +53,14 @@ FROM practitioners;
 #### Backend (.env)
 
 ```env
+# Selección explícita de proveedor de base de datos
+DATABASE_MODE=local_pg17
+LOCAL_DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+SUPABASE_DATABASE_URL=postgresql+asyncpg://postgres:<password>@db.<project>.supabase.co:5432/postgres
+# URL efectiva usada por backend (debe corresponder al modo)
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+
 # Producción
-DATABASE_URL=postgresql+asyncpg://user:password@host:5432/consultamed
 JWT_SECRET_KEY=<genera-un-secreto-de-32-caracteres>
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=480
@@ -62,6 +70,7 @@ DEBUG=false
 ```
 
 > ⚠️ **Importante:** Cambia `JWT_SECRET_KEY` a un valor único para producción.
+> Si despliegas PostgreSQL local con Docker, fija imagen explícita de la serie 17: `LOCAL_POSTGRES_IMAGE=postgres:17.7`.
 
 #### Frontend (.env.local)
 
