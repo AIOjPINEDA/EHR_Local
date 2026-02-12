@@ -21,12 +21,12 @@ Una vez creada la base de datos, Render mostrará dos URLs:
 
 **Internal Database URL** (para uso dentro de Render):
 ```
-postgresql://user:password@host:5432/consultamed
+postgresql://USER:PASSWORD@dpg-XXXX-a/DATABASE
 ```
 
 **External Database URL** (para acceso desde local/deployments):
 ```
-postgresql://user:password@host:5432/consultamed
+postgresql://USER:PASSWORD@dpg-XXXX-a.REGION-postgres.render.com/DATABASE
 ```
 
 ### 3. Configurar Variables de Entorno
@@ -80,12 +80,12 @@ psql $RENDER_EXTERNAL_DB_URL -c "SELECT COUNT(*) FROM practitioners;"
 psql $RENDER_EXTERNAL_DB_URL -c "SELECT COUNT(*) FROM patients;"
 ```
 
-### 6. Configurar en Railway (Backend)
+### 6. Configurar en Render (Backend)
 
-En el dashboard de Railway:
+En el dashboard de Render:
 1. Ir al servicio del backend
-2. Settings → Environment Variables
-3. Agregar:
+2. "Environment" → "Add Environment Variable"
+3. Agregar/actualizar:
    - `DATABASE_MODE=render_cloud`
    - `RENDER_DATABASE_URL=postgresql+asyncpg://user:password@host:5432/consultamed`
 
