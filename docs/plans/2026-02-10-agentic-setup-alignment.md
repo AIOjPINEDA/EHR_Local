@@ -101,7 +101,7 @@ Expected: policy and naming are clearly documented.
 
 **Step 1: Run focused architecture guardrail tests**
 
-Run: `cd backend && pytest tests/unit/test_architecture_dead_code_guards.py -v --tb=short`
+Run: `cd backend && .venv/bin/pytest tests/unit/test_architecture_dead_code_guards.py -v --tb=short`
 Expected: all tests pass; warning-only drift output appears only if mismatches exist.
 
 **Step 2: Run local gate**
