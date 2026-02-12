@@ -36,10 +36,19 @@ class Settings(BaseSettings):
     SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_KEY: str = ""
 
+    @staticmethod
+    def _ensure_asyncpg(url: str) -> str:
+        """Normaliza URLs de Postgres para SQLAlchemy async (asyncpg)."""
+        normalized = (url or "").strip()
+        if normalized.startswith("postgresql://") and "+asyncpg" not in normalized:
+            return normalized.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return normalized
+
     @model_validator(mode="after")
     def resolve_database_url(self) -> "Settings":
         """Resolve runtime database URL from explicit deployment mode."""
         if self.DATABASE_URL:
+            self.DATABASE_URL = self._ensure_asyncpg(self.DATABASE_URL)
             return self
 
         if self.DATABASE_MODE == "supabase_cloud":
@@ -48,7 +57,7 @@ class Settings(BaseSettings):
                     "SUPABASE_DATABASE_URL must be set when DATABASE_MODE=supabase_cloud "
                     "and DATABASE_URL is empty."
                 )
-            self.DATABASE_URL = self.SUPABASE_DATABASE_URL
+            self.DATABASE_URL = self._ensure_asyncpg(self.SUPABASE_DATABASE_URL)
             return self
 
         if self.DATABASE_MODE == "render_cloud":
@@ -57,10 +66,10 @@ class Settings(BaseSettings):
                     "RENDER_DATABASE_URL must be set when DATABASE_MODE=render_cloud "
                     "and DATABASE_URL is empty."
                 )
-            self.DATABASE_URL = self.RENDER_DATABASE_URL
+            self.DATABASE_URL = self._ensure_asyncpg(self.RENDER_DATABASE_URL)
             return self
 
-        self.DATABASE_URL = self.LOCAL_DATABASE_URL
+        self.DATABASE_URL = self._ensure_asyncpg(self.LOCAL_DATABASE_URL)
         return self
 
 

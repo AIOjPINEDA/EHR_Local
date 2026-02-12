@@ -9,10 +9,10 @@ services:
     rootDir: backend
     plan: free
     envVars:
-      # IMPORTANT: RENDER_DATABASE_URL must be updated after database creation
-      # Use the INTERNAL Render DB URL for runtime and add +asyncpg.
       - key: RENDER_DATABASE_URL
-        value: "postgresql+asyncpg://temp:temp@localhost:5432/temp"
+        fromDatabase:
+          name: consultamed-db
+          property: connectionString
       - key: DATABASE_MODE
         value: render_cloud
       - key: JWT_SECRET_KEY
@@ -27,7 +27,7 @@ services:
         value: production
       - key: DEBUG
         value: false
-    buildCommand: "./render_build.sh"
+    buildCommand: "bash ./render_build.sh"
     startCommand: "gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT"
     
   # Frontend Web App
