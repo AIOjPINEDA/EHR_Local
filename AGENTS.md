@@ -146,7 +146,7 @@ Data models follow FHIR nomenclature:
 ## Definition of Done
 
 - `./scripts/test_gate.sh` passes locally (includes schema hash check).
-- `cd backend && pytest tests/unit/test_architecture_dead_code_guards.py -v` passes.
+- `cd backend && .venv/bin/pytest tests/unit/test_architecture_dead_code_guards.py -v` passes.
 - New infrastructural abstractions (routing wrappers, validators, service helpers) have at least one runtime consumer and one automated test.
 - Architecture and agent contract documentation reflect implemented state (not aspirational state).
 
