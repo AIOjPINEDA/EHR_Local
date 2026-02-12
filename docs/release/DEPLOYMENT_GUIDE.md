@@ -2,6 +2,8 @@
 
 > **Versión:** V1 Pilot  
 > **Fecha:** 2026-02-07
+> 
+> **Migración PG17:** Para guía académica completa de migración desde Supabase a PostgreSQL 17 local, ver [docs/playbooks/pg17-migration-readme.md](../playbooks/pg17-migration-readme.md)
 
 ---
 

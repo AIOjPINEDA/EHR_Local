@@ -24,13 +24,15 @@ flowchart TB
     end
 
     subgraph Data ["Data"]
-        PG["PostgreSQL 15 (Supabase)"]
+        PG17["PostgreSQL 17 (Local)"]
+        PG15["PostgreSQL 15 (Supabase Cloud)"]
     end
 
     Browser --> NextJS
     NextJS <-->|JSON over HTTP| FastAPI
     FastAPI --> PDF
-    FastAPI <--> PG
+    FastAPI <-->|Primary| PG17
+    FastAPI <-->|Fallback| PG15
 ```
 
 ## Authentication Model (Current)
@@ -145,4 +147,4 @@ EHR_Guadalix/
 
 ---
 
-*Last updated: 2026-02-10*
+*Last updated: 2026-02-12*

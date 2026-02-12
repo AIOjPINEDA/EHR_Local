@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/FastAPI-0.109+-059669?style=flat-square&logo=fastapi" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Python-3.11+-2563eb?style=flat-square&logo=python" alt="Python" />
   <img src="https://img.shields.io/badge/TypeScript-5.x-2563eb?style=flat-square&logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/PostgreSQL-15-1d4ed8?style=flat-square&logo=postgresql" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/PostgreSQL-17-1d4ed8?style=flat-square&logo=postgresql" alt="PostgreSQL" />
 </p>
 
 ## ✨ ¿Qué incluye?
@@ -81,13 +81,13 @@ npm run dev
 
 3) Base de datos:
 
-- Si `backend/.env` usa `DATABASE_URL` de Supabase cloud/pooler, **no** necesitas `supabase start`.
-- Si `backend/.env` apunta a local (`127.0.0.1:54322`), ejecuta:
+- Modo principal local (`DATABASE_MODE=local_pg17`): levanta PostgreSQL 17 con:
 
 ```bash
-cd supabase
-supabase start
+./scripts/setup-local-db.sh
 ```
+
+- Fallback cloud (`DATABASE_MODE=supabase_cloud`): configura `SUPABASE_DATABASE_URL` y no levantes DB local.
 
 4) URLs de trabajo:
 
@@ -119,7 +119,7 @@ supabase start
 <details>
 <summary><strong>2) Base de datos local (Docker - recomendado)</strong></summary>
 
-Usa este setup para tener un entorno 100% local en macOS con PostgreSQL 15.
+Usa este setup para tener un entorno 100% local en macOS con PostgreSQL 17.
 
 **macOS**
 
@@ -128,15 +128,18 @@ Usa este setup para tener un entorno 100% local en macOS con PostgreSQL 15.
 ```
 
 El script:
-- levanta `consultamed-db` con PostgreSQL 15
+- levanta `consultamed-db` con PostgreSQL 17 (default `postgres:17.7`)
 - espera healthcheck de la base con progreso visible
 - aplica `supabase/migrations/*.sql` en orden
 - evita duplicados usando `schema_migrations` (idempotente)
 - permite ajustar timeout con `READINESS_TIMEOUT_SECONDS` (default: `180`)
+- permite override puntual de imagen con `LOCAL_POSTGRES_IMAGE`
 
 En `backend/.env` configura:
 
 ```env
+DATABASE_MODE=local_pg17
+LOCAL_DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
 DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
 ```
 
@@ -157,6 +160,9 @@ cp .env.example .env
 Configura `.env`:
 
 ```env
+DATABASE_MODE=local_pg17
+LOCAL_DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+SUPABASE_DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
 DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
 JWT_SECRET_KEY=tu-secreto-super-seguro-cambialo
 JWT_ALGORITHM=HS256
@@ -241,11 +247,13 @@ Smoke test passed:
 flowchart LR
     FE["Frontend\nNext.js 14 + TypeScript"]
     API["Backend\nFastAPI + SQLAlchemy"]
-    DB["PostgreSQL\nSupabase"]
+    DB["PostgreSQL 17\nlocal primary"]
+    SB["Supabase PostgreSQL\ncloud fallback"]
     PDF["WeasyPrint\nRecetas PDF"]
 
     FE <--> API
     API <--> DB
+    API -. fallback .-> SB
     API --> PDF
 ```
 
@@ -327,6 +335,7 @@ npm run generate:types
 - [docs/architecture/overview.md](./docs/architecture/overview.md): arquitectura implementada
 - [docs/specs/README.md](./docs/specs/README.md): política y ubicación de specs activas
 - [docs/playbooks/agentic-repo-bootstrap.md](./docs/playbooks/agentic-repo-bootstrap.md): guía base agent-first reutilizable
+- [docs/playbooks/pg17-migration-readme.md](./docs/playbooks/pg17-migration-readme.md): tutorial académico paso a paso de migración Supabase -> PG17
 - [docs/release/DEPLOYMENT_GUIDE.md](./docs/release/DEPLOYMENT_GUIDE.md): despliegue
 - [docs/release/v1-readiness-checklist.md](./docs/release/v1-readiness-checklist.md): checklist release
 
