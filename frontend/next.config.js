@@ -3,10 +3,7 @@ const nextConfig = {
   // Enable strict mode for better React practices
   reactStrictMode: true,
   
-  // Output configuration for Render deployment
-  output: 'export',
-  trailingSlash: true,
-  distDir: 'out',
+  // Server-side rendering enabled for dynamic routes
   
   // PWA configuration will be added later
   // using next-pwa package
@@ -16,9 +13,8 @@ const nextConfig = {
     NEXT_PUBLIC_APP_NAME: 'ConsultaMed',
   },
   
-  // Optimize images - disable for static export
+  // Image optimization for server-side rendering
   images: {
-    unoptimized: true,
     domains: [],
   },
   
