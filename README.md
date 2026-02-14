@@ -62,32 +62,33 @@
 
 Necesitas **backend + frontend** activos.
 
+Todos los comandos con `./scripts/...` asumen que estás en la **raíz del repo** (`EHR_Guadalix/`).
+Si estás dentro de `backend/`, usa `../scripts/...`.
+
 <details>
 <summary><strong> Pasos rápidos de uso diario</strong></summary>
 
-1) Levanta backend:
+1) Base de datos:
+
+- Perfil local (`DATABASE_URL` apuntando a PostgreSQL 17 local): levanta la base con:
+- desde raíz: `./scripts/setup-local-db.sh`
+- desde `backend/`: `../scripts/setup-local-db.sh`
+
+- Perfil Supabase (`DATABASE_URL` apuntando a Supabase): no levantes DB local.
+
+2) Levanta backend:
 
 ```bash
 cd backend
 uvicorn app.main:app --reload --port 8000
 ```
 
-2) Levanta frontend (en otra terminal):
+3) Levanta frontend (en otra terminal):
 
 ```bash
 cd frontend
 npm run dev
 ```
-
-3) Base de datos:
-
-- Modo principal local (`DATABASE_MODE=local_pg17`): levanta PostgreSQL 17 con:
-
-```bash
-./scripts/setup-local-db.sh
-```
-
-- Fallback cloud (`DATABASE_MODE=supabase_cloud`): configura `SUPABASE_DATABASE_URL` y no levantes DB local.
 
 4) URLs de trabajo:
 
@@ -127,6 +128,9 @@ Usa este setup para tener un entorno 100% local en macOS con PostgreSQL 17.
 ./scripts/setup-local-db.sh
 ```
 
+Validación opcional:
+`ls -l scripts/setup-local-db.sh`
+
 El script:
 - levanta `consultamed-db` con PostgreSQL 17 (default `postgres:17.7`)
 - espera healthcheck de la base con progreso visible
@@ -135,11 +139,9 @@ El script:
 - permite ajustar timeout con `READINESS_TIMEOUT_SECONDS` (default: `180`)
 - permite override puntual de imagen con `LOCAL_POSTGRES_IMAGE`
 
-En `backend/.env` configura:
+En `backend/.env` usa el perfil local:
 
 ```env
-DATABASE_MODE=local_pg17
-LOCAL_DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
 DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
 ```
 
@@ -160,10 +162,8 @@ cp .env.example .env
 Configura `.env`:
 
 ```env
-DATABASE_MODE=local_pg17
-LOCAL_DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
-SUPABASE_DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
 DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+
 JWT_SECRET_KEY=tu-secreto-super-seguro-cambialo
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=480
@@ -171,6 +171,21 @@ FRONTEND_URL=http://localhost:3000
 ENVIRONMENT=development
 DEBUG=true
 ```
+
+`backend/.env.local.example` y `backend/.env.supabase.example` son plantillas de referencia (solo `DATABASE_URL`).
+Edita `backend/.env` y cambia únicamente la línea `DATABASE_URL` según el perfil que quieras usar.
+Para Supabase, usa:
+`DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres`
+
+Cambio manual de perfil (resumen):
+
+```bash
+grep '^DATABASE_URL=' .env
+../scripts/setup-local-db.sh
+```
+
+Si usas Supabase y quieres apagar PostgreSQL local (opcional):
+`cd .. && docker compose down`
 
 Si ya ejecutaste el setup local de Docker, las migraciones ya están aplicadas.
 

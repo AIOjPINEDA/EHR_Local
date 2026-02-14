@@ -35,6 +35,15 @@ flowchart TB
     FastAPI <-->|Fallback| PG15
 ```
 
+## Database Runtime Selection
+
+- Backend uses a single runtime selector: `DATABASE_URL`.
+- Local profile example: `backend/.env.local.example`.
+- Supabase profile example: `backend/.env.supabase.example`.
+- Operator switch: edit `DATABASE_URL` in `backend/.env`.
+- Infrastructure provisioning (Docker + migrations) remains in `./scripts/setup-local-db.sh` and is independent from runtime selector logic.
+- Script path: run from repo root (`./scripts/setup-local-db.sh`) or from `backend/` as `../scripts/setup-local-db.sh`.
+
 ## Authentication Model (Current)
 
 ### Authentication Flow
