@@ -30,12 +30,11 @@ def test_env_example_exposes_explicit_dual_database_mode() -> None:
 
 
 def test_backend_config_resolves_database_url_by_mode() -> None:
-    """Backend settings must expose explicit selector for local/supabase/render DB mode."""
+    """Backend settings must expose explicit selector for local/supabase DB mode."""
     config = (_repo_root() / "backend" / "app" / "config.py").read_text(encoding="utf-8")
-    assert 'DATABASE_MODE: Literal["local_pg17", "supabase_cloud", "render_cloud"] = "local_pg17"' in config
+    assert 'DATABASE_MODE: Literal["local_pg17", "supabase_cloud"] = "local_pg17"' in config
     assert "LOCAL_DATABASE_URL: str = " in config
     assert "SUPABASE_DATABASE_URL: str = " in config
-    assert "RENDER_DATABASE_URL: str = " in config
     assert "def resolve_database_url(self) -> \"Settings\":" in config
 
 
