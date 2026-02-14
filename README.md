@@ -138,11 +138,13 @@ El script:
 - evita duplicados usando `schema_migrations` (idempotente)
 - permite ajustar timeout con `READINESS_TIMEOUT_SECONDS` (default: `180`)
 - permite override puntual de imagen con `LOCAL_POSTGRES_IMAGE`
+- expone PostgreSQL local en `localhost:54329` por defecto (evita conflicto con PostgreSQL nativo en `5432`)
+- permite override puntual del puerto host con `LOCAL_POSTGRES_PORT`
 
 En `backend/.env` usa el perfil local:
 
 ```env
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:54329/consultamed
 ```
 
 </details>
@@ -162,7 +164,7 @@ cp .env.example .env
 Configura `.env`:
 
 ```env
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:54329/consultamed
 
 JWT_SECRET_KEY=tu-secreto-super-seguro-cambialo
 JWT_ALGORITHM=HS256

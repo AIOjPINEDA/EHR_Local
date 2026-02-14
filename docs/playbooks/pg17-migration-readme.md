@@ -129,7 +129,7 @@ nano backend/.env
 Variables críticas:
 ```env
 # URL efectiva para PostgreSQL 17 local
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:54329/consultamed
 
 # URL efectiva para Supabase (alternativa)
 # DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
@@ -250,7 +250,7 @@ docker compose down
 ### Cambiar a Modo Local PG17
 Edita `backend/.env` con la URL local y levanta PostgreSQL local.
 ```bash
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:54329/consultamed
 ./scripts/setup-local-db.sh
 ```
 
@@ -321,7 +321,7 @@ cd /ruta/a/EHR_Guadalix
 docker ps | grep postgres
 
 # Verificar puerto
-netstat -an | grep 5432
+netstat -an | grep 54329
 
 # Reiniciar si es necesario
 docker compose restart db

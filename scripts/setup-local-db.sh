@@ -8,11 +8,17 @@ COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
 CONTAINER_NAME="consultamed-db"
 DB_USER="postgres"
 DB_NAME="consultamed"
+LOCAL_POSTGRES_PORT="${LOCAL_POSTGRES_PORT:-54329}"
 READINESS_TIMEOUT_SECONDS="${READINESS_TIMEOUT_SECONDS:-180}"
 READINESS_INTERVAL_SECONDS=2
 
 if ! [[ "$READINESS_TIMEOUT_SECONDS" =~ ^[0-9]+$ ]]; then
   echo "READINESS_TIMEOUT_SECONDS must be an integer (current: $READINESS_TIMEOUT_SECONDS)"
+  exit 1
+fi
+
+if ! [[ "$LOCAL_POSTGRES_PORT" =~ ^[0-9]+$ ]]; then
+  echo "LOCAL_POSTGRES_PORT must be an integer (current: $LOCAL_POSTGRES_PORT)"
   exit 1
 fi
 
@@ -54,16 +60,29 @@ fi
 
 existing_container_id="$(docker ps -aq -f name=^/${CONTAINER_NAME}$)"
 if [[ -n "$existing_container_id" ]]; then
-  echo "Found existing container '$CONTAINER_NAME' (id: $existing_container_id). Reusing it."
-  existing_container_status="$(docker inspect -f '{{.State.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo "unknown")"
-  if [[ "$existing_container_status" != "running" ]]; then
-    echo "Starting existing container '$CONTAINER_NAME'..."
-    docker start "$CONTAINER_NAME" >/dev/null
+  current_mapped_port="$(
+    docker inspect -f '{{with index .NetworkSettings.Ports "5432/tcp"}}{{(index . 0).HostPort}}{{end}}' "$CONTAINER_NAME" 2>/dev/null || true
+  )"
+  if [[ -z "$current_mapped_port" || "$current_mapped_port" != "$LOCAL_POSTGRES_PORT" ]]; then
+    current_mapped_port_display="${current_mapped_port:-<none>}"
+    echo "Found existing container '$CONTAINER_NAME' with host port $current_mapped_port_display (expected: $LOCAL_POSTGRES_PORT)."
+    echo "Recreating container to apply current port mapping..."
+    docker rm -f "$CONTAINER_NAME" >/dev/null
+    "${COMPOSE_CMD[@]}" -f "$COMPOSE_FILE" up -d db
+  else
+    echo "Found existing container '$CONTAINER_NAME' (id: $existing_container_id). Reusing it."
+    existing_container_status="$(docker inspect -f '{{.State.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo "unknown")"
+    if [[ "$existing_container_status" != "running" ]]; then
+      echo "Starting existing container '$CONTAINER_NAME'..."
+      docker start "$CONTAINER_NAME" >/dev/null
+    fi
   fi
 else
   echo "Starting PostgreSQL container..."
   "${COMPOSE_CMD[@]}" -f "$COMPOSE_FILE" up -d db
 fi
+
+echo "Local PostgreSQL host port: $LOCAL_POSTGRES_PORT"
 
 echo "Waiting for database readiness (timeout: ${READINESS_TIMEOUT_SECONDS}s)..."
 READY=false

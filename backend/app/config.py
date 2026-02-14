@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/consultamed"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:54329/consultamed"
 
     # JWT Authentication
     JWT_SECRET_KEY: str = "change-me-in-production"

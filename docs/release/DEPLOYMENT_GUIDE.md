@@ -60,7 +60,7 @@ FROM practitioners;
 #### Backend (.env)
 
 ```env
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:54329/consultamed
 
 JWT_SECRET_KEY=<genera-un-secreto-de-32-caracteres>
 JWT_ALGORITHM=HS256
@@ -78,6 +78,7 @@ Mantén tu `backend/.env` y cambia solo la línea `DATABASE_URL`.
 
 > ⚠️ **Importante:** Cambia `JWT_SECRET_KEY` a un valor único para producción.
 > Si despliegas PostgreSQL local con Docker, fija imagen explícita de la serie 17: `LOCAL_POSTGRES_IMAGE=postgres:17.7`.
+> El puerto host local por defecto es `54329` (override opcional: `LOCAL_POSTGRES_PORT`).
 
 #### Frontend (.env.local)
 
