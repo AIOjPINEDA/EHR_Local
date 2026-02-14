@@ -37,6 +37,20 @@ Columnas en Excel:
 - `Fecha_Nacimiento`: Fecha en formato DD/MM/YYYY
 - `Última_Consulta`: Última consulta registrada
 
+### ⚠️ SEGURIDAD - CRÍTICO
+
+**IMPORTANTE: Los archivos de datos con información de pacientes NUNCA deben estar en git.**
+
+- ✅ Los archivos `data/*.xlsx`, `data/*.csv`, `data/*.xls` están en `.gitignore`
+- ✅ Los datos existen **solo localmente** en tu máquina
+- ❌ **NUNCA** hacer `git add -f` para forzar tracking de datos de pacientes
+- 🔒 Cumplimiento GDPR/LOPD-GDD: PII no puede estar en repositorios
+
+Si necesitas compartir datos:
+1. Usa canales seguros y encriptados
+2. Nunca uses git/GitHub para datos de pacientes
+3. Documenta el proceso en este README (no los datos)
+
 ### Notas
 
 - El script maneja duplicados automáticamente (skip si ya existe)
