@@ -173,3 +173,10 @@ tmp/
 # Git Worktrees
 # ============================================
 .worktrees/
+
+# ============================================
+# Migraciones de Datos
+# ============================================
+# Logs de migraciones (pueden contener info sensible)
+backend/scripts/migrations/*.log
+backend/scripts/migrations/**/*.log
