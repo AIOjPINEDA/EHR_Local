@@ -2,7 +2,6 @@
 ConsultaMed Backend - Configuration Settings
 """
 from functools import lru_cache
-from typing import Literal
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,11 +12,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
     # Database
-    DATABASE_MODE: Literal["local_pg17", "supabase_cloud", "render_cloud"] = "local_pg17"
-    LOCAL_DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/consultamed"
-    SUPABASE_DATABASE_URL: str = ""
-    RENDER_DATABASE_URL: str = ""
-    DATABASE_URL: str = ""
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/consultamed"
 
     # JWT Authentication
     JWT_SECRET_KEY: str = "change-me-in-production"
@@ -31,11 +26,6 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
-    # Supabase (optional)
-    SUPABASE_URL: str = ""
-    SUPABASE_ANON_KEY: str = ""
-    SUPABASE_SERVICE_KEY: str = ""
-
     @staticmethod
     def _ensure_asyncpg(url: str) -> str:
         """Normaliza URLs de Postgres para SQLAlchemy async (asyncpg)."""
@@ -46,30 +36,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def resolve_database_url(self) -> "Settings":
-        """Resolve runtime database URL from explicit deployment mode."""
-        if self.DATABASE_URL:
-            self.DATABASE_URL = self._ensure_asyncpg(self.DATABASE_URL)
-            return self
-
-        if self.DATABASE_MODE == "supabase_cloud":
-            if not self.SUPABASE_DATABASE_URL:
-                raise ValueError(
-                    "SUPABASE_DATABASE_URL must be set when DATABASE_MODE=supabase_cloud "
-                    "and DATABASE_URL is empty."
-                )
-            self.DATABASE_URL = self._ensure_asyncpg(self.SUPABASE_DATABASE_URL)
-            return self
-
-        if self.DATABASE_MODE == "render_cloud":
-            if not self.RENDER_DATABASE_URL:
-                raise ValueError(
-                    "RENDER_DATABASE_URL must be set when DATABASE_MODE=render_cloud "
-                    "and DATABASE_URL is empty."
-                )
-            self.DATABASE_URL = self._ensure_asyncpg(self.RENDER_DATABASE_URL)
-            return self
-
-        self.DATABASE_URL = self._ensure_asyncpg(self.LOCAL_DATABASE_URL)
+        """Normalize and validate runtime database URL."""
+        self.DATABASE_URL = self._ensure_asyncpg(self.DATABASE_URL)
+        if not self.DATABASE_URL:
+            raise ValueError("DATABASE_URL must be set and non-empty.")
         return self
 
 

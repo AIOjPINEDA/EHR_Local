@@ -52,8 +52,18 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "Starting PostgreSQL container..."
-"${COMPOSE_CMD[@]}" -f "$COMPOSE_FILE" up -d db
+existing_container_id="$(docker ps -aq -f name=^/${CONTAINER_NAME}$)"
+if [[ -n "$existing_container_id" ]]; then
+  echo "Found existing container '$CONTAINER_NAME' (id: $existing_container_id). Reusing it."
+  existing_container_status="$(docker inspect -f '{{.State.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo "unknown")"
+  if [[ "$existing_container_status" != "running" ]]; then
+    echo "Starting existing container '$CONTAINER_NAME'..."
+    docker start "$CONTAINER_NAME" >/dev/null
+  fi
+else
+  echo "Starting PostgreSQL container..."
+  "${COMPOSE_CMD[@]}" -f "$COMPOSE_FILE" up -d db
+fi
 
 echo "Waiting for database readiness (timeout: ${READINESS_TIMEOUT_SECONDS}s)..."
 READY=false
