@@ -177,6 +177,11 @@ tmp/
 # ============================================
 # Migraciones de Datos
 # ============================================
+# CRÍTICO: Datos de pacientes - NUNCA subir a git
+backend/scripts/migrations/data/*.xlsx
+backend/scripts/migrations/data/*.csv
+backend/scripts/migrations/data/*.xls
+
 # Logs de migraciones (pueden contener info sensible)
 backend/scripts/migrations/*.log
 backend/scripts/migrations/**/*.log
