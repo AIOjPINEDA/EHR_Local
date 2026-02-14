@@ -64,7 +64,7 @@ echo "[1/7] Backend unit + contract tests (includes architecture dead-code guard
 if ! "$PYTHON_BIN" -c "import pytest" >/dev/null 2>&1; then
   echo "pytest is not available in $PYTHON_BIN."
   echo "Bootstrap backend deps:"
-  echo "  cd backend && python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && pip install ruff"
+  echo "  cd backend && python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt"
   exit 1
 fi
 

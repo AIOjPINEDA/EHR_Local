@@ -52,7 +52,6 @@ cd backend
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-pip install ruff
 ```
 
 ## Coverage Policy (MVP)
