@@ -10,6 +10,8 @@ python-multipart==0.0.9
 # Database
 sqlalchemy==2.0.25
 asyncpg==0.30.0
+# Required by SQLAlchemy async helpers (greenlet_spawn)
+greenlet>=2.0
 alembic==1.13.1
 
 # Validation & Serialization
