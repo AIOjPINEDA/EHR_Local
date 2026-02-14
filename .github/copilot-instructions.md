@@ -3,7 +3,7 @@
 > Canonical source of truth: `AGENTS.md` at repo root.
 > Keep this file as a short operational summary for GitHub Copilot.
 
-Last updated: 2026-02-10
+Last updated: 2026-02-14
 
 ## Project Context
 
@@ -25,6 +25,7 @@ Last updated: 2026-02-10
 
 ```bash
 cd backend
+source .venv/bin/activate
 pytest tests/ -v --tb=short
 ruff check .
 black .
@@ -89,6 +90,7 @@ Recommended local gate:
 Always:
 
 - Validate all inputs in backend
+- Use `backend/.venv` as the canonical local Python environment (avoid root `.venv` for backend workflows)
 - Keep FHIR-style naming (`Patient`, `Encounter`, `Condition`, etc.)
 - Run tests before merge
 - Keep Next.js route groups free of dead wrappers (`layout.tsx` must have at least one UI route consumer)

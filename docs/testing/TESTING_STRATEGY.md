@@ -36,6 +36,9 @@ Run before opening/updating a PR:
 ./scripts/test_gate.sh
 ```
 
+Canonical local Python environment for backend workflows: `backend/.venv`.
+Avoid using a root `.venv` for backend commands to prevent dependency drift.
+
 If `scripts/test_gate.sh` fails because backend Python deps are missing, bootstrap once:
 
 ```bash

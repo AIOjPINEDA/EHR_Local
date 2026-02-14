@@ -293,6 +293,9 @@ EHR_Guadalix/
 
 ## 🧪 Testing y calidad
 
+> Política de entorno Python local: el entorno canónico para backend es `backend/.venv`.
+> Evita usar un `.venv` en raíz para flujos de backend para prevenir desalineación de dependencias.
+
 <details>
 <summary><strong>Backend</strong></summary>
 

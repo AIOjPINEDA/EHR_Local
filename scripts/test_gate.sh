@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/backend"
 FRONTEND_DIR="$ROOT_DIR/frontend"
+CANONICAL_PYTHON="$BACKEND_DIR/.venv/bin/python"
 
 if [[ ! -d "$BACKEND_DIR" || ! -d "$FRONTEND_DIR" ]]; then
   echo "Expected backend/ and frontend/ directories next to scripts/."
@@ -11,27 +12,36 @@ if [[ ! -d "$BACKEND_DIR" || ! -d "$FRONTEND_DIR" ]]; then
 fi
 
 POSSIBLE_PYTHONS=(
-  "$BACKEND_DIR/.venv/bin/python"
-  "/tmp/consultamed_venv/bin/python"
   "$(command -v python3.11 || true)"
   "$(command -v python3 || true)"
 )
 
 PYTHON_BIN=""
-for py in "${POSSIBLE_PYTHONS[@]}"; do
-  # Check if python exists AND can import standard library (minimal sanity check)
-  if [[ -x "$py" ]] && "$py" -c "import sys" >/dev/null 2>&1; then
-    PYTHON_BIN="$py"
-    # Prefer one with functioning pytest
-    if "$py" -m pytest --version >/dev/null 2>&1; then
-        PYTHON_BIN="$py"
-        break
-    fi
+if [[ -n "${CONSULTAMED_PYTHON:-}" ]]; then
+  if [[ -x "$CONSULTAMED_PYTHON" ]] && "$CONSULTAMED_PYTHON" -m pytest --version >/dev/null 2>&1; then
+    PYTHON_BIN="$CONSULTAMED_PYTHON"
+  else
+    echo "CONSULTAMED_PYTHON is set but unusable: $CONSULTAMED_PYTHON"
+    echo "Expected an executable Python with pytest available."
+    exit 1
   fi
-done
+elif [[ -x "$CANONICAL_PYTHON" ]] && "$CANONICAL_PYTHON" -m pytest --version >/dev/null 2>&1; then
+  PYTHON_BIN="$CANONICAL_PYTHON"
+else
+  for py in "${POSSIBLE_PYTHONS[@]}"; do
+    if [[ -x "$py" ]] && "$py" -m pytest --version >/dev/null 2>&1; then
+      PYTHON_BIN="$py"
+      break
+    fi
+  done
+
+  if [[ -n "$PYTHON_BIN" ]]; then
+    echo "Warning: backend/.venv not found or missing pytest; falling back to $PYTHON_BIN"
+  fi
+fi
 
 if [[ -z "$PYTHON_BIN" ]]; then
-  echo "Python not found. Install Python 3.11+."
+  echo "Python not found. Install Python 3.11+ and bootstrap backend/.venv."
   exit 1
 fi
 echo "Using Python: $PYTHON_BIN"
@@ -39,8 +49,6 @@ echo "Using Python: $PYTHON_BIN"
 RUFF_BIN=""
 if [[ -x "$BACKEND_DIR/.venv/bin/ruff" ]]; then
   RUFF_BIN="$BACKEND_DIR/.venv/bin/ruff"
-elif [[ -x "/tmp/consultamed_venv/bin/ruff" ]]; then
-  RUFF_BIN="/tmp/consultamed_venv/bin/ruff"
 elif command -v ruff >/dev/null 2>&1; then
   RUFF_BIN="$(command -v ruff)"
 fi
@@ -48,8 +56,6 @@ fi
 MYPY_BIN=""
 if [[ -x "$BACKEND_DIR/.venv/bin/mypy" ]]; then
   MYPY_BIN="$BACKEND_DIR/.venv/bin/mypy"
-elif [[ -x "/tmp/consultamed_venv/bin/mypy" ]]; then
-  MYPY_BIN="/tmp/consultamed_venv/bin/mypy"
 elif command -v mypy >/dev/null 2>&1; then
   MYPY_BIN="$(command -v mypy)"
 fi
@@ -58,7 +64,7 @@ echo "[1/7] Backend unit + contract tests (includes architecture dead-code guard
 if ! "$PYTHON_BIN" -c "import pytest" >/dev/null 2>&1; then
   echo "pytest is not available in $PYTHON_BIN."
   echo "Bootstrap backend deps:"
-  echo "  cd backend && python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt"
+  echo "  cd backend && python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && pip install ruff"
   exit 1
 fi
 

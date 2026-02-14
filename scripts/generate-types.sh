@@ -16,22 +16,35 @@ FRONTEND_DIR="$REPO_ROOT/frontend"
 SCHEMA_FILE="$FRONTEND_DIR/openapi.json"
 GENERATED_FILE="$FRONTEND_DIR/src/types/api.generated.ts"
 
-# ── 1. Resolve Python with venv fallback ──────────────────────
-# ── 1. Resolve Python with venv fallback ──────────────────────
+# ── 1. Resolve Python (backend/.venv canonical) ───────────────
+CANONICAL_PYTHON="$BACKEND_DIR/.venv/bin/python"
 POSSIBLE_PYTHONS=(
-  "$BACKEND_DIR/.venv/bin/python"
-  "/tmp/consultamed_venv/bin/python"
   "$(command -v python3.11 || true)"
   "$(command -v python3 || true)"
 )
 
 PYTHON_BIN=""
-for py in "${POSSIBLE_PYTHONS[@]}"; do
-  if [[ -x "$py" ]] && "$py" -c "from fastapi import FastAPI" >/dev/null 2>&1; then
-    PYTHON_BIN="$py"
-    break
+if [[ -n "${CONSULTAMED_PYTHON:-}" ]]; then
+  if [[ -x "$CONSULTAMED_PYTHON" ]] && "$CONSULTAMED_PYTHON" -c "from fastapi import FastAPI" >/dev/null 2>&1; then
+    PYTHON_BIN="$CONSULTAMED_PYTHON"
+  else
+    echo "❌ CONSULTAMED_PYTHON is set but unusable: $CONSULTAMED_PYTHON"
+    exit 1
   fi
-done
+elif [[ -x "$CANONICAL_PYTHON" ]] && "$CANONICAL_PYTHON" -c "from fastapi import FastAPI" >/dev/null 2>&1; then
+  PYTHON_BIN="$CANONICAL_PYTHON"
+else
+  for py in "${POSSIBLE_PYTHONS[@]}"; do
+    if [[ -x "$py" ]] && "$py" -c "from fastapi import FastAPI" >/dev/null 2>&1; then
+      PYTHON_BIN="$py"
+      break
+    fi
+  done
+
+  if [[ -n "$PYTHON_BIN" ]]; then
+    echo "⚠️  backend/.venv not available; falling back to $PYTHON_BIN"
+  fi
+fi
 
 if [[ -z "$PYTHON_BIN" ]]; then
   echo "❌ No working Python found with fastapi installed."

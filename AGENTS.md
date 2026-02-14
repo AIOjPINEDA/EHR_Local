@@ -43,6 +43,7 @@
 ### Backend
 ```bash
 cd backend
+source .venv/bin/activate
 pytest tests/unit tests/contracts -v --tb=short  # Run fast test suite (default for PR)
 pytest tests/ -v --tb=short        # Run full suite (includes integration when present)
 ruff check .                        # Lint
@@ -117,6 +118,7 @@ Data models follow FHIR nomenclature:
   ```bash
   ./scripts/test_gate.sh
   ```
+- Use `backend/.venv` as the canonical local Python environment (do not rely on root `.venv` for backend workflows)
 - Validate all inputs in backend (frontend validation is only for UX)
 - Use type hints (Python) and strict mode (TypeScript)
 - Follow FHIR R5 naming for data models

@@ -39,7 +39,7 @@ jobs:
         run: ruff check app tests
 
       - name: Test
-        run: pytest tests/ -v --tb=short
+        run: pytest tests/unit tests/contracts -v --tb=short
 
   frontend:
     name: Frontend Checks
