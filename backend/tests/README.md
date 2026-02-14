@@ -44,5 +44,5 @@ Run integration tests only when present:
 
 ```bash
 cd backend
-pytest tests/integration -v --tb=short
+RUN_INTEGRATION=1 pytest tests/integration -v --tb=short
 ```

@@ -24,15 +24,11 @@ Este índice centraliza la documentación vigente para evitar información dispe
 
 ## Planes
 
-- `docs/plans/UI_REFACTORING_PLAN_V2.md`: plan de refactor de UI V2.
-- `docs/plans/2026-02-08-soap-fhir-mvp-implementation-plan.md`: implementación SOAP v1 + base FHIR-ready.
 - `docs/plans/PENDING_TASKS.md`: tareas pendientes no prioritarias y follow-ups operativos.
 
 ## Históricos (no fuente de verdad actual)
 
-- `.archive/specs/001-consultamed-mvp/`: especificación MVP original.
-- `.archive/inspiration_repos/`: documentación comparativa de repos externos.
-- `.archive/plans/`: planes anteriores.
+- Material histórico local en `.archive/` (no versionado en git).
 
 Si hay conflicto entre documentos, priorizar:
 1. `AGENTS.md`

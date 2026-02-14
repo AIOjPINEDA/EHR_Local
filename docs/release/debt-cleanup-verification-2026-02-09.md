@@ -54,12 +54,12 @@
 - Updated: `scripts/test_gate.sh`
 - Updated: `AGENTS.md`
 - Updated: `docs/architecture/overview.md`
-- Updated: `.archive/specs/001-consultamed-mvp/spec.md`
+- Updated: local-only archive material (`.archive/`, not versioned in git)
 - Updated: `docs/plans/2026-02-09-dead-code-governance-optimization.md`
 - Added: `docs/release/debt-cleanup-verification-2026-02-09.md`
 
 ## Residual Risks
 
 1. `validate_allergy_category` removal assumes Pydantic/schema-level constraints remain authoritative for allergy category inputs; monitor contract tests if allergy payload rules evolve.
-2. `.archive/specs/001-consultamed-mvp/spec.md` was under `.archive` ignore rules and was force-added to keep governance notes versioned; keep this intentional behavior in mind for future archive updates.
+2. Historical archive material is local-only and intentionally excluded from git; do not rely on `.archive/` as a versioned source.
 3. Architecture guardrails currently target known high-value debt patterns (route-group orphan layouts and a known dead validator signature); additional dead-code categories may still need future guard tests.

@@ -16,6 +16,14 @@ Esta guía te enseñará a:
 
 ---
 
+## 📍 Convención de Rutas
+
+- Los comandos con `./scripts/...` se ejecutan desde la raíz del repo (`EHR_Guadalix/`).
+- Si estás en `backend/`, usa `../scripts/...`.
+- Puedes validar el script local con: `ls -l scripts/setup-local-db.sh`.
+
+---
+
 ## 📋 Prerrequisitos Tecnológicos
 
 ### Conocimientos Previos
@@ -57,7 +65,7 @@ git --version            # >= 2.30
 
 ### Componentes Clave
 1. **Docker Compose:** Orquesta contenedor PostgreSQL 17
-2. **Config.py:** Resuelve URL de BD según `DATABASE_MODE`
+2. **Config.py:** Normaliza/valida la URL efectiva desde `DATABASE_URL`
 3. **Script de Setup:** Configuración idempotente de BD local
 4. **Migraciones:** SQL versionados aplicados automáticamente
 
@@ -67,7 +75,7 @@ git --version            # >= 2.30
 
 ### Configuración Implementada
 - **PostgreSQL 17.7** fijado en `docker-compose.yml`
-- **Modo dual** implementado via `DATABASE_MODE` en `backend/app/config.py`
+- **Selector runtime único** via `DATABASE_URL` en `backend/app/config.py`
 - **Variables de entorno** preparadas en `backend/.env.example`
 - **Script automatizado** en `scripts/setup-local-db.sh`
 
@@ -107,7 +115,7 @@ docker pull postgres:17.7
 docker images | grep postgres
 ```
 
-### Fase 2: Configuración de Modo Dual
+### Fase 2: Configuración de URL Runtime
 
 #### 2.1 Configurar Variables de Entorno
 ```bash
@@ -120,17 +128,11 @@ nano backend/.env
 
 Variables críticas:
 ```env
-# Modo de base de datos
-DATABASE_MODE=local_pg17
+# URL efectiva para PostgreSQL 17 local
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:54329/consultamed
 
-# URL para PostgreSQL 17 local
-LOCAL_DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
-
-# URL para Supabase (fallback)
-SUPABASE_DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
-
-# URL efectiva (debe coincidir con el modo)
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
+# URL efectiva para Supabase (alternativa)
+# DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
 ```
 
 #### 2.2 Verificar Configuración de Docker Compose
@@ -145,7 +147,7 @@ docker compose config | grep image
 
 #### 3.1 Ejecutar Script de Setup
 ```bash
-# Ejecutar configuración inicial
+# Ejecutar configuración inicial (desde raíz del repo)
 ./scripts/setup-local-db.sh
 
 # El script realiza:
@@ -192,13 +194,14 @@ curl http://localhost:8000/api/v1/health
 python -c "
 import asyncio
 from app.config import settings
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 async def test():
     engine = create_async_engine(settings.DATABASE_URL)
     async with engine.connect() as conn:
-        result = await conn.execute('SELECT version()')
-        print('PostgreSQL Version:', result.fetchone()[0])
+        result = await conn.execute(text('SELECT version()'))
+        print('PostgreSQL Version:', result.scalar_one())
 
 asyncio.run(test())
 "
@@ -206,10 +209,9 @@ asyncio.run(test())
 
 #### 4.3 Ejecutar Suite de Tests
 ```bash
-# Tests rápidos de configuración
 pytest tests/unit/test_pg17_spike_config.py -v
 
-# Tests completos (si aplica)
+cd ..
 ./scripts/test_gate.sh
 ```
 
@@ -238,23 +240,17 @@ curl -H "Authorization: Bearer $TOKEN" \
 ## 🔀 Procedimientos de Switching
 
 ### Cambiar a Modo Supabase (Fallback)
+Edita `backend/.env`, aplica la URL de Supabase y reinicia backend.
+Si no usas la base local, puedes detener el contenedor.
 ```bash
-# Editar .env
-DATABASE_MODE=supabase_cloud
 DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres
-
-# Reiniciar backend
-# (Docker contenedor de BD local puede detenerse)
 docker compose down
 ```
 
 ### Cambiar a Modo Local PG17
+Edita `backend/.env` con la URL local y levanta PostgreSQL local.
 ```bash
-# Editar .env
-DATABASE_MODE=local_pg17
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/consultamed
-
-# Iniciar BD local
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:54329/consultamed
 ./scripts/setup-local-db.sh
 ```
 
@@ -272,7 +268,6 @@ docker system prune -f
 git checkout HEAD~1 -- backend/.env.example backend/app/config.py docker-compose.yml
 
 # 3. Configurar modo cloud
-DATABASE_MODE=supabase_cloud
 DATABASE_URL=tu_url_supabase
 
 # 4. Verificar operación
@@ -306,6 +301,18 @@ READINESS_TIMEOUT_SECONDS=300 ./scripts/setup-local-db.sh
 docker logs consultamed-db
 ```
 
+### Error: "no such file or directory: ./scripts/setup-local-db.sh"
+**Causa:** El comando se ejecutó fuera de la raíz del repo.
+**Solución:**
+```bash
+# Opción 1: ir a la raíz del repo
+cd /ruta/a/EHR_Guadalix
+./scripts/setup-local-db.sh
+
+# Opción 2: si ya estás en backend/
+../scripts/setup-local-db.sh
+```
+
 ### Error: "Connection refused"
 **Causa:** Contenedor no iniciado o puerto bloqueado.
 **Solución:**
@@ -314,7 +321,7 @@ docker logs consultamed-db
 docker ps | grep postgres
 
 # Verificar puerto
-netstat -an | grep 5432
+netstat -an | grep 54329
 
 # Reiniciar si es necesario
 docker compose restart db

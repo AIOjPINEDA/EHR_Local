@@ -17,6 +17,7 @@ This project uses a centralized agent contract for consistent AI collaboration.
 
 ### Always
 - Run tests before committing
+- Use `backend/.venv` as the canonical local Python environment for backend workflows
 - Use type hints and strict mode
 - Follow FHIR naming for data models
 

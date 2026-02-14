@@ -68,7 +68,7 @@ Recommended local gate:
 ## Workflow Alignment
 
 - New active specs live in `docs/specs/`.
-- `.archive/` is historical reference only.
+- `.archive/` is local-only historical material and is not versioned in git.
 - `.specify/` is optional in this repository and not required for the default delivery workflow.
 - If documentation drift is detected by guardrails during MVP, treat it as warning-first and resolve before release hardening.
 

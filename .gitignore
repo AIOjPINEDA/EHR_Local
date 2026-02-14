@@ -153,6 +153,9 @@ secrets/
 *.backup
 .cache/
 
+# Local-only historical material (intentionally not versioned)
+.archive/
+
 # ============================================
 # Spec-kit (mantener solo estructura)
 # ============================================

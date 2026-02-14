@@ -64,7 +64,7 @@ echo "[1/7] Backend unit + contract tests (includes architecture dead-code guard
 if ! "$PYTHON_BIN" -c "import pytest" >/dev/null 2>&1; then
   echo "pytest is not available in $PYTHON_BIN."
   echo "Bootstrap backend deps:"
-  echo "  cd backend && python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && pip install ruff"
+  echo "  cd backend && python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt"
   exit 1
 fi
 
@@ -116,6 +116,16 @@ if [[ -x "$ROOT_DIR/scripts/verify-schema-hash.sh" ]]; then
   "$ROOT_DIR/scripts/verify-schema-hash.sh"
 else
   echo "verify-schema-hash.sh not found; skipping."
+fi
+
+echo "[optional] Backend integration tests"
+if [[ "${RUN_INTEGRATION:-0}" == "1" ]]; then
+  (
+    cd "$BACKEND_DIR"
+    "$PYTHON_BIN" -m pytest tests/integration -v --tb=short --ignore=.env
+  )
+else
+  echo "Skipping integration tests (set RUN_INTEGRATION=1 to enable)."
 fi
 
 echo "Test gate passed."
