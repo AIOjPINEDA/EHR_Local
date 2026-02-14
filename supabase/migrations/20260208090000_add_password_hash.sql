@@ -9,7 +9,7 @@ ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);
 -- Set a default bcrypt hash for existing practitioners
 -- Hash for 'piloto2026': Generated with bcrypt.hashpw()
 UPDATE practitioners
-SET password_hash = '$2b$12$wbGUiLX75v0buQJbIh1vQ.7lrFqZep1/TaaAwNeNSjXUD/dKnK65W'
+SET password_hash = '$2b$12$7Qre0dWpClsiVlaAjdtYcOg7UyocLtItw6/jXsGF0i6mBd07Sjc7C'
 WHERE password_hash IS NULL;
 
 -- Make column required after setting defaults

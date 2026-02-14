@@ -17,7 +17,7 @@ INSERT INTO practitioners (
   'Muñoz Mejía',
   'Medicina Familiar y Comunitaria',
   'sara@consultamed.es',
-  '$2b$12$wbGUiLX75v0buQJbIh1vQ.7lrFqZep1/TaaAwNeNSjXUD/dKnK65W'
+  '$2b$12$7Qre0dWpClsiVlaAjdtYcOg7UyocLtItw6/jXsGF0i6mBd07Sjc7C'
 ),
 (
   '282888890',
@@ -25,7 +25,7 @@ INSERT INTO practitioners (
   'Pineda Moreno',
   'Medicina de Urgencias',
   'jaime@consultamed.es',
-  '$2b$12$wbGUiLX75v0buQJbIh1vQ.7lrFqZep1/TaaAwNeNSjXUD/dKnK65W'
+  '$2b$12$7Qre0dWpClsiVlaAjdtYcOg7UyocLtItw6/jXsGF0i6mBd07Sjc7C'
 );
 
 -- ============================================================================

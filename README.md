@@ -355,6 +355,7 @@ npm run generate:types
 - [docs/specs/README.md](./docs/specs/README.md): política y ubicación de specs activas
 - [docs/playbooks/agentic-repo-bootstrap.md](./docs/playbooks/agentic-repo-bootstrap.md): guía base agent-first reutilizable
 - [docs/playbooks/pg17-migration-readme.md](./docs/playbooks/pg17-migration-readme.md): tutorial académico paso a paso de migración Supabase -> PG17
+- [docs/playbooks/windows-local-manual-run.md](./docs/playbooks/windows-local-manual-run.md): ejecución manual en Windows (bootstrap + arranque diario)
 - [docs/release/DEPLOYMENT_GUIDE.md](./docs/release/DEPLOYMENT_GUIDE.md): despliegue
 - [docs/release/v1-readiness-checklist.md](./docs/release/v1-readiness-checklist.md): checklist release
 

@@ -15,6 +15,7 @@ Este índice centraliza la documentación vigente para evitar información dispe
 - `docs/architecture/overview.md`: arquitectura implementada actualmente.
 - `docs/specs/`: specs activas nuevas.
 - `docs/playbooks/agentic-repo-bootstrap.md`: guía base agent-first.
+- `docs/playbooks/windows-local-manual-run.md`: guía manual específica para ejecutar en Windows paso a paso.
 
 ## Testing
 
