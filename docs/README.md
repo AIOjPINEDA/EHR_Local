@@ -28,9 +28,7 @@ Este índice centraliza la documentación vigente para evitar información dispe
 
 ## Históricos (no fuente de verdad actual)
 
-- `.archive/specs/001-consultamed-mvp/`: especificación MVP original.
-- `.archive/inspiration_repos/`: documentación comparativa de repos externos.
-- `.archive/plans/`: planes anteriores.
+- Material histórico local en `.archive/` (no versionado en git).
 
 Si hay conflicto entre documentos, priorizar:
 1. `AGENTS.md`

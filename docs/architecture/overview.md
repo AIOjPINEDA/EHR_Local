@@ -151,7 +151,7 @@ EHR_Guadalix/
 │   ├── plans/
 │   ├── playbooks/
 │   └── specs/       # New active specs
-└── .archive/        # Historical specs/plans/reference material
+└── (local-only archive, not versioned in git)
 ```
 
 ---

@@ -5,7 +5,7 @@ This folder is the canonical location for new active specs in this repository.
 ## Policy
 
 - Write new specs under `docs/specs/`.
-- Keep historical and archived material under `.archive/`.
+- Keep historical and archived material in local-only `.archive/` (not versioned in git).
 - Do not move legacy specs unless there is a specific migration task.
 
 ## Naming
