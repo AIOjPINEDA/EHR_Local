@@ -4,5 +4,6 @@
     "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
     "python.terminal.activateEnvironment": true,
     "chat.agent.maxRequests": 50,
-    "chat.tools.terminal.autoApprove": false
+    "chat.tools.terminal.autoApprove": false,
+    "python-envs.pythonProjects": []
 }
