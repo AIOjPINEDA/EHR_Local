@@ -39,6 +39,12 @@ Run before opening/updating a PR:
 Canonical local Python environment for backend workflows: `backend/.venv`.
 Avoid using a root `.venv` for backend commands to prevent dependency drift.
 
+For runtime checks that require live DB/API wiring, run the optional integration layer:
+
+```bash
+RUN_INTEGRATION=1 ./scripts/test_gate.sh
+```
+
 If `scripts/test_gate.sh` fails because backend Python deps are missing, bootstrap once:
 
 ```bash

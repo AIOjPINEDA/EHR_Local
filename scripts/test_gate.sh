@@ -118,4 +118,14 @@ else
   echo "verify-schema-hash.sh not found; skipping."
 fi
 
+echo "[optional] Backend integration tests"
+if [[ "${RUN_INTEGRATION:-0}" == "1" ]]; then
+  (
+    cd "$BACKEND_DIR"
+    "$PYTHON_BIN" -m pytest tests/integration -v --tb=short --ignore=.env
+  )
+else
+  echo "Skipping integration tests (set RUN_INTEGRATION=1 to enable)."
+fi
+
 echo "Test gate passed."
