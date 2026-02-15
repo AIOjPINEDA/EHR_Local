@@ -177,11 +177,11 @@ tmp/
 # ============================================
 # Claude Code CLI
 # ============================================
-.claude/
+.claude/*
 # Exception: EHDS compliance radar skill (needs to be versioned)
 !.claude/skills/
+.claude/skills/*
 !.claude/skills/ehds-compliance-radar/
-!.claude/skills/ehds-compliance-radar/**
 
 # ============================================
 # Migraciones de Datos
