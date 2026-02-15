@@ -79,7 +79,9 @@ Authentication is implemented using JWT tokens with bcrypt password hashing:
 2. Frontend requests encounters: `/api/v1/encounters/patient/{patient_id}`.
 3. Doctor documents SOAP flow (`reason`, `subjective`, `objective`, `assessment`, `plan`, `recommendations`) and diagnosis/treatment.
 4. Backend persists structured encounter text in `Encounter` plus linked `Condition` and `MedicationRequest`.
-5. Doctor downloads PDF from `/api/v1/prescriptions/{encounter_id}/pdf`.
+5. Doctor can edit an existing consultation from `/encounters/{id}/edit`; frontend submits `PUT /api/v1/encounters/{id}` to replace SOAP + linked conditions/medications.
+6. Legacy `note` data is preserved during edit when request omits `note` and no new SOAP content is provided.
+7. Doctor downloads PDF from `/api/v1/prescriptions/{encounter_id}/pdf`.
 
 ## Backend Responsibilities
 
@@ -103,6 +105,7 @@ Authentication is implemented using JWT tokens with bcrypt password hashing:
 | `src/lib/hooks/` | Reusable React hooks (`useAuthGuard`, `usePagination`) |
 | `src/lib/hooks/useAuthGuard.ts` | Auth guard with loading state (prevents flash of unprotected content) |
 | `src/lib/hooks/usePagination.ts` | Abstract pagination hook (FHIR Bundle Links ready, hides limit/offset from UI) |
+| `src/lib/hooks/use-encounter-form.ts` | Shared encounter form state/submit logic for create (POST) and edit (PUT) flows |
 | `src/components/ui/` | Shared UI primitives |
 | `src/types/api.ts` | Manual bridge and FE-only API types |
 | `src/types/api.generated.ts` | Auto-generated types from OpenAPI schema |
@@ -149,7 +152,7 @@ Schemas are structured following FHIR R5 resource independence:
 app/schemas/
 ├── condition.py       # ConditionCreate, ConditionResponse (atomic)
 ├── medication.py      # MedicationCreate, MedicationResponse (atomic)
-└── encounter.py       # EncounterCreate/Response (imports atomic schemas)
+└── encounter.py       # EncounterCreate/Update/Response (imports atomic schemas)
 ```
 
 ### Service Layer (FHIR Interactions)
