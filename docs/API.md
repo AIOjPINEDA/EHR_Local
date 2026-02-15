@@ -73,6 +73,10 @@ curl -X POST "http://localhost:8000/api/v1/auth/login" \
 | POST | `/patients/` | Crear paciente |
 | PATCH | `/patients/{id}` | Actualizar paciente |
 
+`PATCH /patients/{id}` usa semántica parcial:
+- Para limpiar campos opcionales enviar `null` en `gender`, `telecom_phone` o `telecom_email`.
+- `name_given`, `name_family` y `birth_date` no aceptan `null` ni texto vacío.
+
 **Búsqueda:**
 ```bash
 GET /patients/?search=Garcia&offset=0&limit=20
@@ -93,6 +97,7 @@ GET /patients/?search=Garcia&offset=0&limit=20
 | GET | `/encounters/patient/{patient_id}` | Historial consultas |
 | GET | `/encounters/{id}` | Detalle consulta |
 | POST | `/encounters/patient/{patient_id}` | Nueva consulta |
+| PUT | `/encounters/{id}` | Editar/reemplazar consulta existente |
 
 **Respuesta incluye `subject_id`** para navegación frontend:
 ```json
@@ -134,6 +139,9 @@ GET /patients/?search=Garcia&offset=0&limit=20
   ]
 }
 ```
+
+`PUT /encounters/{id}` usa el mismo payload SOAP y reemplaza `conditions`/`medications` (delete + recreate).  
+Si no se envía `note` y no hay contenido SOAP nuevo, se preserva la nota legacy existente.
 
 ### Templates
 

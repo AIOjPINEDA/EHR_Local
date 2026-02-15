@@ -52,6 +52,20 @@ def test_build_legacy_note_builds_ordered_sections() -> None:
     )
 
 
+def test_build_legacy_note_preserves_existing_note_without_new_input() -> None:
+    """Legacy note should be preserved when update omits note and SOAP data."""
+    generated = _build_legacy_note(
+        note=None,
+        subjective_text=None,
+        objective_text=None,
+        assessment_text=None,
+        plan_text=None,
+        recommendations_text=None,
+        existing_note="Nota legacy previa",
+    )
+    assert generated == "Nota legacy previa"
+
+
 def test_resolve_encounter_instructions_uses_priority() -> None:
     """Prescription instructions must follow recommendations > plan > note."""
     encounter = SimpleNamespace(recommendations_text="rec", plan_text="plan", note="note")

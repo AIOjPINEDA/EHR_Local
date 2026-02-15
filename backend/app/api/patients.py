@@ -127,8 +127,8 @@ async def update_patient(
     """
     service = PatientService(db)
     
-    # Filter out None values
-    update_data = {k: v for k, v in patient_data.model_dump().items() if v is not None}
+    # Include only explicitly provided PATCH fields (null = clear intent).
+    update_data = patient_data.model_dump(exclude_unset=True)
     
     try:
         patient = await service.update(patient_id, update_data)

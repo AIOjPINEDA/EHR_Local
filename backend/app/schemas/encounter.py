@@ -43,6 +43,30 @@ class EncounterCreate(BaseModel):
     )
 
 
+class EncounterUpdate(BaseModel):
+    """
+    Schema para actualizar un Encounter (FHIR R5 Update interaction).
+
+    Semántica FHIR Update: reemplazo completo del contenido del recurso.
+    Los campos omitidos (None) se limpian; conditions/medications se reemplazan.
+    """
+    reason_text: Optional[str] = Field(None, max_length=500, description="Motivo de consulta")
+    subjective_text: Optional[str] = Field(None, description="Subjetivo (SOAP)")
+    objective_text: Optional[str] = Field(None, description="Objetivo (SOAP)")
+    assessment_text: Optional[str] = Field(None, description="Análisis/Evaluación (SOAP)")
+    plan_text: Optional[str] = Field(None, description="Plan de tratamiento (SOAP)")
+    recommendations_text: Optional[str] = Field(None, description="Recomendaciones")
+    note: Optional[str] = Field(None, description="Nota libre (legacy)")
+    conditions: List[ConditionCreate] = Field(
+        default_factory=list,
+        description="Diagnósticos (reemplazo completo)",
+    )
+    medications: List[MedicationCreate] = Field(
+        default_factory=list,
+        description="Prescripciones (reemplazo completo)",
+    )
+
+
 class EncounterResponse(BaseModel):
     """
     Encounter response (FHIR R5 Encounter resource).

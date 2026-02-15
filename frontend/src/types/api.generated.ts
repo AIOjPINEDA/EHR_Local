@@ -168,12 +168,9 @@ export interface paths {
         put?: never;
         /**
          * Create Encounter
-         * @description Create new encounter for patient.
+         * @description Create new encounter for patient (FHIR Create interaction).
          *
-         *     Creates:
-         *     - Encounter record
-         *     - Condition(s) for diagnoses
-         *     - MedicationRequest(s) for prescriptions
+         *     Creates Encounter + Condition(s) + MedicationRequest(s).
          */
         post: operations["create_encounter_api_v1_encounters_patient__patient_id__post"];
         delete?: never;
@@ -194,7 +191,14 @@ export interface paths {
          * @description Get encounter by ID with full details.
          */
         get: operations["get_encounter_api_v1_encounters__encounter_id__get"];
-        put?: never;
+        /**
+         * Update Encounter
+         * @description Update an existing encounter (FHIR R5 Update interaction).
+         *
+         *     Reemplaza campos SOAP y sub-recursos (Conditions, Medications)
+         *     mediante estrategia delete + recreate.
+         */
+        put: operations["update_encounter_api_v1_encounters__encounter_id__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -421,108 +425,249 @@ export interface components {
         };
         /**
          * ConditionCreate
-         * @description Schema for creating a condition.
+         * @description Schema para crear una Condition (diagnóstico).
+         *
+         *     Alineado con FHIR R5 Condition resource.
          */
         ConditionCreate: {
-            /** Code Text */
+            /**
+             * Code Text
+             * @description Texto del diagnóstico
+             */
             code_text: string;
-            /** Code Coding Code */
+            /**
+             * Code Coding Code
+             * @description Código CIE-10 u otro sistema de codificación
+             */
             code_coding_code?: string | null;
         };
         /**
          * ConditionResponse
-         * @description Condition response.
+         * @description Condition response (FHIR R5 Condition resource).
+         *
+         *     Representa un diagnóstico clínico como recurso atómico independiente.
          */
         ConditionResponse: {
-            /** Id */
+            /**
+             * Id
+             * @description Identificador único de la condición
+             */
             id: string;
-            /** Code Text */
+            /**
+             * Code Text
+             * @description Texto del diagnóstico
+             */
             code_text: string;
-            /** Code Coding Code */
-            code_coding_code: string | null;
-            /** Clinical Status */
+            /**
+             * Code Coding Code
+             * @description Código de clasificación (CIE-10, etc)
+             */
+            code_coding_code?: string | null;
+            /**
+             * Clinical Status
+             * @description Estado clínico: active | resolved | inactive
+             */
             clinical_status: string;
         };
         /**
          * EncounterCreate
-         * @description Schema for creating an encounter.
+         * @description Schema para crear un Encounter (consulta médica).
+         *
+         *     Estructura transaccional: crea Encounter + Conditions + Medications en una sola operación.
+         *     Alineado con FHIR R5 Encounter resource.
          */
         EncounterCreate: {
-            /** Reason Text */
+            /**
+             * Reason Text
+             * @description Motivo de consulta
+             */
             reason_text?: string | null;
-            /** Subjective Text */
+            /**
+             * Subjective Text
+             * @description Subjetivo (SOAP)
+             */
             subjective_text?: string | null;
-            /** Objective Text */
+            /**
+             * Objective Text
+             * @description Objetivo (SOAP)
+             */
             objective_text?: string | null;
-            /** Assessment Text */
+            /**
+             * Assessment Text
+             * @description Análisis/Evaluación (SOAP)
+             */
             assessment_text?: string | null;
-            /** Plan Text */
+            /**
+             * Plan Text
+             * @description Plan de tratamiento (SOAP)
+             */
             plan_text?: string | null;
-            /** Recommendations Text */
+            /**
+             * Recommendations Text
+             * @description Recomendaciones
+             */
             recommendations_text?: string | null;
-            /** Note */
+            /**
+             * Note
+             * @description Nota libre (legacy)
+             */
             note?: string | null;
             /**
              * Conditions
-             * @default []
+             * @description Diagnósticos vinculados a esta consulta
              */
-            conditions: components["schemas"]["ConditionCreate"][];
+            conditions?: components["schemas"]["ConditionCreate"][];
             /**
              * Medications
-             * @default []
+             * @description Prescripciones vinculadas a esta consulta
              */
-            medications: components["schemas"]["MedicationCreate"][];
+            medications?: components["schemas"]["MedicationCreate"][];
         };
         /**
          * EncounterListResponse
-         * @description Paginated encounter list.
+         * @description Respuesta paginada de encounters.
+         *
+         *     Future-proof: preparado para migrar a FHIR Bundle con paginación por cursores.
          */
         EncounterListResponse: {
-            /** Items */
+            /**
+             * Items
+             * @description Lista de encounters
+             */
             items: components["schemas"]["EncounterResponse"][];
-            /** Total */
+            /**
+             * Total
+             * @description Total de resultados disponibles
+             */
             total: number;
         };
         /**
          * EncounterResponse
-         * @description Encounter response.
+         * @description Encounter response (FHIR R5 Encounter resource).
+         *
+         *     Incluye recursos atómicos vinculados (Conditions, Medications).
          */
         EncounterResponse: {
-            /** Id */
+            /**
+             * Id
+             * @description Identificador único del encounter
+             */
             id: string;
-            /** Subject Id */
+            /**
+             * Subject Id
+             * @description Referencia al paciente (Patient.id)
+             */
             subject_id: string;
-            /** Status */
+            /**
+             * Status
+             * @description Estado: planned | in-progress | finished | cancelled
+             */
             status: string;
             /**
              * Period Start
              * Format: date-time
+             * @description Fecha/hora de inicio del encounter
              */
             period_start: string;
-            /** Reason Text */
-            reason_text: string | null;
-            /** Subjective Text */
-            subjective_text: string | null;
-            /** Objective Text */
-            objective_text: string | null;
-            /** Assessment Text */
-            assessment_text: string | null;
-            /** Plan Text */
-            plan_text: string | null;
-            /** Recommendations Text */
-            recommendations_text: string | null;
-            /** Note */
-            note: string | null;
+            /**
+             * Reason Text
+             * @description Motivo de consulta
+             */
+            reason_text?: string | null;
+            /**
+             * Subjective Text
+             * @description Subjetivo (SOAP)
+             */
+            subjective_text?: string | null;
+            /**
+             * Objective Text
+             * @description Objetivo (SOAP)
+             */
+            objective_text?: string | null;
+            /**
+             * Assessment Text
+             * @description Análisis (SOAP)
+             */
+            assessment_text?: string | null;
+            /**
+             * Plan Text
+             * @description Plan (SOAP)
+             */
+            plan_text?: string | null;
+            /**
+             * Recommendations Text
+             * @description Recomendaciones
+             */
+            recommendations_text?: string | null;
+            /**
+             * Note
+             * @description Nota consolidada (legacy)
+             */
+            note?: string | null;
             /**
              * Conditions
-             * @default []
+             * @description Diagnósticos de esta consulta
              */
-            conditions: components["schemas"]["ConditionResponse"][];
+            conditions?: components["schemas"]["ConditionResponse"][];
             /**
              * Medications
-             * @default []
+             * @description Prescripciones de esta consulta
              */
-            medications: components["schemas"]["MedicationResponse"][];
+            medications?: components["schemas"]["MedicationResponse"][];
+        };
+        /**
+         * EncounterUpdate
+         * @description Schema para actualizar un Encounter (FHIR R5 Update interaction).
+         *
+         *     Semántica FHIR Update: reemplazo completo del contenido del recurso.
+         *     Los campos omitidos (None) se limpian; conditions/medications se reemplazan.
+         */
+        EncounterUpdate: {
+            /**
+             * Reason Text
+             * @description Motivo de consulta
+             */
+            reason_text?: string | null;
+            /**
+             * Subjective Text
+             * @description Subjetivo (SOAP)
+             */
+            subjective_text?: string | null;
+            /**
+             * Objective Text
+             * @description Objetivo (SOAP)
+             */
+            objective_text?: string | null;
+            /**
+             * Assessment Text
+             * @description Análisis/Evaluación (SOAP)
+             */
+            assessment_text?: string | null;
+            /**
+             * Plan Text
+             * @description Plan de tratamiento (SOAP)
+             */
+            plan_text?: string | null;
+            /**
+             * Recommendations Text
+             * @description Recomendaciones
+             */
+            recommendations_text?: string | null;
+            /**
+             * Note
+             * @description Nota libre (legacy)
+             */
+            note?: string | null;
+            /**
+             * Conditions
+             * @description Diagnósticos (reemplazo completo)
+             */
+            conditions?: components["schemas"]["ConditionCreate"][];
+            /**
+             * Medications
+             * @description Prescripciones (reemplazo completo)
+             */
+            medications?: components["schemas"]["MedicationCreate"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -531,16 +676,30 @@ export interface components {
         };
         /**
          * MedicationCreate
-         * @description Schema for creating a medication.
+         * @description Schema para crear una MedicationRequest (prescripción).
+         *
+         *     Alineado con FHIR R5 MedicationRequest resource.
          */
         MedicationCreate: {
-            /** Medication Text */
+            /**
+             * Medication Text
+             * @description Nombre del medicamento
+             */
             medication_text: string;
-            /** Dosage Text */
+            /**
+             * Dosage Text
+             * @description Pauta de dosificación
+             */
             dosage_text: string;
-            /** Duration Value */
+            /**
+             * Duration Value
+             * @description Valor de duración del tratamiento
+             */
             duration_value?: number | null;
-            /** Duration Unit */
+            /**
+             * Duration Unit
+             * @description Unidad de duración: días, semanas, meses
+             */
             duration_unit?: string | null;
         };
         /** MedicationItem */
@@ -554,20 +713,40 @@ export interface components {
         };
         /**
          * MedicationResponse
-         * @description Medication response.
+         * @description MedicationRequest response (FHIR R5 MedicationRequest resource).
+         *
+         *     Representa una prescripción médica como recurso atómico independiente.
          */
         MedicationResponse: {
-            /** Id */
+            /**
+             * Id
+             * @description Identificador único de la prescripción
+             */
             id: string;
-            /** Medication Text */
+            /**
+             * Medication Text
+             * @description Nombre del medicamento
+             */
             medication_text: string;
-            /** Dosage Text */
+            /**
+             * Dosage Text
+             * @description Pauta de dosificación
+             */
             dosage_text: string;
-            /** Duration Value */
-            duration_value: number | null;
-            /** Duration Unit */
-            duration_unit: string | null;
-            /** Status */
+            /**
+             * Duration Value
+             * @description Valor de duración
+             */
+            duration_value?: number | null;
+            /**
+             * Duration Unit
+             * @description Unidad de duración
+             */
+            duration_unit?: string | null;
+            /**
+             * Status
+             * @description Estado de la prescripción: active | completed | cancelled
+             */
             status: string;
         };
         /**
@@ -1179,6 +1358,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EncounterResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_encounter_api_v1_encounters__encounter_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                encounter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EncounterUpdate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

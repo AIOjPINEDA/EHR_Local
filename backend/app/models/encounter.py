@@ -2,6 +2,7 @@
 ConsultaMed Backend - Encounter Model (FHIR Encounter)
 """
 from datetime import datetime
+from typing import Optional
 from uuid import uuid4
 from sqlalchemy import String, DateTime, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -54,47 +55,47 @@ class Encounter(Base):
         DateTime(timezone=True),
         default=datetime.utcnow
     )
-    period_end: Mapped[datetime] = mapped_column(
+    period_end: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),
         nullable=True
     )
     
     # Reason
-    reason_text: Mapped[str] = mapped_column(
+    reason_text: Mapped[Optional[str]] = mapped_column(
         String(500),
         nullable=True,
         comment="Motivo de consulta"
     )
     
     # SOAP fields
-    subjective_text: Mapped[str] = mapped_column(
+    subjective_text: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True,
         comment="Subjetivo (S)"
     )
-    objective_text: Mapped[str] = mapped_column(
+    objective_text: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True,
         comment="Objetivo (O)"
     )
-    assessment_text: Mapped[str] = mapped_column(
+    assessment_text: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True,
         comment="Análisis / Impresión clínica (A)"
     )
-    plan_text: Mapped[str] = mapped_column(
+    plan_text: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True,
         comment="Plan terapéutico (P)"
     )
-    recommendations_text: Mapped[str] = mapped_column(
+    recommendations_text: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True,
         comment="Recomendaciones al paciente"
     )
     
     # Legacy note (backward compatibility)
-    note: Mapped[str] = mapped_column(Text, nullable=True)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
     # Relationships
     patient = relationship("Patient", back_populates="encounters")

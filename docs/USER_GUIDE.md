@@ -1,7 +1,7 @@
 # ConsultaMed - Guía de Usuario
 
 > **Versión:** V1 Pilot  
-> **Última actualización:** 2026-02-07
+> **Última actualización:** 2026-02-15
 
 ---
 
@@ -66,6 +66,16 @@ Las alergias son **críticas** para la seguridad del paciente:
 
 > ⚠️ Las alergias se muestran con **badge rojo** en todas las vistas del paciente.
 
+### Editar Perfil del Paciente
+
+1. Abre la ficha del paciente
+2. Pulsa **"Editar perfil"**
+3. Modifica los campos necesarios y pulsa **"Guardar cambios"**
+4. Para limpiar campos opcionales, déjalos vacíos:
+   - Género (Sin especificar)
+   - Teléfono
+   - Email
+
 ---
 
 ## 🏥 Consultas Médicas
@@ -83,6 +93,13 @@ Las alergias son **críticas** para la seguridad del paciente:
    - **Recomendaciones**: indicaciones al paciente
 4. Añade **diagnósticos** (texto o CIE-10) y, si aplica, **tratamiento farmacológico**
 4. Pulsa **"Guardar"**
+
+### Editar Consulta
+
+1. Abre el detalle de una consulta existente
+2. Pulsa **"Editar consulta"**
+3. Ajusta SOAP, diagnósticos y/o tratamiento
+4. Pulsa **"Actualizar Consulta"** o **"Actualizar y abrir receta"**
 
 ### Usar Templates
 

@@ -86,7 +86,7 @@ export function buildDiagnosisSuggestions({
     encounter.conditions.forEach((condition) => {
       pushSuggestion({
         text: condition.code_text,
-        code: condition.code_coding_code,
+        code: condition.code_coding_code ?? null,
         source: "history",
       });
     });
