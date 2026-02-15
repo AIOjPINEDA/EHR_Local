@@ -2,25 +2,31 @@
 ConsultaMed Backend - Patient Service
 
 Lógica de negocio para gestión de pacientes.
+Operaciones alineadas con FHIR R5 interactions.
 """
 from datetime import datetime
 from typing import Optional, List, Dict, Tuple, Any
 from sqlalchemy import select, or_, func
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.services.base import BaseService
 from app.models.patient import Patient
 from app.models.allergy import AllergyIntolerance
 from app.models.encounter import Encounter
 from app.validators.dni import validate_documento_identidad, format_dni
-from app.validators.clinical import validate_birth_date, validate_gender
+from app.validators.clinical import validate_birth_date
 
 
-class PatientService:
-    """Service class for patient operations."""
-    
-    def __init__(self, db: AsyncSession):
-        self.db = db
+class PatientService(BaseService[Patient]):
+    """
+    Service class for Patient resource operations (FHIR R5 Patient).
+
+    Naming conventions:
+    - get_by_id(): FHIR Read (get single resource by ID)
+    - search(): FHIR Search (query with parameters)
+    - create(): FHIR Create
+    - update(): FHIR Update (partial, uses PATCH semantics)
+    """
 
     @staticmethod
     def _build_search_conditions(query: str) -> List[Any]:
@@ -148,18 +154,14 @@ class PatientService:
         if existing:
             raise ValueError(f"Ya existe un paciente con DNI {data['identifier_value']}")
         
-        # Validate birth date
+        # Validate birth date (lógica de negocio: rangos razonables)
         if "birth_date" in data:
             is_valid, error = validate_birth_date(data["birth_date"])
             if not is_valid:
                 raise ValueError(error)
-        
-        # Validate gender
-        if "gender" in data:
-            is_valid, error = validate_gender(data.get("gender"))
-            if not is_valid:
-                raise ValueError(error)
-        
+
+        # Note: gender validation is handled by Pydantic schema (PatientCreate)
+
         # Create patient
         patient = Patient(
             identifier_value=format_dni(data["identifier_value"]),
@@ -172,9 +174,8 @@ class PatientService:
         )
         
         self.db.add(patient)
-        await self.db.commit()
-        await self.db.refresh(patient)
-        
+        await self.commit_and_refresh(patient)
+
         # Reload with relationships for response
         reloaded_patient = await self.get_by_id(str(patient.id))
         if reloaded_patient is None:
@@ -187,16 +188,13 @@ class PatientService:
         if not patient:
             return None
         
-        # Validate clinical fields before applying
+        # Validate clinical fields before applying (solo lógica de negocio)
         if "birth_date" in data:
             is_valid, error = validate_birth_date(data["birth_date"])
             if not is_valid:
                 raise ValueError(error)
 
-        if "gender" in data:
-            is_valid, error = validate_gender(data.get("gender"))
-            if not is_valid:
-                raise ValueError(error)
+        # Note: gender validation is handled by Pydantic schema (PatientUpdate)
 
         # Update allowed fields
         allowed_fields = [
@@ -207,10 +205,8 @@ class PatientService:
         for field in allowed_fields:
             if field in data:
                 setattr(patient, field, data[field])
-        
-        await self.db.commit()
-        await self.db.refresh(patient)
-        
+
+        await self.commit_and_refresh(patient)
         return patient
     
     async def add_allergy(self, patient_id: str, allergy_data: dict) -> AllergyIntolerance:
@@ -225,9 +221,7 @@ class PatientService:
         )
         
         self.db.add(allergy)
-        await self.db.commit()
-        await self.db.refresh(allergy)
-        
+        await self.commit_and_refresh(allergy)
         return allergy
     
     async def remove_allergy(self, patient_id: str, allergy_id: str) -> bool:
