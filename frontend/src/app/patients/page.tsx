@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 import { HospitalBrand } from "@/components/branding/hospital-brand";
 import { PrimaryNav } from "@/components/navigation/primary-nav";
 import { PatientList } from "@/components/patients/patient-list";
@@ -12,11 +12,10 @@ import {
   buildPatientsDirectoryUrl,
   normalizePatientSearchQuery,
 } from "@/lib/patients/directory";
-import { authStore } from "@/lib/stores/auth-store";
 import type { PaginatedResponse, PatientSummary } from "@/types/api";
 
 export default function PatientsListPage() {
-  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,17 +46,27 @@ export default function PatientsListPage() {
   }, [currentPage, debouncedSearchQuery, limit]);
 
   useEffect(() => {
-    authStore.loadFromStorage();
-    if (!authStore.isAuthenticated) {
-      router.push("/login");
-      return;
+    if (isAuthenticated) {
+      loadPatients();
     }
-    api.setToken(authStore.token);
-    loadPatients();
-  }, [router, loadPatients]);
+  }, [isAuthenticated, loadPatients]);
   
   const totalPages = Math.ceil(total / limit);
-  
+
+  // Mostrar spinner mientras se valida autenticación
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // No renderizar si no autenticado (ya redirigiendo)
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white shadow-sm">

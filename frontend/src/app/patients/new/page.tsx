@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
-import { authStore } from "@/lib/stores/auth-store";
 import { Patient, PatientCreate } from "@/types/api";
 
 export default function NewPatientPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   // Form state
   const [formData, setFormData] = useState<PatientCreate>({
     identifier_value: "",
@@ -23,16 +24,6 @@ export default function NewPatientPage() {
     telecom_phone: "",
     telecom_email: "",
   });
-  
-  // Check auth on mount
-  useEffect(() => {
-    authStore.loadFromStorage();
-    if (!authStore.isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    api.setToken(authStore.token);
-  }, [router]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -67,7 +58,21 @@ export default function NewPatientPage() {
       setIsLoading(false);
     }
   };
-  
+
+  // Mostrar spinner mientras se valida autenticación
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // No renderizar si no autenticado (ya redirigiendo)
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}

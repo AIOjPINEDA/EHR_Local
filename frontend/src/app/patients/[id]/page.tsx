@@ -1,16 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
 import { PatientHeader } from "@/components/patients/patient-header";
-import { authStore } from "@/lib/stores/auth-store";
 import type { Patient, EncounterListResponse } from "@/types/api";
 
 export default function PatientDetailPage() {
-  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const params = useParams();
   const patientId = params.id as string;
   
@@ -53,15 +53,11 @@ export default function PatientDetailPage() {
   }, [patientId]);
 
   useEffect(() => {
-    authStore.loadFromStorage();
-    if (!authStore.isAuthenticated) {
-      router.push("/login");
-      return;
+    if (isAuthenticated) {
+      loadPatient();
+      loadEncounters();
     }
-    api.setToken(authStore.token);
-    loadPatient();
-    loadEncounters();
-  }, [router, loadPatient, loadEncounters]);
+  }, [isAuthenticated, loadPatient, loadEncounters]);
   
   const handleAddAllergy = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +111,21 @@ export default function PatientDetailPage() {
       </div>
     );
   }
-  
+
+  // Mostrar spinner mientras se valida autenticación
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // No renderizar si no autenticado (ya redirigiendo)
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}

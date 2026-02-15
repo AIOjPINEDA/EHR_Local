@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 import { HospitalBrand } from "@/components/branding/hospital-brand";
 import { APP_NAME } from "@/lib/branding/constants";
 import { PrimaryNav } from "@/components/navigation/primary-nav";
@@ -18,9 +18,8 @@ import { authStore } from "@/lib/stores/auth-store";
 import type { PaginatedResponse, PatientSummary } from "@/types/api";
 
 export default function DashboardPage() {
-  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const [user, setUser] = useState(authStore.practitioner);
-  const [isSessionReady, setIsSessionReady] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [totalPatients, setTotalPatients] = useState(0);
@@ -31,20 +30,13 @@ export default function DashboardPage() {
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 250);
   
   useEffect(() => {
-    authStore.loadFromStorage();
-    
-    if (!authStore.isAuthenticated) {
-      router.push("/login");
-      return;
+    if (isAuthenticated) {
+      setUser(authStore.practitioner);
     }
-    
-    setUser(authStore.practitioner);
-    api.setToken(authStore.token);
-    setIsSessionReady(true);
-  }, [router]);
-  
+  }, [isAuthenticated]);
+
   const loadPatients = useCallback(async (query: string, page: number) => {
-    if (!isSessionReady) {
+    if (!isAuthenticated) {
       return;
     }
     setIsLoadingPatients(true);
@@ -67,19 +59,19 @@ export default function DashboardPage() {
     } finally {
       setIsLoadingPatients(false);
     }
-  }, [isSessionReady]);
-  
+  }, [isAuthenticated]);
+
   useEffect(() => {
-    if (!isSessionReady) {
+    if (!isAuthenticated) {
       return;
     }
     void loadPatients(normalizePatientSearchQuery(debouncedSearchQuery), currentPage);
-  }, [currentPage, debouncedSearchQuery, isSessionReady, loadPatients]);
+  }, [currentPage, debouncedSearchQuery, isAuthenticated, loadPatients]);
   
   const handleLogout = () => {
     authStore.logout();
     api.setToken(null);
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   const totalPages = Math.max(1, Math.ceil(totalPatients / pageSize));
@@ -100,6 +92,20 @@ export default function DashboardPage() {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
+  }
+
+  // Mostrar spinner mientras se valida autenticación
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // No renderizar si no autenticado (ya redirigiendo)
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (

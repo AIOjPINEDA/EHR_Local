@@ -1,18 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
+import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 import { PatientHeader } from "@/components/patients/patient-header";
 import { openBlobInNewTab } from "@/lib/files/download";
 import { formatPatientGender } from "@/lib/patients/directory";
-import { authStore } from "@/lib/stores/auth-store";
 import type { EncounterDetail, Patient } from "@/types/api";
 
 export default function EncounterDetailPage() {
-  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const params = useParams();
   const encounterId = params.id as string;
   
@@ -38,14 +38,10 @@ export default function EncounterDetailPage() {
   }, [encounterId]);
 
   useEffect(() => {
-    authStore.loadFromStorage();
-    if (!authStore.isAuthenticated) {
-      router.push("/login");
-      return;
+    if (isAuthenticated) {
+      void loadEncounter();
     }
-    api.setToken(authStore.token);
-    void loadEncounter();
-  }, [router, loadEncounter]);
+  }, [isAuthenticated, loadEncounter]);
   
   const handleOpenPrescription = async () => {
     if (!encounter || encounter.medications.length === 0) {
@@ -104,7 +100,21 @@ export default function EncounterDetailPage() {
       </div>
     );
   }
-  
+
+  // Mostrar spinner mientras se valida autenticación
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // No renderizar si no autenticado (ya redirigiendo)
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}

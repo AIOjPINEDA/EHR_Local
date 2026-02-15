@@ -1,18 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 import { HospitalBrand } from "@/components/branding/hospital-brand";
 import { PrimaryNav } from "@/components/navigation/primary-nav";
-import { authStore } from "@/lib/stores/auth-store";
 import type { Template, TemplateListResponse, TemplateMedication } from "@/types/api";
 
 type MedicationItem = TemplateMedication;
 
 export default function TemplatesPage() {
-  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,14 +61,10 @@ export default function TemplatesPage() {
   }, []);
 
   useEffect(() => {
-    authStore.loadFromStorage();
-    if (!authStore.isAuthenticated) {
-      router.push("/login");
-      return;
+    if (isAuthenticated) {
+      void loadTemplates();
     }
-    api.setToken(authStore.token);
-    void loadTemplates();
-  }, [loadTemplates, router]);
+  }, [isAuthenticated, loadTemplates]);
 
   const openCreateModal = () => {
     setEditingTemplate(null);
@@ -199,6 +194,20 @@ export default function TemplatesPage() {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
+  }
+
+  // Mostrar spinner mientras se valida autenticación
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // No renderizar si no autenticado (ya redirigiendo)
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
