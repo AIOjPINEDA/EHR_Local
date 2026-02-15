@@ -16,9 +16,10 @@ from app.models.encounter import Encounter
 from app.models.condition import Condition
 from app.models.medication_request import MedicationRequest
 
-# ✅ Usar schemas atómicos FHIR-compatible
+# Schemas atómicos FHIR-compatible
 from app.schemas.encounter import (
     EncounterCreate,
+    EncounterUpdate,
     EncounterResponse,
     EncounterListResponse,
 )
@@ -46,9 +47,15 @@ def _build_legacy_note(
     assessment_text: Optional[str],
     plan_text: Optional[str],
     recommendations_text: Optional[str],
+    existing_note: Optional[str] = None,
 ) -> Optional[str]:
     """
     Keep `note` backward-compatible when frontend sends structured SOAP fields.
+
+    Prioridad:
+      1. Nota explícita enviada por el cliente.
+      2. Síntesis de campos SOAP (si al menos uno tiene contenido).
+      3. Nota existente preservada (para no perder datos legacy durante edición).
     """
     explicit_note = _clean_text(note)
     if explicit_note:
@@ -62,7 +69,11 @@ def _build_legacy_note(
         ("Recomendaciones", _clean_text(recommendations_text)),
     ]
     lines = [f"{title}: {content}" for title, content in sections if content]
-    return "\n".join(lines) if lines else None
+    if lines:
+        return "\n".join(lines)
+
+    # Preservar nota legacy existente si no hay datos nuevos
+    return existing_note
 
 
 async def _ensure_patient_exists(db: AsyncSession, patient_id: str) -> None:
@@ -71,6 +82,83 @@ async def _ensure_patient_exists(db: AsyncSession, patient_id: str) -> None:
     patient_result = await db.execute(patient_stmt)
     if patient_result.scalar_one_or_none() is None:
         raise_not_found("Paciente")
+
+
+def _apply_soap_fields(
+    encounter: Encounter,
+    data: EncounterCreate | EncounterUpdate,
+) -> None:
+    """Aplica campos SOAP y nota legacy a un Encounter."""
+    # Capturar nota existente ANTES de sobreescribir campos
+    existing_note = encounter.note
+
+    encounter.reason_text = _clean_text(data.reason_text)
+    encounter.subjective_text = _clean_text(data.subjective_text)
+    encounter.objective_text = _clean_text(data.objective_text)
+    encounter.assessment_text = _clean_text(data.assessment_text)
+    encounter.plan_text = _clean_text(data.plan_text)
+    encounter.recommendations_text = _clean_text(data.recommendations_text)
+    encounter.note = _build_legacy_note(
+        note=data.note,
+        subjective_text=encounter.subjective_text,
+        objective_text=encounter.objective_text,
+        assessment_text=encounter.assessment_text,
+        plan_text=encounter.plan_text,
+        recommendations_text=encounter.recommendations_text,
+        existing_note=existing_note,
+    )
+
+
+def _create_conditions(
+    db: AsyncSession,
+    data: EncounterCreate | EncounterUpdate,
+    *,
+    subject_id: str,
+    encounter_id: str,
+) -> None:
+    """Crea recursos Condition vinculados a un Encounter."""
+    for cond_data in data.conditions:
+        db.add(Condition(
+            subject_id=subject_id,
+            encounter_id=encounter_id,
+            code_text=cond_data.code_text,
+            code_coding_code=cond_data.code_coding_code,
+        ))
+
+
+def _create_medications(
+    db: AsyncSession,
+    data: EncounterCreate | EncounterUpdate,
+    *,
+    subject_id: str,
+    encounter_id: str,
+    requester_id: str,
+) -> None:
+    """Crea recursos MedicationRequest vinculados a un Encounter."""
+    for med_data in data.medications:
+        db.add(MedicationRequest(
+            subject_id=subject_id,
+            encounter_id=encounter_id,
+            requester_id=requester_id,
+            medication_text=med_data.medication_text,
+            dosage_text=med_data.dosage_text,
+            duration_value=med_data.duration_value,
+            duration_unit=med_data.duration_unit,
+        ))
+
+
+async def _reload_encounter(db: AsyncSession, encounter_id: str) -> Encounter:
+    """Recarga un Encounter con sus relaciones (conditions, medications)."""
+    stmt = (
+        select(Encounter)
+        .options(
+            selectinload(Encounter.conditions),
+            selectinload(Encounter.medications),
+        )
+        .where(Encounter.id == encounter_id)
+    )
+    result = await db.execute(stmt)
+    return result.scalar_one()
 
 
 # ============================================
@@ -154,79 +242,80 @@ async def create_encounter(
     current_user: Practitioner = Depends(get_current_practitioner),
 ) -> EncounterResponse:
     """
-    Create new encounter for patient.
-    
-    Creates:
-    - Encounter record
-    - Condition(s) for diagnoses
-    - MedicationRequest(s) for prescriptions
+    Create new encounter for patient (FHIR Create interaction).
+
+    Creates Encounter + Condition(s) + MedicationRequest(s).
     """
     await _ensure_patient_exists(db, patient_id)
-    
-    # Create encounter
-    reason_text = _clean_text(encounter_data.reason_text)
-    subjective_text = _clean_text(encounter_data.subjective_text)
-    objective_text = _clean_text(encounter_data.objective_text)
-    assessment_text = _clean_text(encounter_data.assessment_text)
-    plan_text = _clean_text(encounter_data.plan_text)
-    recommendations_text = _clean_text(encounter_data.recommendations_text)
-    note = _build_legacy_note(
-        note=encounter_data.note,
-        subjective_text=subjective_text,
-        objective_text=objective_text,
-        assessment_text=assessment_text,
-        plan_text=plan_text,
-        recommendations_text=recommendations_text,
-    )
 
     encounter = Encounter(
         subject_id=patient_id,
         participant_id=current_user.id,
-        reason_text=reason_text,
-        subjective_text=subjective_text,
-        objective_text=objective_text,
-        assessment_text=assessment_text,
-        plan_text=plan_text,
-        recommendations_text=recommendations_text,
-        note=note,
         status="finished",
     )
+    _apply_soap_fields(encounter, encounter_data)
     db.add(encounter)
-    await db.flush()  # Get encounter.id
-    
-    # Create conditions
-    for cond_data in encounter_data.conditions:
-        condition = Condition(
-            subject_id=patient_id,
-            encounter_id=encounter.id,
-            code_text=cond_data.code_text,
-            code_coding_code=cond_data.code_coding_code,
-        )
-        db.add(condition)
-    
-    # Create medications
-    for med_data in encounter_data.medications:
-        medication = MedicationRequest(
-            subject_id=patient_id,
-            encounter_id=encounter.id,
-            requester_id=current_user.id,
-            medication_text=med_data.medication_text,
-            dosage_text=med_data.dosage_text,
-            duration_value=med_data.duration_value,
-            duration_unit=med_data.duration_unit,
-        )
-        db.add(medication)
-    
+    await db.flush()  # Obtener encounter.id
+
+    _create_conditions(db, encounter_data, subject_id=patient_id, encounter_id=encounter.id)
+    _create_medications(
+        db, encounter_data,
+        subject_id=patient_id, encounter_id=encounter.id, requester_id=current_user.id,
+    )
+
     await db.commit()
-    
-    # Reload with relationships
+    return cast(EncounterResponse, await _reload_encounter(db, encounter.id))
+
+
+@router.put("/{encounter_id}", response_model=EncounterResponse)
+async def update_encounter(
+    encounter_id: str,
+    encounter_data: EncounterUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: Practitioner = Depends(get_current_practitioner),
+) -> EncounterResponse:
+    """
+    Update an existing encounter (FHIR R5 Update interaction).
+
+    Reemplaza campos SOAP y sub-recursos (Conditions, Medications)
+    mediante estrategia delete + recreate.
+    """
+    # 1. Fetch con relaciones
     stmt = (
         select(Encounter)
         .options(
             selectinload(Encounter.conditions),
             selectinload(Encounter.medications),
         )
-        .where(Encounter.id == encounter.id)
+        .where(Encounter.id == encounter_id)
     )
     result = await db.execute(stmt)
-    return cast(EncounterResponse, result.scalar_one())
+    encounter = result.scalar_one_or_none()
+    if not encounter:
+        raise_not_found("Consulta")
+
+    # 2. Actualizar campos SOAP
+    _apply_soap_fields(encounter, encounter_data)
+
+    # 3. Reemplazar Conditions (delete + recreate)
+    for cond in list(encounter.conditions):
+        await db.delete(cond)
+    await db.flush()
+    _create_conditions(
+        db, encounter_data,
+        subject_id=encounter.subject_id, encounter_id=encounter.id,
+    )
+
+    # 4. Reemplazar Medications (delete + recreate)
+    for med in list(encounter.medications):
+        await db.delete(med)
+    await db.flush()
+    _create_medications(
+        db, encounter_data,
+        subject_id=encounter.subject_id, encounter_id=encounter.id,
+        requester_id=current_user.id,
+    )
+
+    # 5. Commit & reload
+    await db.commit()
+    return cast(EncounterResponse, await _reload_encounter(db, encounter.id))
