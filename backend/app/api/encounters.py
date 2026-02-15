@@ -2,26 +2,32 @@
 ConsultaMed Backend - Encounters Endpoints
 """
 from typing import Optional, List, cast
-from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.api.auth import get_current_practitioner
+from app.api.exceptions import raise_not_found
 from app.models.practitioner import Practitioner
 from app.models.patient import Patient
 from app.models.encounter import Encounter
 from app.models.condition import Condition
 from app.models.medication_request import MedicationRequest
 
+# ✅ Usar schemas atómicos FHIR-compatible
+from app.schemas.encounter import (
+    EncounterCreate,
+    EncounterResponse,
+    EncounterListResponse,
+)
+
 router = APIRouter()
 
 
 # ============================================
-# Schemas
+# Helper Functions
 # ============================================
 
 
@@ -64,81 +70,7 @@ async def _ensure_patient_exists(db: AsyncSession, patient_id: str) -> None:
     patient_stmt = select(Patient.id).where(Patient.id == patient_id)
     patient_result = await db.execute(patient_stmt)
     if patient_result.scalar_one_or_none() is None:
-        raise HTTPException(status_code=404, detail="Paciente no encontrado")
-
-
-class ConditionCreate(BaseModel):
-    """Schema for creating a condition."""
-    code_text: str = Field(..., min_length=1, max_length=200)
-    code_coding_code: Optional[str] = None
-
-
-class MedicationCreate(BaseModel):
-    """Schema for creating a medication."""
-    medication_text: str = Field(..., min_length=1, max_length=200)
-    dosage_text: str = Field(..., min_length=1, max_length=500)
-    duration_value: Optional[int] = None
-    duration_unit: Optional[str] = None
-
-
-class EncounterCreate(BaseModel):
-    """Schema for creating an encounter."""
-    reason_text: Optional[str] = None
-    subjective_text: Optional[str] = None
-    objective_text: Optional[str] = None
-    assessment_text: Optional[str] = None
-    plan_text: Optional[str] = None
-    recommendations_text: Optional[str] = None
-    note: Optional[str] = None
-    conditions: List[ConditionCreate] = []
-    medications: List[MedicationCreate] = []
-
-
-class ConditionResponse(BaseModel):
-    """Condition response."""
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-    code_text: str
-    code_coding_code: Optional[str]
-    clinical_status: str
-
-
-class MedicationResponse(BaseModel):
-    """Medication response."""
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-    medication_text: str
-    dosage_text: str
-    duration_value: Optional[int]
-    duration_unit: Optional[str]
-    status: str
-
-
-class EncounterResponse(BaseModel):
-    """Encounter response."""
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-    subject_id: str
-    status: str
-    period_start: datetime
-    reason_text: Optional[str]
-    subjective_text: Optional[str]
-    objective_text: Optional[str]
-    assessment_text: Optional[str]
-    plan_text: Optional[str]
-    recommendations_text: Optional[str]
-    note: Optional[str]
-    conditions: List[ConditionResponse] = []
-    medications: List[MedicationResponse] = []
-
-
-class EncounterListResponse(BaseModel):
-    """Paginated encounter list."""
-    items: List[EncounterResponse]
-    total: int
+        raise_not_found("Paciente")
 
 
 # ============================================
@@ -207,13 +139,10 @@ async def get_encounter(
     
     result = await db.execute(stmt)
     encounter = result.scalar_one_or_none()
-    
+
     if not encounter:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Consulta no encontrada"
-        )
-    
+        raise_not_found("Consulta")
+
     return cast(EncounterResponse, encounter)
 
 
