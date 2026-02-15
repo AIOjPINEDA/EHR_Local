@@ -18,6 +18,7 @@ import { useAutocompleteList } from "@/lib/hooks/useAutocompleteList";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import { authStore } from "@/lib/stores/auth-store";
 import type {
+  Encounter,
   EncounterCreate,
   EncounterListResponse,
   EncounterSummary,
@@ -151,6 +152,7 @@ export interface UseEncounterFormReturn {
   // Form submission
   isLoading: boolean;
   isSaving: boolean;
+  isEditMode: boolean;
   error: string;
   handleSubmit: (
     event: { preventDefault: () => void },
@@ -159,8 +161,21 @@ export interface UseEncounterFormReturn {
   openPrescriptionPdfPreview: (encounterId: string) => Promise<void>;
 }
 
-export function useEncounterForm(patientId: string): UseEncounterFormReturn {
+/**
+ * Hook del formulario de encuentro clínico.
+ *
+ * Soporta tanto creación (POST) como edición (PUT) según
+ * se pase o no un `encounterId`.
+ *
+ * @param patientId - ID del paciente al que pertenece la consulta.
+ * @param encounterId - Si se proporciona, el hook opera en modo edición.
+ */
+export function useEncounterForm(
+  patientId: string,
+  encounterId?: string,
+): UseEncounterFormReturn {
   const router = useRouter();
+  const isEditMode = Boolean(encounterId);
 
   // Data loading
   const [patient, setPatient] = useState<Patient | null>(null);
@@ -207,12 +222,37 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
       setPatient(patientData);
       setTemplates(templatesData.items ?? []);
       setEncounterHistory(encounterData.items ?? []);
+
+      // En modo edición, cargar datos del encounter existente
+      if (encounterId) {
+        const existing = await api.get<Encounter>(`/encounters/${encounterId}`);
+        setReasonText(existing.reason_text ?? "");
+        setSubjectiveText(existing.subjective_text ?? "");
+        setObjectiveText(existing.objective_text ?? "");
+        setAssessmentText(existing.assessment_text ?? "");
+        setPlanText(existing.plan_text ?? "");
+        setRecommendationsText(existing.recommendations_text ?? "");
+        setConditions(
+          existing.conditions.map((c) => ({
+            code_text: c.code_text,
+            code_coding_code: c.code_coding_code ?? undefined,
+          })),
+        );
+        setMedications(
+          existing.medications.map((m) => ({
+            medication_text: m.medication_text,
+            dosage_text: m.dosage_text,
+            duration_value: m.duration_value ?? undefined,
+            duration_unit: m.duration_unit ?? undefined,
+          })),
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar datos");
     } finally {
       setIsLoading(false);
     }
-  }, [patientId]);
+  }, [patientId, encounterId]);
 
   useEffect(() => {
     authStore.loadFromStorage();
@@ -305,9 +345,9 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
       current.map((condition, currentIndex) =>
         currentIndex === index
           ? {
-              ...condition,
-              code_coding_code: value.trim() ? value : undefined,
-            }
+            ...condition,
+            code_coding_code: value.trim() ? value : undefined,
+          }
           : condition,
       ),
     );
@@ -363,9 +403,9 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
       current.map((medication, currentIndex) =>
         currentIndex === index
           ? {
-              ...medication,
-              duration_value: value,
-            }
+            ...medication,
+            duration_value: value,
+          }
           : medication,
       ),
     );
@@ -376,9 +416,9 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
       current.map((medication, currentIndex) =>
         currentIndex === index
           ? {
-              ...medication,
-              duration_unit: value,
-            }
+            ...medication,
+            duration_unit: value,
+          }
           : medication,
       ),
     );
@@ -406,10 +446,10 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
         current.map((condition, currentIndex) =>
           currentIndex === activeDiagnosisIndex
             ? {
-                ...condition,
-                code_text: suggestion.text,
-                code_coding_code: suggestion.code ?? undefined,
-              }
+              ...condition,
+              code_text: suggestion.text,
+              code_coding_code: suggestion.code ?? undefined,
+            }
             : condition,
         ),
       );
@@ -453,9 +493,9 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
         current.map((medication, currentIndex) =>
           currentIndex === activeMedicationIndex
             ? {
-                ...medication,
-                medication_text: suggestion.text,
-              }
+              ...medication,
+              medication_text: suggestion.text,
+            }
             : medication,
         ),
       );
@@ -545,7 +585,7 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
     setError("");
 
     try {
-      const encounterData: EncounterCreate = {
+      const encounterPayload: EncounterCreate = {
         reason_text: reasonText || undefined,
         subjective_text: subjectiveText || undefined,
         objective_text: objectiveText || undefined,
@@ -556,21 +596,34 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
         medications: validMedications,
       };
 
-      const createdEncounter = await api.post<{ id: string }>(
-        `/encounters/patient/${patientId}`,
-        encounterData,
-      );
+      let savedId: string;
+
+      if (encounterId) {
+        // Modo edición: PUT
+        await api.put(`/encounters/${encounterId}`, encounterPayload);
+        savedId = encounterId;
+      } else {
+        // Modo creación: POST
+        const created = await api.post<{ id: string }>(
+          `/encounters/patient/${patientId}`,
+          encounterPayload,
+        );
+        savedId = created.id;
+      }
 
       if (options.openPdf) {
         try {
-          await openPrescriptionPdfPreview(createdEncounter.id);
+          await openPrescriptionPdfPreview(savedId);
         } finally {
-          router.push(`/encounters/${createdEncounter.id}`);
+          router.push(`/encounters/${savedId}`);
         }
         return;
       }
 
-      router.push(`/patients/${patientId}`);
+      // Navegación post-guardado
+      router.push(
+        isEditMode ? `/encounters/${savedId}` : `/patients/${patientId}`,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar consulta");
     } finally {
@@ -657,6 +710,7 @@ export function useEncounterForm(patientId: string): UseEncounterFormReturn {
     // Form submission
     isLoading,
     isSaving,
+    isEditMode,
     error,
     handleSubmit,
     openPrescriptionPdfPreview,

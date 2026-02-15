@@ -15,18 +15,18 @@ export default function EncounterDetailPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const params = useParams();
   const encounterId = params.id as string;
-  
+
   const [encounter, setEncounter] = useState<EncounterDetail | null>(null);
   const [patient, setPatient] = useState<Patient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  
+
   const loadEncounter = useCallback(async () => {
     try {
       const encounterData = await api.get<EncounterDetail>(`/encounters/${encounterId}`);
       setEncounter(encounterData);
-      
+
       // Cargar datos básicos del paciente
       const patientData = await api.get<Patient>(`/patients/${encounterData.subject_id}`);
       setPatient(patientData);
@@ -42,16 +42,16 @@ export default function EncounterDetailPage() {
       void loadEncounter();
     }
   }, [isAuthenticated, loadEncounter]);
-  
+
   const handleOpenPrescription = async () => {
     if (!encounter || encounter.medications.length === 0) {
       setError("No hay medicamentos para generar la receta.");
       return;
     }
-    
+
     setError("");
     setIsGeneratingPdf(true);
-    
+
     try {
       const blob = await api.downloadPdf(`/prescriptions/${encounterId}/pdf`);
       openBlobInNewTab(blob);
@@ -61,7 +61,7 @@ export default function EncounterDetailPage() {
       setIsGeneratingPdf(false);
     }
   };
-  
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("es-ES", {
       day: "2-digit",
@@ -71,7 +71,7 @@ export default function EncounterDetailPage() {
       minute: "2-digit",
     });
   };
-  
+
   const formatDuration = (value: number | null, unit: string | null) => {
     if (!value) return "";
     const units: Record<string, string> = {
@@ -81,7 +81,7 @@ export default function EncounterDetailPage() {
     };
     return `${value} ${units[unit || "d"] || unit}`;
   };
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -89,7 +89,7 @@ export default function EncounterDetailPage() {
       </div>
     );
   }
-  
+
   if (!encounter) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
@@ -134,7 +134,7 @@ export default function EncounterDetailPage() {
           </div>
         </div>
       </header>
-      
+
       <main className="max-w-[1400px] mx-auto px-4 py-8 space-y-6">
         {/* Error */}
         {error && (
@@ -142,7 +142,7 @@ export default function EncounterDetailPage() {
             {error}
           </div>
         )}
-        
+
         {/* Patient Info Bar */}
         {patient && (
           <PatientHeader patient={patient} variant="compact" />
@@ -173,7 +173,7 @@ export default function EncounterDetailPage() {
             </div>
           </div>
         )}
-        
+
         {/* Encounter Info */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-start justify-between mb-4">
@@ -181,16 +181,15 @@ export default function EncounterDetailPage() {
               <h2 className="text-lg font-semibold text-gray-800">
                 Consulta del {formatDate(encounter.period_start)}
               </h2>
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                encounter.status === "finished" 
-                  ? "bg-green-100 text-green-700"
-                  : "bg-yellow-100 text-yellow-700"
-              }`}>
+              <span className={`text-xs px-2 py-1 rounded-full ${encounter.status === "finished"
+                ? "bg-green-100 text-green-700"
+                : "bg-yellow-100 text-yellow-700"
+                }`}>
                 {encounter.status === "finished" ? "Finalizada" : encounter.status}
               </span>
             </div>
           </div>
-          
+
           {encounter.reason_text && (
             <div className="mt-4">
               <h4 className="text-sm font-medium text-gray-500 mb-1">Motivo de consulta</h4>
@@ -198,7 +197,7 @@ export default function EncounterDetailPage() {
             </div>
           )}
         </div>
-        
+
         {/* SOAP: Subjetivo */}
         {encounter.subjective_text && (
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -242,11 +241,10 @@ export default function EncounterDetailPage() {
                         </span>
                       )}
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      condition.clinical_status === "active"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-gray-100 text-gray-600"
-                    }`}>
+                    <span className={`text-xs px-2 py-1 rounded-full ${condition.clinical_status === "active"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-gray-100 text-gray-600"
+                      }`}>
                       {condition.clinical_status === "active" ? "Activo" : condition.clinical_status}
                     </span>
                   </div>
@@ -281,15 +279,14 @@ export default function EncounterDetailPage() {
                         <p className="text-gray-600 mt-1">{med.dosage_text}</p>
                         {med.duration_value && (
                           <p className="text-sm text-gray-500 mt-1">
-                            Duración: {formatDuration(med.duration_value, med.duration_unit)}
+                            Duración: {formatDuration(med.duration_value, med.duration_unit ?? null)}
                           </p>
                         )}
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        med.status === "active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}>
+                      <span className={`text-xs px-2 py-1 rounded-full ${med.status === "active"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-600"
+                        }`}>
                         {med.status === "active" ? "Activo" : med.status}
                       </span>
                     </div>
@@ -310,9 +307,15 @@ export default function EncounterDetailPage() {
             )}
           </div>
         )}
-        
+
         {/* Actions */}
         <div className="flex gap-4">
+          <Link
+            href={`/encounters/${encounterId}/edit`}
+            className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 text-center transition"
+          >
+            ✏️ Editar consulta
+          </Link>
           <Link
             href={`/patients/${encounter.subject_id}`}
             className="w-full py-3 px-4 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 text-center"

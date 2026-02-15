@@ -538,7 +538,7 @@
           "Encounters"
         ],
         "summary": "Create Encounter",
-        "description": "Create new encounter for patient.\n\nCreates:\n- Encounter record\n- Condition(s) for diagnoses\n- MedicationRequest(s) for prescriptions",
+        "description": "Create new encounter for patient (FHIR Create interaction).\n\nCreates Encounter + Condition(s) + MedicationRequest(s).",
         "operationId": "create_encounter_api_v1_encounters_patient__patient_id__post",
         "security": [
           {
@@ -614,6 +614,62 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EncounterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Encounters"
+        ],
+        "summary": "Update Encounter",
+        "description": "Update an existing encounter (FHIR R5 Update interaction).\n\nReemplaza campos SOAP y sub-recursos (Conditions, Medications)\nmediante estrategia delete + recreate.",
+        "operationId": "update_encounter_api_v1_encounters__encounter_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "encounter_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Encounter Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EncounterUpdate"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1295,18 +1351,21 @@
             "type": "string",
             "maxLength": 200,
             "minLength": 1,
-            "title": "Code Text"
+            "title": "Code Text",
+            "description": "Texto del diagnóstico"
           },
           "code_coding_code": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 50
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Code Coding Code"
+            "title": "Code Coding Code",
+            "description": "Código CIE-10 u otro sistema de codificación"
           }
         },
         "type": "object",
@@ -1314,17 +1373,19 @@
           "code_text"
         ],
         "title": "ConditionCreate",
-        "description": "Schema for creating a condition."
+        "description": "Schema para crear una Condition (diagnóstico).\n\nAlineado con FHIR R5 Condition resource."
       },
       "ConditionResponse": {
         "properties": {
           "id": {
             "type": "string",
-            "title": "Id"
+            "title": "Id",
+            "description": "Identificador único de la condición"
           },
           "code_text": {
             "type": "string",
-            "title": "Code Text"
+            "title": "Code Text",
+            "description": "Texto del diagnóstico"
           },
           "code_coding_code": {
             "anyOf": [
@@ -1335,35 +1396,38 @@
                 "type": "null"
               }
             ],
-            "title": "Code Coding Code"
+            "title": "Code Coding Code",
+            "description": "Código de clasificación (CIE-10, etc)"
           },
           "clinical_status": {
             "type": "string",
-            "title": "Clinical Status"
+            "title": "Clinical Status",
+            "description": "Estado clínico: active | resolved | inactive"
           }
         },
         "type": "object",
         "required": [
           "id",
           "code_text",
-          "code_coding_code",
           "clinical_status"
         ],
         "title": "ConditionResponse",
-        "description": "Condition response."
+        "description": "Condition response (FHIR R5 Condition resource).\n\nRepresenta un diagnóstico clínico como recurso atómico independiente."
       },
       "EncounterCreate": {
         "properties": {
           "reason_text": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 500
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Reason Text"
+            "title": "Reason Text",
+            "description": "Motivo de consulta"
           },
           "subjective_text": {
             "anyOf": [
@@ -1374,7 +1438,8 @@
                 "type": "null"
               }
             ],
-            "title": "Subjective Text"
+            "title": "Subjective Text",
+            "description": "Subjetivo (SOAP)"
           },
           "objective_text": {
             "anyOf": [
@@ -1385,7 +1450,8 @@
                 "type": "null"
               }
             ],
-            "title": "Objective Text"
+            "title": "Objective Text",
+            "description": "Objetivo (SOAP)"
           },
           "assessment_text": {
             "anyOf": [
@@ -1396,7 +1462,8 @@
                 "type": "null"
               }
             ],
-            "title": "Assessment Text"
+            "title": "Assessment Text",
+            "description": "Análisis/Evaluación (SOAP)"
           },
           "plan_text": {
             "anyOf": [
@@ -1407,7 +1474,8 @@
                 "type": "null"
               }
             ],
-            "title": "Plan Text"
+            "title": "Plan Text",
+            "description": "Plan de tratamiento (SOAP)"
           },
           "recommendations_text": {
             "anyOf": [
@@ -1418,7 +1486,8 @@
                 "type": "null"
               }
             ],
-            "title": "Recommendations Text"
+            "title": "Recommendations Text",
+            "description": "Recomendaciones"
           },
           "note": {
             "anyOf": [
@@ -1429,7 +1498,8 @@
                 "type": "null"
               }
             ],
-            "title": "Note"
+            "title": "Note",
+            "description": "Nota libre (legacy)"
           },
           "conditions": {
             "items": {
@@ -1437,7 +1507,7 @@
             },
             "type": "array",
             "title": "Conditions",
-            "default": []
+            "description": "Diagnósticos vinculados a esta consulta"
           },
           "medications": {
             "items": {
@@ -1445,12 +1515,12 @@
             },
             "type": "array",
             "title": "Medications",
-            "default": []
+            "description": "Prescripciones vinculadas a esta consulta"
           }
         },
         "type": "object",
         "title": "EncounterCreate",
-        "description": "Schema for creating an encounter."
+        "description": "Schema para crear un Encounter (consulta médica).\n\nEstructura transaccional: crea Encounter + Conditions + Medications en una sola operación.\nAlineado con FHIR R5 Encounter resource."
       },
       "EncounterListResponse": {
         "properties": {
@@ -1459,11 +1529,13 @@
               "$ref": "#/components/schemas/EncounterResponse"
             },
             "type": "array",
-            "title": "Items"
+            "title": "Items",
+            "description": "Lista de encounters"
           },
           "total": {
             "type": "integer",
-            "title": "Total"
+            "title": "Total",
+            "description": "Total de resultados disponibles"
           }
         },
         "type": "object",
@@ -1472,26 +1544,30 @@
           "total"
         ],
         "title": "EncounterListResponse",
-        "description": "Paginated encounter list."
+        "description": "Respuesta paginada de encounters.\n\nFuture-proof: preparado para migrar a FHIR Bundle con paginación por cursores."
       },
       "EncounterResponse": {
         "properties": {
           "id": {
             "type": "string",
-            "title": "Id"
+            "title": "Id",
+            "description": "Identificador único del encounter"
           },
           "subject_id": {
             "type": "string",
-            "title": "Subject Id"
+            "title": "Subject Id",
+            "description": "Referencia al paciente (Patient.id)"
           },
           "status": {
             "type": "string",
-            "title": "Status"
+            "title": "Status",
+            "description": "Estado: planned | in-progress | finished | cancelled"
           },
           "period_start": {
             "type": "string",
             "format": "date-time",
-            "title": "Period Start"
+            "title": "Period Start",
+            "description": "Fecha/hora de inicio del encounter"
           },
           "reason_text": {
             "anyOf": [
@@ -1502,7 +1578,8 @@
                 "type": "null"
               }
             ],
-            "title": "Reason Text"
+            "title": "Reason Text",
+            "description": "Motivo de consulta"
           },
           "subjective_text": {
             "anyOf": [
@@ -1513,7 +1590,8 @@
                 "type": "null"
               }
             ],
-            "title": "Subjective Text"
+            "title": "Subjective Text",
+            "description": "Subjetivo (SOAP)"
           },
           "objective_text": {
             "anyOf": [
@@ -1524,7 +1602,8 @@
                 "type": "null"
               }
             ],
-            "title": "Objective Text"
+            "title": "Objective Text",
+            "description": "Objetivo (SOAP)"
           },
           "assessment_text": {
             "anyOf": [
@@ -1535,7 +1614,8 @@
                 "type": "null"
               }
             ],
-            "title": "Assessment Text"
+            "title": "Assessment Text",
+            "description": "Análisis (SOAP)"
           },
           "plan_text": {
             "anyOf": [
@@ -1546,7 +1626,8 @@
                 "type": "null"
               }
             ],
-            "title": "Plan Text"
+            "title": "Plan Text",
+            "description": "Plan (SOAP)"
           },
           "recommendations_text": {
             "anyOf": [
@@ -1557,7 +1638,8 @@
                 "type": "null"
               }
             ],
-            "title": "Recommendations Text"
+            "title": "Recommendations Text",
+            "description": "Recomendaciones"
           },
           "note": {
             "anyOf": [
@@ -1568,7 +1650,8 @@
                 "type": "null"
               }
             ],
-            "title": "Note"
+            "title": "Note",
+            "description": "Nota consolidada (legacy)"
           },
           "conditions": {
             "items": {
@@ -1576,7 +1659,7 @@
             },
             "type": "array",
             "title": "Conditions",
-            "default": []
+            "description": "Diagnósticos de esta consulta"
           },
           "medications": {
             "items": {
@@ -1584,7 +1667,7 @@
             },
             "type": "array",
             "title": "Medications",
-            "default": []
+            "description": "Prescripciones de esta consulta"
           }
         },
         "type": "object",
@@ -1592,17 +1675,118 @@
           "id",
           "subject_id",
           "status",
-          "period_start",
-          "reason_text",
-          "subjective_text",
-          "objective_text",
-          "assessment_text",
-          "plan_text",
-          "recommendations_text",
-          "note"
+          "period_start"
         ],
         "title": "EncounterResponse",
-        "description": "Encounter response."
+        "description": "Encounter response (FHIR R5 Encounter resource).\n\nIncluye recursos atómicos vinculados (Conditions, Medications)."
+      },
+      "EncounterUpdate": {
+        "properties": {
+          "reason_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Text",
+            "description": "Motivo de consulta"
+          },
+          "subjective_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subjective Text",
+            "description": "Subjetivo (SOAP)"
+          },
+          "objective_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Text",
+            "description": "Objetivo (SOAP)"
+          },
+          "assessment_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Text",
+            "description": "Análisis/Evaluación (SOAP)"
+          },
+          "plan_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Text",
+            "description": "Plan de tratamiento (SOAP)"
+          },
+          "recommendations_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendations Text",
+            "description": "Recomendaciones"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "Nota libre (legacy)"
+          },
+          "conditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionCreate"
+            },
+            "type": "array",
+            "title": "Conditions",
+            "description": "Diagnósticos (reemplazo completo)"
+          },
+          "medications": {
+            "items": {
+              "$ref": "#/components/schemas/MedicationCreate"
+            },
+            "type": "array",
+            "title": "Medications",
+            "description": "Prescripciones (reemplazo completo)"
+          }
+        },
+        "type": "object",
+        "title": "EncounterUpdate",
+        "description": "Schema para actualizar un Encounter (FHIR R5 Update interaction).\n\nSemántica FHIR Update: reemplazo completo del contenido del recurso.\nLos campos omitidos (None) se limpian; conditions/medications se reemplazan."
       },
       "HTTPValidationError": {
         "properties": {
@@ -1623,35 +1807,41 @@
             "type": "string",
             "maxLength": 200,
             "minLength": 1,
-            "title": "Medication Text"
+            "title": "Medication Text",
+            "description": "Nombre del medicamento"
           },
           "dosage_text": {
             "type": "string",
             "maxLength": 500,
             "minLength": 1,
-            "title": "Dosage Text"
+            "title": "Dosage Text",
+            "description": "Pauta de dosificación"
           },
           "duration_value": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 1.0
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Duration Value"
+            "title": "Duration Value",
+            "description": "Valor de duración del tratamiento"
           },
           "duration_unit": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "maxLength": 20
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Duration Unit"
+            "title": "Duration Unit",
+            "description": "Unidad de duración: días, semanas, meses"
           }
         },
         "type": "object",
@@ -1660,7 +1850,7 @@
           "dosage_text"
         ],
         "title": "MedicationCreate",
-        "description": "Schema for creating a medication."
+        "description": "Schema para crear una MedicationRequest (prescripción).\n\nAlineado con FHIR R5 MedicationRequest resource."
       },
       "MedicationItem": {
         "properties": {
@@ -1689,15 +1879,18 @@
         "properties": {
           "id": {
             "type": "string",
-            "title": "Id"
+            "title": "Id",
+            "description": "Identificador único de la prescripción"
           },
           "medication_text": {
             "type": "string",
-            "title": "Medication Text"
+            "title": "Medication Text",
+            "description": "Nombre del medicamento"
           },
           "dosage_text": {
             "type": "string",
-            "title": "Dosage Text"
+            "title": "Dosage Text",
+            "description": "Pauta de dosificación"
           },
           "duration_value": {
             "anyOf": [
@@ -1708,7 +1901,8 @@
                 "type": "null"
               }
             ],
-            "title": "Duration Value"
+            "title": "Duration Value",
+            "description": "Valor de duración"
           },
           "duration_unit": {
             "anyOf": [
@@ -1719,11 +1913,13 @@
                 "type": "null"
               }
             ],
-            "title": "Duration Unit"
+            "title": "Duration Unit",
+            "description": "Unidad de duración"
           },
           "status": {
             "type": "string",
-            "title": "Status"
+            "title": "Status",
+            "description": "Estado de la prescripción: active | completed | cancelled"
           }
         },
         "type": "object",
@@ -1731,12 +1927,10 @@
           "id",
           "medication_text",
           "dosage_text",
-          "duration_value",
-          "duration_unit",
           "status"
         ],
         "title": "MedicationResponse",
-        "description": "Medication response."
+        "description": "MedicationRequest response (FHIR R5 MedicationRequest resource).\n\nRepresenta una prescripción médica como recurso atómico independiente."
       },
       "PatientCreate": {
         "properties": {

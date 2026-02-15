@@ -40,15 +40,31 @@ export type Patient = Schema["PatientResponse"];
 export type Condition = Schema["ConditionResponse"];
 export type MedicationRequest = Schema["MedicationResponse"];
 export type EncounterCreate = Schema["EncounterCreate"];
-export type EncounterListResponse = Schema["EncounterListResponse"];
+export type EncounterUpdate = Schema["EncounterUpdate"];
 
 /**
  * Combined encounter summary + detail.
- * The backend `EncounterResponse` already includes all fields.
+ *
+ * Override: `conditions` y `medications` son siempre arrays (el backend usa
+ * default_factory=list), pero openapi-typescript los marca como opcionales
+ * al detectar un valor por defecto. Los forzamos a requeridos aquí para
+ * evitar guardas innecesarias en toda la app.
  */
-export type Encounter = Schema["EncounterResponse"];
-export type EncounterSummary = Schema["EncounterResponse"];
-export type EncounterDetail = Schema["EncounterResponse"];
+type _EncounterBase = Schema["EncounterResponse"];
+export type Encounter = Omit<_EncounterBase, "conditions" | "medications"> & {
+  conditions: Condition[];
+  medications: MedicationRequest[];
+};
+export type EncounterSummary = Encounter;
+export type EncounterDetail = Encounter;
+
+/**
+ * Override de EncounterListResponse para usar nuestro Encounter corregido.
+ */
+export interface EncounterListResponse {
+  items: Encounter[];
+  total: number;
+}
 
 /**
  * Alias kept for backward compat.
