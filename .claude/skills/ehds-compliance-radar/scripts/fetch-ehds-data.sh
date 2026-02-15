@@ -33,19 +33,31 @@ if [[ -f "$CACHE_HASH_FILE" ]]; then
 fi
 
 echo "[fetch-ehds-data] Downloading EHDS articles from $ARTICLES_ENDPOINT ..."
-curl -s -X GET "$ARTICLES_ENDPOINT" \
-  -H "Content-Type: application/json" \
-  -o "$ARTICLES_CACHE"
+ARTICLES_RAW=$(curl -s -X GET "$ARTICLES_ENDPOINT" \
+  -H "Content-Type: application/json")
 
 # Validate articles JSON
-if ! jq -e '.data' "$ARTICLES_CACHE" > /dev/null 2>&1; then
+if ! echo "$ARTICLES_RAW" | jq -e '.data' > /dev/null 2>&1; then
   echo "[fetch-ehds-data] ERROR: Invalid JSON structure in articles response (missing .data key)"
-  rm -f "$ARTICLES_CACHE"
   exit 1
 fi
 
-ARTICLE_COUNT=$(jq '.data | length' "$ARTICLES_CACHE")
-echo "[fetch-ehds-data] Downloaded $ARTICLE_COUNT articles."
+# Extract API modified date if available
+API_MODIFIED=$(echo "$ARTICLES_RAW" | jq -r '.meta.date_modified // "unknown"')
+
+# Filter to relevant chapters only (1, 2, 3, 5)
+echo "$ARTICLES_RAW" | jq '{
+  _meta: {
+    fetched_at: (now | todate),
+    api_date_modified: "'"${API_MODIFIED}"'",
+    source: "EHDS Explorer API v2.0",
+    filtered_chapters: [1, 2, 3, 5]
+  },
+  articles: [.data[] | select(.chapter_id == 1 or .chapter_id == 2 or .chapter_id == 3 or .chapter_id == 5)]
+}' > "$ARTICLES_CACHE"
+
+ARTICLE_COUNT=$(jq '.articles | length' "$ARTICLES_CACHE")
+echo "[fetch-ehds-data] Downloaded and filtered to $ARTICLE_COUNT articles (chapters 1, 2, 3, 5)."
 
 echo "[fetch-ehds-data] Downloading EHDS definitions from $DEFINITIONS_ENDPOINT ..."
 curl -s -X GET "$DEFINITIONS_ENDPOINT" \
