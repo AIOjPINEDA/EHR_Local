@@ -22,12 +22,23 @@ class ApiClient {
     this.token = token;
   }
 
+  /**
+   * Centralized error handler for all API responses.
+   * Parses error.detail from backend or returns fallback message.
+   */
+  private async handleErrorResponse(response: Response): Promise<never> {
+    const error: ApiError = await response.json().catch(() => ({
+      detail: 'Error desconocido',
+    }));
+    throw new Error(error.detail);
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}/api/v1${endpoint}`;
-    
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -43,10 +54,7 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        detail: 'Error desconocido',
-      }));
-      throw new Error(error.detail);
+      await this.handleErrorResponse(response);
     }
 
     // Handle 204 No Content
@@ -86,10 +94,7 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        detail: 'Error desconocido',
-      }));
-      throw new Error(error.detail);
+      await this.handleErrorResponse(response);
     }
 
     return response.json();
@@ -109,7 +114,7 @@ class ApiClient {
   // Download PDF as blob
   async downloadPdf(endpoint: string): Promise<Blob> {
     const url = `${this.baseUrl}/api/v1${endpoint}`;
-    
+
     const headers: HeadersInit = {};
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
@@ -118,7 +123,7 @@ class ApiClient {
     const response = await fetch(url, { headers });
 
     if (!response.ok) {
-      throw new Error('Error al descargar PDF');
+      await this.handleErrorResponse(response);
     }
 
     return response.blob();
