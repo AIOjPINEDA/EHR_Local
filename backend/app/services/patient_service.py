@@ -187,6 +187,16 @@ class PatientService(BaseService[Patient]):
         patient = await self.get_by_id(patient_id)
         if not patient:
             return None
+
+        # Campos obligatorios en DB: no aceptan null ni vacío
+        required_fields = ("name_given", "name_family", "birth_date")
+        for field in required_fields:
+            if field in data and data[field] is None:
+                raise ValueError(f"El campo '{field}' no puede ser null")
+            if field in ("name_given", "name_family") and field in data:
+                value = data[field]
+                if isinstance(value, str) and not value.strip():
+                    raise ValueError(f"El campo '{field}' no puede estar vacío")
         
         # Validate clinical fields before applying (solo lógica de negocio)
         if "birth_date" in data:
