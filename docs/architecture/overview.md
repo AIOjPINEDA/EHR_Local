@@ -86,9 +86,11 @@ Authentication is implemented using JWT tokens with bcrypt password hashing:
 | Layer | Responsibility |
 |------|----------------|
 | `app/api/` | REST endpoints and contracts |
+| `app/api/exceptions.py` | Centralized HTTPException helpers (`raise_not_found`, `raise_unauthorized`, etc.) |
 | `app/models/` | SQLAlchemy entities (FHIR-aligned naming) |
-| `app/schemas/` | Patient-related Pydantic schemas |
-| `app/services/` | Business logic (`PatientService`, PDF service) |
+| `app/schemas/` | Atomic FHIR-aligned Pydantic schemas (Condition, Medication, Encounter) |
+| `app/services/` | Business logic extending `BaseService` with FHIR naming (`read`, `search`, `create`, `update`, `delete`) |
+| `app/services/base.py` | Base service class with FHIR R5 interaction naming conventions |
 | `app/validators/` | DNI/NIE + clinical input validation |
 
 ## Frontend Responsibilities
@@ -96,8 +98,11 @@ Authentication is implemented using JWT tokens with bcrypt password hashing:
 | Layer | Responsibility |
 |------|----------------|
 | `src/app/` | Route pages (dashboard, patients, encounters, templates) |
-| `src/lib/api/client.ts` | API wrapper with `/api/v1` prefix + auth header |
+| `src/lib/api/client.ts` | API wrapper with `/api/v1` prefix, auth header, and centralized error handling |
 | `src/lib/stores/auth-store.ts` | Lightweight auth state + persistence |
+| `src/lib/hooks/` | Reusable React hooks (`useAuthGuard`, `usePagination`) |
+| `src/lib/hooks/useAuthGuard.ts` | Auth guard with loading state (prevents flash of unprotected content) |
+| `src/lib/hooks/usePagination.ts` | Abstract pagination hook (FHIR Bundle Links ready, hides limit/offset from UI) |
 | `src/components/ui/` | Shared UI primitives |
 | `src/types/api.ts` | Manual bridge and FE-only API types |
 | `src/types/api.generated.ts` | Auto-generated types from OpenAPI schema |
@@ -130,15 +135,99 @@ These controls prevent drift between declared architecture and implemented behav
 | MedicationRequest | MedicationRequest |
 | AllergyIntolerance | AllergyIntolerance |
 
+## FHIR Architecture Patterns
+
+### Atomic Schemas (FHIR Resources)
+
+Schemas are structured following FHIR R5 resource independence:
+
+- **Atomic resources**: `Condition` and `Medication` schemas are independent of `Encounter`
+- **Unidirectional imports**: `Encounter` imports atomic schemas (prevents circular dependencies)
+- **Reusability**: Atomic schemas can be used in multiple contexts (e.g., direct CRUD, nested in Encounter)
+
+```
+app/schemas/
+├── condition.py       # ConditionCreate, ConditionResponse (atomic)
+├── medication.py      # MedicationCreate, MedicationResponse (atomic)
+└── encounter.py       # EncounterCreate/Response (imports atomic schemas)
+```
+
+### Service Layer (FHIR Interactions)
+
+Services follow FHIR R5 interaction naming conventions (avoiding "magic methods"):
+
+- **`read`**: FHIR Read operation (get by ID)
+- **`search`**: FHIR Search operation (query with parameters)
+- **`create`**: FHIR Create operation
+- **`update`**: FHIR Update operation (full replacement)
+- **`patch`**: FHIR Patch operation (partial update)
+- **`delete`**: FHIR Delete operation
+
+All services extend `BaseService[T]` with:
+- Generic typing for primary resource (e.g., `PatientService(BaseService[Patient])`)
+- Shared `commit_and_refresh(instance: M)` helper (accepts any model type)
+- FHIR-aligned method names (no `save_or_update`, `upsert`, etc.)
+
+### Error Handling
+
+Backend uses centralized exception helpers:
+
+```python
+from app.api.exceptions import raise_not_found, raise_bad_request, raise_unauthorized, raise_forbidden
+
+# Instead of:
+raise HTTPException(status_code=404, detail="Paciente no encontrado")
+
+# Use:
+raise_not_found("Paciente")
+```
+
+Frontend uses centralized error response handler in `ApiClient`:
+
+```typescript
+private async handleErrorResponse(response: Response): Promise<never> {
+  const error = await response.json().catch(() => ({ detail: 'Error desconocido' }));
+  throw new Error(error.detail);
+}
+```
+
+### Pagination Abstraction (FHIR Bundle Links Ready)
+
+Frontend pagination hook (`usePagination`) abstracts limit/offset implementation:
+
+- **UI API**: `nextPage()`, `prevPage()`, `hasNext`, `hasPrev`, `currentPage`, `totalPages`
+- **Internal API**: `__internalOffset`, `__internalPageSize` (hidden from UI)
+- **Future-proof**: Ready to migrate to FHIR Bundle Links (cursor-based) without UI changes
+
 ## Repository Layout (Active)
 
 ```
 EHR_Guadalix/
 ├── backend/
 │   ├── app/
+│   │   ├── api/              # REST endpoints
+│   │   │   └── exceptions.py # Centralized HTTPException helpers
+│   │   ├── models/           # SQLAlchemy ORM (FHIR-aligned)
+│   │   ├── schemas/          # Atomic FHIR Pydantic schemas
+│   │   │   ├── condition.py
+│   │   │   ├── medication.py
+│   │   │   └── encounter.py
+│   │   ├── services/         # Business logic (FHIR interactions)
+│   │   │   └── base.py       # BaseService with FHIR naming
+│   │   └── validators/       # DNI/NIE + clinical validation
 │   └── tests/
 ├── frontend/
 │   ├── src/
+│   │   ├── app/              # Next.js 14 App Router pages
+│   │   ├── lib/
+│   │   │   ├── api/
+│   │   │   │   └── client.ts # API wrapper with centralized errors
+│   │   │   ├── hooks/        # Reusable React hooks
+│   │   │   │   ├── useAuthGuard.ts
+│   │   │   │   └── usePagination.ts
+│   │   │   └── stores/       # Auth store
+│   │   ├── components/ui/    # UI primitives
+│   │   └── types/            # TypeScript types
 │   └── scripts/
 ├── supabase/
 │   └── migrations/
@@ -150,10 +239,10 @@ EHR_Guadalix/
 │   ├── architecture/
 │   ├── plans/
 │   ├── playbooks/
-│   └── specs/       # New active specs
+│   └── specs/                # Active specs
 └── (local-only archive, not versioned in git)
 ```
 
 ---
 
-*Last updated: 2026-02-12*
+*Last updated: 2026-02-15*

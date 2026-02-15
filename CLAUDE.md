@@ -47,9 +47,14 @@ npm run dev           # Dev server (port 3000)
 
 ### Backend (`backend/app/`)
 - **`api/`** — Route modules mounted under `/api/v1`: `auth`, `patients`, `encounters`, `templates`, `prescriptions`. Aggregated in `api/router.py`.
+  - **`api/exceptions.py`** — Centralized HTTPException helpers: `raise_not_found`, `raise_bad_request`, `raise_unauthorized`, `raise_forbidden`. Use these instead of direct `HTTPException` calls for consistency.
 - **`models/`** — SQLAlchemy async ORM with FHIR R5 naming: `Patient`, `Practitioner`, `Encounter`, `Condition`, `MedicationRequest`, `AllergyIntolerance`, `Template`. UUID PKs, `meta_created_at`/`meta_updated_at` timestamps.
-- **`schemas/`** — Pydantic v2 schemas (`ConfigDict(from_attributes=True)`) for request/response validation.
-- **`services/`** — Business logic layer (e.g., `PatientService`). Receives `AsyncSession`, raises `ValueError` on validation failures (API layer converts to 400).
+- **`schemas/`** — Atomic FHIR R5 Pydantic v2 schemas (`ConfigDict(from_attributes=True)`). Independent resources (Condition, Medication) prevent circular imports. Encounter imports atomic schemas unidirectionally.
+  - **`schemas/condition.py`** — `ConditionCreate`, `ConditionResponse` (atomic, FHIR-aligned)
+  - **`schemas/medication.py`** — `MedicationCreate`, `MedicationResponse` (atomic, FHIR-aligned)
+  - **`schemas/encounter.py`** — `EncounterCreate`, `EncounterResponse` (imports atomic schemas)
+- **`services/`** — Business logic layer extending `BaseService[T]` with FHIR R5 interaction naming: `read`, `search`, `create`, `update`, `patch`, `delete`. Receives `AsyncSession`, raises `ValueError` on validation failures (API layer converts to 400).
+  - **`services/base.py`** — Base service class with FHIR naming conventions and `commit_and_refresh` helper (accepts any model type via TypeVar M).
 - **`validators/`** — Domain validators: `dni.py` (Spanish DNI/NIE), `clinical.py` (birth_date, gender). **Never modify DNI/NIE validators without explicit approval.**
 - **`templates/`** — HTML templates for WeasyPrint PDF prescription generation.
 - **`config.py`** — Pydantic `BaseSettings` loading from `.env`. Single `DATABASE_URL` controls local vs Supabase.
@@ -61,9 +66,14 @@ npm run dev           # Dev server (port 3000)
 
 ### Frontend (`frontend/src/`)
 - **`app/`** — Pages: `/login`, `/dashboard`, `/patients`, `/patients/[id]`, `/patients/[id]/encounters/new`, `/encounters/[id]`, `/settings/templates`.
-- **`lib/api/client.ts`** — Singleton `ApiClient` with token injection, JSON + form-data + blob (PDF) support. Base URL from `NEXT_PUBLIC_API_URL`.
-- **`lib/stores/auth-store.ts`** — Custom observable store persisting JWT + practitioner to `localStorage` (`consultamed_auth` key). Client-side auth guards via `useEffect` in each page.
-- **`lib/hooks/`** — `useEncounterForm`, `useDebouncedValue`, `useAutocompleteList`.
+- **`lib/api/client.ts`** — Singleton `ApiClient` with token injection, centralized error handling (`handleErrorResponse`), JSON + form-data + blob (PDF) support. Base URL from `NEXT_PUBLIC_API_URL`.
+- **`lib/stores/auth-store.ts`** — Custom observable store persisting JWT + practitioner to `localStorage` (`consultamed_auth` key).
+- **`lib/hooks/`** — Reusable React hooks for common patterns:
+  - **`useAuthGuard.ts`** — Centralized auth guard with loading state. Prevents flash of unprotected content during auth validation. Use in all protected pages.
+  - **`usePagination.ts`** — Abstract pagination hook (FHIR Bundle Links ready). Hides limit/offset from UI, exposes `nextPage()`, `prevPage()`, `hasNext`, `hasPrev`. Future-proof for cursor-based pagination.
+  - **`useEncounterForm.ts`** — Encounter form state management.
+  - **`useDebouncedValue.ts`** — Debounced value for search inputs.
+  - **`useAutocompleteList.ts`** — Autocomplete list management.
 - **`types/api.ts`** — Manual bridge re-exporting generated types with friendly aliases (e.g., `Patient = Schema["PatientResponse"]`).
 - **`types/api.generated.ts`** — Auto-generated from OpenAPI via `npm run generate:types`. Do not edit manually.
 - **`components/ui/`** — shadcn/ui primitives (Radix-based). `cn()` utility for Tailwind class merging.
