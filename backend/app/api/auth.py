@@ -5,7 +5,7 @@ MVP simple: JWT local sin Supabase Auth para desarrollo rápido.
 """
 from datetime import datetime, timedelta
 from typing import Optional, cast
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
@@ -14,6 +14,7 @@ from jose import JWTError, jwt
 
 from app.config import settings
 from app.database import get_db
+from app.api.exceptions import raise_unauthorized
 from app.models.practitioner import Practitioner
 
 router = APIRouter()
@@ -56,25 +57,20 @@ async def get_current_practitioner(
     db: AsyncSession = Depends(get_db)
 ) -> Practitioner:
     """Dependency to get current authenticated practitioner."""
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Credenciales inválidas",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         practitioner_id: str = payload.get("sub")
         if practitioner_id is None:
-            raise credentials_exception
+            raise_unauthorized("Credenciales inválidas")
     except JWTError:
-        raise credentials_exception
-    
+        raise_unauthorized("Credenciales inválidas")
+
     stmt = select(Practitioner).where(Practitioner.id == practitioner_id)
     result = await db.execute(stmt)
     practitioner = result.scalar_one_or_none()
-    
+
     if practitioner is None:
-        raise credentials_exception
+        raise_unauthorized("Credenciales inválidas")
     return practitioner
 
 
@@ -93,30 +89,18 @@ async def login(
     stmt = select(Practitioner).where(Practitioner.telecom_email == form_data.username)
     result = await db.execute(stmt)
     practitioner = result.scalar_one_or_none()
-    
+
     if not practitioner:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email o contraseña incorrectos",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
+        raise_unauthorized("Email o contraseña incorrectos")
+
     # Verify password using bcrypt
     import bcrypt
-    
+
     if not practitioner.password_hash:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email o contraseña incorrectos",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
+        raise_unauthorized("Email o contraseña incorrectos")
+
     if not bcrypt.checkpw(form_data.password.encode('utf-8'), practitioner.password_hash.encode('utf-8')):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email o contraseña incorrectos",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise_unauthorized("Email o contraseña incorrectos")
     
     # Crear token
     access_token = create_access_token(data={"sub": practitioner.id})

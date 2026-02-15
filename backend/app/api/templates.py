@@ -3,13 +3,14 @@ ConsultaMed Backend - Templates Endpoints
 """
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Query, status, Depends
+from fastapi import APIRouter, Query, status, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, func
 
 from app.database import get_db
 from app.api.auth import get_current_practitioner
+from app.api.exceptions import raise_not_found, raise_forbidden
 from app.models.template import TreatmentTemplate
 from app.models.practitioner import Practitioner
 
@@ -177,13 +178,10 @@ async def match_template(
         .limit(1)
     )
     template = result.scalar_one_or_none()
-    
+
     if not template:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No se encontró template para este diagnóstico"
-        )
-    
+        raise_not_found("Template para este diagnóstico")
+
     return TemplateResponse(
         id=str(template.id),
         name=template.name,
@@ -215,13 +213,10 @@ async def get_template(
         )
     )
     template = result.scalar_one_or_none()
-    
+
     if not template:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Template no encontrado"
-        )
-    
+        raise_not_found("Template")
+
     return TemplateResponse(
         id=str(template.id),
         name=template.name,
@@ -284,26 +279,17 @@ async def update_template(
         )
     )
     template = result.scalar_one_or_none()
-    
+
     if not template:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Template no encontrado"
-        )
-    
+        raise_not_found("Template")
+
     # Proteger templates globales de edición
     if template.practitioner_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No se pueden modificar templates del sistema"
-        )
-    
+        raise_forbidden("No se pueden modificar templates del sistema")
+
     # Verificar que pertenece al usuario actual
     if template.practitioner_id != current_practitioner.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permiso para modificar este template"
-        )
+        raise_forbidden("No tienes permiso para modificar este template")
     
     # Actualizar campos
     if data.name is not None:
@@ -348,26 +334,17 @@ async def delete_template(
         )
     )
     template = result.scalar_one_or_none()
-    
+
     if not template:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Template no encontrado"
-        )
-    
+        raise_not_found("Template")
+
     # Proteger templates globales de eliminación
     if template.practitioner_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No se pueden eliminar templates del sistema"
-        )
-    
+        raise_forbidden("No se pueden eliminar templates del sistema")
+
     # Verificar que pertenece al usuario actual
     if template.practitioner_id != current_practitioner.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permiso para eliminar este template"
-        )
+        raise_forbidden("No tienes permiso para eliminar este template")
     
     await db.delete(template)
     await db.commit()

@@ -7,7 +7,7 @@ import unicodedata
 from datetime import date
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -15,6 +15,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.api.auth import get_current_practitioner
+from app.api.exceptions import raise_not_found, raise_bad_request
 from app.models.encounter import Encounter
 from app.models.practitioner import Practitioner
 from app.services.pdf_service import PDFService
@@ -75,10 +76,7 @@ async def _get_encounter_or_404(db: AsyncSession, encounter_id: str) -> Encounte
     encounter = result.scalar_one_or_none()
 
     if not encounter:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Consulta no encontrada",
-        )
+        raise_not_found("Consulta")
 
     return encounter
 
@@ -160,10 +158,7 @@ async def download_prescription_pdf(
     encounter = await _get_encounter_or_404(db, encounter_id)
 
     if not encounter.medications:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La consulta no tiene medicamentos para generar receta"
-        )
+        raise_bad_request("La consulta no tiene medicamentos para generar receta")
 
     payload = _build_prescription_payload(encounter, current_practitioner)
 

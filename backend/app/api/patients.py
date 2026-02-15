@@ -2,17 +2,18 @@
 ConsultaMed Backend - Patients Endpoints
 """
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.api.auth import get_current_practitioner
+from app.api.exceptions import raise_not_found, raise_bad_request
 from app.models.practitioner import Practitioner
 from app.services.patient_service import PatientService
 from app.schemas.patient import (
-    PatientCreate, 
-    PatientUpdate, 
-    PatientResponse, 
+    PatientCreate,
+    PatientUpdate,
+    PatientResponse,
     PatientListResponse,
     PatientSummary,
     AllergyCreate,
@@ -84,13 +85,10 @@ async def get_patient(
     """
     service = PatientService(db)
     patient = await service.get_by_id(patient_id)
-    
+
     if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Paciente no encontrado"
-        )
-    
+        raise_not_found("Paciente")
+
     return PatientResponse.model_validate(patient)
 
 
@@ -114,10 +112,7 @@ async def create_patient(
         patient = await service.create(patient_data.model_dump())
         return PatientResponse.model_validate(patient)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise_bad_request(str(e))
 
 
 @router.patch("/{patient_id}", response_model=PatientResponse)
@@ -138,17 +133,11 @@ async def update_patient(
     try:
         patient = await service.update(patient_id, update_data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-    
+        raise_bad_request(str(e))
+
     if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Paciente no encontrado"
-        )
-    
+        raise_not_found("Paciente")
+
     return PatientResponse.model_validate(patient)
 
 
@@ -163,13 +152,10 @@ async def list_allergies(
     """
     service = PatientService(db)
     patient = await service.get_by_id(patient_id)
-    
+
     if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Paciente no encontrado"
-        )
-    
+        raise_not_found("Paciente")
+
     return [AllergyResponse.model_validate(allergy) for allergy in patient.allergies]
 
 
@@ -188,11 +174,8 @@ async def add_allergy(
     # Check patient exists
     patient = await service.get_by_id(patient_id)
     if not patient:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Paciente no encontrado"
-        )
-    
+        raise_not_found("Paciente")
+
     allergy = await service.add_allergy(patient_id, allergy_data.model_dump())
     return AllergyResponse.model_validate(allergy)
 
@@ -208,11 +191,8 @@ async def remove_allergy(
     Remove allergy from patient.
     """
     service = PatientService(db)
-    
+
     success = await service.remove_allergy(patient_id, allergy_id)
-    
+
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Alergia no encontrada"
-        )
+        raise_not_found("Alergia")
