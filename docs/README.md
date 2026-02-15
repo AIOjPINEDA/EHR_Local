@@ -22,6 +22,11 @@ Este índice centraliza la documentación vigente para evitar información dispe
 - `docs/testing/PR_TEST_CHECKLIST.md`: checklist obligatorio para PRs funcionales.
 - `backend/tests/README.md`: estructura y reglas para tests backend.
 
+## Compliance
+
+- `docs/compliance/EHDS_COMPLIANCE_RADAR.md`: radar de compliance EHDS (generado por Agent Skill).
+- `docs/plans/2026-02-15-ehds-compliance-radar-design.md`: diseño del sistema de compliance radar.
+
 ## Planes
 
 - `docs/plans/PENDING_TASKS.md`: tareas pendientes no prioritarias y follow-ups operativos.
