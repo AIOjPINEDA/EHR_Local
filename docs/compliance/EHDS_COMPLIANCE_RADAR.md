@@ -1,611 +1,463 @@
 # EHDS Compliance Radar — ConsultaMed
 
-**Generated:** 2026-02-15T21:30:00Z
-**Regulation:** (EU) 2024/1689 — European Health Data Space
-**System Version:** d73e32a609281a676649f64242344d62864b1814
-**Scope:** ConsultaMed MVP — Private practice EHR in Spain (1-2 physicians)
+> **Auto-generated:** 2026-02-16
+> **Regulation:** (EU) 2025/327 — European Health Data Space
+> **EHDS API cache:** 2026-02-16
+> **Analyzed:** 59 articles from Chapters 1–3, 5 (of 105 total)
 
 ---
 
 ## Executive Summary
 
-ConsultaMed demonstrates **partial compliance** with EHDS Regulation (EU) 2024/1689, with strong foundations in data modeling (FHIR R5 alignment) and patient identification (Spanish DNI/NIE validation), but significant gaps in patient-facing access rights, consent management, and cybersecurity controls.
+| **Status** | **Count** | **% of Assessed** |
+|------------|-----------|-------------------|
+| Implemented | 4 | 17% |
+| Partial | 9 | 39% |
+| Roadmap | 10 | 44% |
+| Not Applicable | — | — |
+| **Total HIGH/MEDIUM articles assessed** | 23 | 100% |
 
-**Compliance Posture:**
-- **Compliant:** 2 articles (17%)
-- **Partial Compliance:** 7 articles (58%)
-- **Non-Compliant:** 3 articles (25%)
+ConsultaMed demonstrates **early-stage partial compliance** with EHDS Regulation (EU) 2025/327. The system has strong foundations in FHIR R5 data modeling, Spanish patient identification (DNI/NIE), structured clinical data registration, and EU-only data storage. However, significant gaps exist in patient-facing rights (Articles 3–10), audit logging (Article 9, 25), and formal EHR system certification requirements (Chapter 3).
 
-**Critical Gaps (Pre-Production Blockers):**
-1. **Article 3 (Patient Access):** No patient-facing portal for direct EHR access — violates "immediate, free-of-charge access" requirement.
-2. **Article 12 (Cybersecurity):** Missing multi-factor authentication (MFA), encryption at rest, and formal incident response plan.
-3. **Article 4 (Consent & Correction):** No patient self-service for data rectification or consent withdrawal.
+**Top 3 strengths:**
+1. FHIR R5-aligned data models across all clinical resources (Patient, Encounter, Condition, MedicationRequest, AllergyIntolerance).
+2. Spanish DNI/NIE validation with official algorithm and OID (`urn:oid:1.3.6.1.4.1.19126.3`).
+3. EU-only data storage (Supabase EU region or local PostgreSQL).
 
-**Strengths:**
-- FHIR R5-aligned data models enable future EEHRxF compliance.
-- Spanish DNI/NIE validation ensures legal patient identification per LOPD-GDD.
-- JWT-based authentication with bcrypt password hashing provides baseline security.
-
----
-
-## 1. Regulatory Scope
-
-### 1.1 Applicable Articles
-
-Based on ConsultaMed's role as a **primary use EHR system** for small private practices in Spain, the following EHDS articles apply:
-
-**Chapter 2: Access and Use of Electronic Health Data**
-- Article 3: Patient access to EHR data (HIGH priority)
-- Article 4: General conditions of access (consent, correction) (HIGH priority)
-- Article 5: Healthcare professional access (HIGH priority)
-- Article 7: Interoperability of EHR systems (HIGH priority)
-- Article 8: Electronic prescription (MEDIUM priority)
-
-**Chapter 3: Requirements for EHR Systems**
-- Article 9: Manufacturer obligations (HIGH priority)
-- Article 10: Quality and safety standards (HIGH priority)
-- Article 11: Interoperability standards (HIGH priority)
-- Article 12: Cybersecurity requirements (HIGH priority)
-
-**Chapter 5: Secondary Use (Storage)**
-- Article 38: EU storage obligation (MEDIUM priority)
-
-### 1.2 Spanish National Context
-
-**LOPD-GDD (Ley Orgánica 3/2018)** complements EHDS requirements:
-- **Article 9 LOPD-GDD:** Health data processing requires explicit consent or legal basis per GDPR Article 9(2).
-- **DNI/NIE validation:** Spanish national ID is the legal patient identifier; ConsultaMed implements full validation per official algorithm.
+**Top 3 critical gaps:**
+1. **No patient-facing portal** — violates Articles 3, 4, 5, 6, 7 (patient rights to access, insert, correct, export data).
+2. **No audit logging** — violates Articles 9, 11, 25 (right to know who accessed data; logging software component).
+3. **No incident response system** — violates Article 44 (handling risks and serious incidents).
 
 ---
 
-## 2. Compliance Assessment
+## Chapter 2: Primary Use of Electronic Health Data (HIGH)
 
-### 2.1 Data Model Alignment — EHDS Article 7, 11
+### Art. 3 — Right of natural persons to access their personal electronic health data
 
-**Requirement (Article 7):**
-> "EHR systems shall adopt the European EHR Exchange Format (EEHRxF) and ensure data portability using harmonised standards."
+- **Status:** `roadmap`
+- **Priority:** HIGH
+- **Requirement:** Natural persons shall have immediate, free-of-charge access to at least priority categories of their personal electronic health data through electronic health data access services.
+- **Evidence:** ConsultaMed provides practitioner-mediated access only. API endpoint `GET /api/v1/patients/{id}` returns full patient record, but requires practitioner JWT. Frontend route `/patients/[id]` is practitioner-only (`frontend/src/app/patients/[id]/page.tsx`).
+- **Gaps:**
+  - No patient authentication mechanism (patients have no login credentials).
+  - No patient-facing portal routes.
+  - No direct patient access to encounters, conditions, medications, or allergies.
 
-**Requirement (Article 11):**
-> "EHR systems shall support interoperability standards enabling cross-border data exchange."
+### Art. 4 — Electronic health data access services for natural persons and their representatives
 
-**Current Implementation:**
+- **Status:** `roadmap`
+- **Priority:** HIGH
+- **Requirement:** Member States shall ensure that one or more electronic health data access services are made available to natural persons at national, regional, or local level.
+- **Evidence:** No patient-facing access service exists. All routes in `frontend/src/app/` require practitioner authentication via `useAuthGuard` (`frontend/src/lib/hooks/useAuthGuard.ts`).
+- **Gaps:**
+  - No patient access service implementation.
+  - No representative/proxy access mechanism (e.g., parent accessing child's data).
 
-**Evidence:**
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/models/patient.py` — Patient model uses FHIR R5 naming conventions:
-  - `identifier_value` (DNI/NIE with Spanish OID `urn:oid:1.3.6.1.4.1.19126.3`)
-  - `name_given`, `name_family`, `birth_date`, `gender`, `telecom_phone`, `telecom_email`
-  - UUID primary keys, `meta_created_at`/`meta_updated_at` timestamps
-- All core resources (`Patient`, `Practitioner`, `Encounter`, `Condition`, `MedicationRequest`, `AllergyIntolerance`) follow FHIR R5 resource structure.
-- Atomic schema design (independent `Condition`, `Medication` schemas) prevents circular dependencies and enables reusability.
+### Art. 5 — Right of natural persons to insert information in their own EHR
 
-**Status:** ⚠️ **Partial Compliance**
+- **Status:** `roadmap`
+- **Priority:** MEDIUM
+- **Requirement:** Natural persons shall have the right to insert information in their electronic health record, clearly marked as inserted by the natural person.
+- **Evidence:** No patient data input mechanism exists. All clinical data entry is via practitioner encounter form (`frontend/src/lib/hooks/use-encounter-form.ts`).
+- **Gaps:**
+  - No patient-contributed data fields.
+  - No provenance tracking distinguishing practitioner-entered vs patient-entered data.
 
-**Gap Analysis:**
-- FHIR R5 naming is present, but **no FHIR API implementation** (current API is REST JSON, not FHIR REST).
-- EEHRxF technical specifications are pending (Article 7(9) delegated acts expected Q2 2026).
-- No HL7 FHIR Implementation Guide (IG) compliance (e.g., IPS - International Patient Summary).
-- No support for FHIR Bundle Links (pagination uses offset/limit, not cursor-based).
+### Art. 6 — Right of natural persons to rectification
 
-**Recommended Action:**
-1. Monitor EEHRxF delegated acts publication (Q2 2026).
-2. Evaluate FHIR REST API wrapper over existing models (low-effort: FHIR-to-JSON serialization layer).
-3. Implement FHIR IPS profile for cross-border patient summaries (post-production).
+- **Status:** `partial`
+- **Priority:** HIGH
+- **Requirement:** Natural persons shall have the right to obtain rectification of inaccurate personal electronic health data.
+- **Evidence:** `PATCH /api/v1/patients/{id}` supports partial updates (`backend/app/api/patients.py:118-141`). Supports clear-intent (null = clear optional fields). Guards required fields (name_given, name_family, birth_date).
+- **Gaps:**
+  - Rectification is practitioner-only. No patient self-service correction request.
+  - No workflow for patient to flag inaccuracies and practitioner to review/approve.
 
----
+### Art. 7 — Right to data portability for natural persons
 
-### 2.2 Patient Identification — LOPD-GDD Article 9, GDPR Article 5
+- **Status:** `roadmap`
+- **Priority:** HIGH
+- **Requirement:** Natural persons shall have the right to download an electronic copy of their personal electronic health data in the European electronic health record exchange format (EEHRxF).
+- **Evidence:** No data export feature exists. PDF prescription generation (`backend/app/api/prescriptions.py`) is encounter-specific, not a full EHR export.
+- **Gaps:**
+  - No patient data export (JSON, FHIR Bundle, or EEHRxF).
+  - No machine-readable full EHR download.
+  - EEHRxF format specification pending (Art. 15 delegated acts).
 
-**Requirement (LOPD-GDD Article 9):**
-> "Health data processing shall use legal identifiers ensuring data subject accuracy and integrity."
+### Art. 8 — Right to restrict access
 
-**Current Implementation:**
+- **Status:** `roadmap`
+- **Priority:** MEDIUM
+- **Requirement:** Natural persons shall have the right to restrict access to all or part of their personal electronic health data by health professionals.
+- **Evidence:** No access restriction mechanism. All authenticated practitioners can access all patients.
+- **Gaps:**
+  - No patient consent/restriction model.
+  - No per-patient or per-category access flags.
 
-**Evidence:**
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/validators/dni.py` — Full Spanish DNI/NIE validation:
-  - DNI: 8 digits + modulo-23 letter algorithm
-  - NIE: X/Y/Z prefix + 7 digits + letter
-  - Detects type automatically, validates checksum, formats to uppercase
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/models/patient.py` — `identifier_value` is **unique, non-nullable**, mapped to Spanish OID.
+### Art. 9 — Right to obtain information on accessing data
 
-**Status:** ✅ **Compliant**
+- **Status:** `roadmap`
+- **Priority:** HIGH
+- **Requirement:** Natural persons shall have the right to obtain information on access to their personal electronic health data, including the identity of health professionals who accessed it.
+- **Evidence:** No audit logging system. Models have `meta_created_at`/`meta_updated_at` timestamps but no user attribution for read operations.
+- **Gaps:**
+  - No `audit_log` table or middleware.
+  - Cannot determine which practitioner viewed which patient record.
+  - No audit log export for patient right of access.
 
-**Gap Analysis:** None. DNI/NIE validation exceeds GDPR Article 5(1)(d) accuracy requirements.
+### Art. 10 — Right of natural persons to opt out in primary use
 
----
+- **Status:** `roadmap`
+- **Priority:** MEDIUM
+- **Requirement:** Member States may allow natural persons to opt out of having their data accessible through the health professional access service, under specific conditions.
+- **Evidence:** No opt-out mechanism. Spain has not yet published implementation rules.
+- **Gaps:**
+  - No patient opt-out flag or workflow.
+  - Await Spanish national transposition law.
 
-### 2.3 Patient Access to EHR — EHDS Article 3
+### Art. 11 — Access by health professionals to personal electronic health data
 
-**Requirement (Article 3):**
-> "Natural persons shall have immediate, free-of-charge, and direct access to their electronic health data through electronic health data access services."
+- **Status:** `partial`
+- **Priority:** HIGH
+- **Requirement:** Health professionals shall have access to personal electronic health data of natural persons under their treatment. Access shall be logged.
+- **Evidence:**
+  - JWT-based authentication: `backend/app/api/auth.py` with `get_current_practitioner()` dependency on all protected routes.
+  - bcrypt password hashing for secure credential storage.
+  - 8-hour token expiry limits session window.
+  - Frontend auth guard: `frontend/src/lib/hooks/useAuthGuard.ts`.
+- **Gaps:**
+  - **No audit logging** of access events (the article explicitly requires logged access).
+  - No multi-factor authentication (single-factor JWT only).
+  - No role-based access control (all practitioners see all patients).
 
-**Current Implementation:**
+### Art. 12 — Health professional access services
 
-**Evidence:**
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/docs/USER_GUIDE.md` — Current system only provides **practitioner access**:
-  - Practitioners log in with credentials (`sara@consultamed.es`).
-  - Patients can view their data only **via the practitioner** during consultations.
-  - No patient-facing portal or self-service access.
+- **Status:** `implemented`
+- **Priority:** HIGH
+- **Requirement:** EHR systems shall provide a health professional access service supported by the EHR system.
+- **Evidence:**
+  - Full REST API with 25 endpoints (`backend/app/api/router.py`): auth, patients, encounters, prescriptions, templates.
+  - Frontend application with 9 protected pages: dashboard, patient list, patient detail, encounters (create/view/edit), templates, prescriptions.
+  - API client with token injection: `frontend/src/lib/api/client.ts`.
+- **Gaps:** None for basic access service. Audit logging is covered under Art. 9/11/25.
 
-**Status:** ❌ **Non-Compliant**
+### Art. 13 — Registration of personal electronic health data
 
-**Gap Analysis:**
-- EHDS Article 3 mandates **patient self-service access** "without undue delay."
-- Current architecture requires practitioner mediation, violating direct access requirement.
-- No patient authentication mechanism (patients have no login credentials).
+- **Status:** `implemented`
+- **Priority:** HIGH
+- **Requirement:** Health data shall be registered in an electronic format through EHR systems.
+- **Evidence:**
+  - All clinical data entered via structured forms: SOAP fields (subjective, objective, assessment, plan, recommendations) in `backend/app/models/encounter.py:71-95`.
+  - Conditions with ICD-10 coding: `backend/app/models/condition.py:41-55`.
+  - MedicationRequests with SNOMED CT coding and UCUM dosage: `backend/app/models/medication_request.py:57-90`.
+  - AllergyIntolerance with category/criticality: `backend/app/models/allergy.py:43-64`.
+  - All data persisted to PostgreSQL with UUID PKs and timestamps.
+- **Gaps:** None. Registration is comprehensive for current clinical scope.
 
-**Recommended Action (Critical — Pre-Production):**
-1. Implement patient authentication (email + password or Spanish Cl@ve integration).
-2. Create patient-facing portal routes (`/patient-portal/`) with:
-   - View encounters, diagnoses, medications, allergies (read-only).
-   - Download EHR data in machine-readable format (JSON or PDF).
-3. Audit log all patient access events per GDPR Article 15 (right of access).
+### Art. 14 — Priority categories of personal electronic health data for primary use
 
----
+- **Status:** `partial`
+- **Priority:** HIGH
+- **Requirement:** Defines mandatory data categories: (a) patient summaries, (b) electronic prescriptions, (c) electronic dispensations, (d) medical images/reports, (e) laboratory results, (f) discharge reports.
+- **Evidence:**
+  - (a) Patient summaries: Partial — patient demographics + allergies + encounter history exist, but no structured IPS (International Patient Summary).
+  - (b) Electronic prescriptions: Implemented — PDF generation via WeasyPrint (`backend/app/api/prescriptions.py`), MedicationRequest model with dosage/duration.
+  - (c) Electronic dispensations: N/A — ConsultaMed does not manage pharmacy dispensation.
+  - (d) Medical images/reports: Not implemented — no imaging model or upload.
+  - (e) Laboratory results: Not implemented — no lab results model.
+  - (f) Discharge reports: Partial — encounter `plan_text` and `recommendations_text` serve as post-visit summary.
+- **Gaps:**
+  - No structured patient summary (IPS profile).
+  - No medical imaging support.
+  - No laboratory results model.
 
-### 2.4 Consent Management & Data Correction — EHDS Article 4, GDPR Article 16
+### Art. 15 — European electronic health record exchange format (EEHRxF)
 
-**Requirement (Article 4):**
-> "Natural persons shall have the right to rectify inaccurate or incomplete electronic health data and to insert information in their own EHR."
+- **Status:** `partial`
+- **Priority:** HIGH
+- **Requirement:** The Commission shall establish the EEHRxF for priority categories, ensuring machine-readability and cross-border exchange.
+- **Evidence:**
+  - FHIR R5 naming conventions across all models: Patient, Practitioner, Encounter, Condition, MedicationRequest, AllergyIntolerance.
+  - Atomic schema design with independent FHIR resources (`backend/app/schemas/condition.py`, `backend/app/schemas/medication.py`).
+  - Service layer uses FHIR interaction naming: read, search, create, update, patch, delete (`backend/app/services/base.py`).
+  - ICD-10 coding system: `http://hl7.org/fhir/sid/icd-10`.
+  - SNOMED CT coding system: `http://snomed.info/sct`.
+- **Gaps:**
+  - No FHIR REST API (current API is bespoke JSON, not HL7 FHIR compliant).
+  - No FHIR Bundle support for data exchange.
+  - EEHRxF technical specifications pending (delegated acts expected 2026).
+  - No IPS (International Patient Summary) profile implementation.
 
-**Requirement (GDPR Article 16 — Right to Rectification):**
-> "The data subject shall have the right to obtain without undue delay the rectification of inaccurate personal data."
+### Art. 16 — Identification management
 
-**Current Implementation:**
-
-**Evidence:**
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/api/patients.py` — `PATCH /patients/{id}` allows practitioner-initiated updates.
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/docs/USER_GUIDE.md` — Patients can request corrections **only through the practitioner** ("Editar perfil del paciente" section).
-- No self-service consent management (opt-in/opt-out for data sharing).
-
-**Status:** ⚠️ **Partial Compliance**
-
-**Gap Analysis:**
-- GDPR Article 16 allows practitioner-mediated rectification (current implementation), but EHDS Article 4 encourages **patient self-service**.
-- No UI for patients to flag inaccuracies or request corrections.
-- No consent management for secondary uses (research, public health).
-
-**Recommended Action (Medium Priority — Month 1-3):**
-1. Add patient portal feature: "Request Correction" button with free-text explanation.
-2. Create practitioner workflow: review patient correction requests, approve/deny with audit trail.
-3. Implement consent management module for future secondary use (HealthData@EU opt-in/opt-out).
-
----
-
-### 2.5 Healthcare Professional Access — EHDS Article 5
-
-**Requirement (Article 5):**
-> "Healthcare professionals shall have secure, audited access to patient electronic health data for treatment purposes, subject to patient consent where required by national law."
-
-**Current Implementation:**
-
-**Evidence:**
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/api/auth.py` — JWT authentication with HS256 algorithm:
-  - `OAuth2PasswordRequestForm` (username = email, password).
-  - bcrypt password verification.
-  - Token expires after 8 hours.
-  - Dependency `get_current_practitioner()` enforces authentication on all protected routes.
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/frontend/src/lib/hooks/useAuthGuard.ts` — Frontend auth guard prevents unauthorized access:
-  - Loading state prevents flash of unprotected content.
-  - Token stored in `localStorage` (`consultamed_auth` key).
-  - Redirects to `/login` if token missing or invalid.
-
-**Status:** ⚠️ **Partial Compliance**
-
-**Gap Analysis:**
-- Authentication is present, but **no audit logging** of access events (EHDS Article 5 requires "audited access").
-- No multi-factor authentication (MFA) — HS256 JWT with 8-hour expiry is vulnerable to token theft.
-- No role-based access control (RBAC) — all authenticated practitioners have full access (acceptable for single-practitioner MVP, but not scalable).
-
-**Recommended Action:**
-1. **Pre-Production (Critical):** Implement access audit logging:
-   - Log practitioner ID, patient ID, timestamp, action (read/write) for all API calls.
-   - Store in dedicated `audit_log` table (immutable, retention per GDPR Article 5(1)(e): 6 years for medical records in Spain).
-2. **Post-Production (Month 1-3):** Add MFA (TOTP or SMS-based) for practitioner login.
-3. **Future:** Implement RBAC for multi-practitioner practices (roles: admin, doctor, nurse, receptionist).
-
----
-
-### 2.6 Interoperability Standards — EHDS Article 7, 11
-
-**Requirement (Article 7):**
-> "EHR systems shall adopt the European EHR Exchange Format (EEHRxF) to enable cross-border data portability."
-
-**Requirement (Article 11):**
-> "EHR systems shall support international standards such as HL7 FHIR, SNOMED CT, and ICD-10."
-
-**Current Implementation:**
-
-**Evidence:**
-- FHIR R5 resource naming in models (`Patient`, `Encounter`, `Condition`, `MedicationRequest`).
-- ICD-10 coding support: `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/models/condition.py` — `code_coding_code` field stores ICD-10 codes.
-- No SNOMED CT support.
-- No FHIR REST API (current API is bespoke JSON over HTTP).
-
-**Status:** ⚠️ **Partial Compliance**
-
-**Gap Analysis:**
-- EEHRxF delegated acts not yet published (expected Q2 2026).
-- No HL7 FHIR Implementation Guide (IG) compliance (e.g., IPS, FHIR R5 Core profiles).
-- No SNOMED CT integration (diagnosis coding uses free text + ICD-10; SNOMED CT is recommended for clinical concepts).
-
-**Recommended Action:**
-1. Monitor EEHRxF publication and assess implementation effort (likely FHIR R5 + EU-specific profiles).
-2. Add FHIR REST API layer (read-only endpoint for `/Patient/{id}`, `/Encounter/{id}` in FHIR JSON format).
-3. Evaluate SNOMED CT licensing and integration for diagnosis coding (post-production).
+- **Status:** `implemented`
+- **Priority:** HIGH
+- **Requirement:** Member States shall establish identification management mechanisms for natural persons and health professionals.
+- **Evidence:**
+  - Patient identification: Spanish DNI/NIE with official modulo-23 algorithm (`backend/app/validators/dni.py`). OID: `urn:oid:1.3.6.1.4.1.19126.3`. Unique constraint enforced at DB level.
+  - Practitioner identification: Nº Colegiado (Spanish medical board number). OID: `urn:oid:2.16.724.4.9.10.5`. Unique constraint enforced.
+  - Both identifiers validated on creation and stored with official coding systems.
+- **Gaps:** None. Identification management is compliant for Spanish context.
 
 ---
 
-### 2.7 Manufacturer Obligations — EHDS Article 9
+## Chapter 3: EHR Systems (HIGH)
 
-**Requirement (Article 9):**
-> "Manufacturers of EHR systems shall maintain technical documentation, conduct conformity assessments, and implement post-market surveillance."
+### Art. 25 — Harmonised software components of EHR systems
 
-**Current Implementation:**
+- **Status:** `partial`
+- **Priority:** HIGH
+- **Requirement:** EHR systems shall have two mandatory harmonised software components: (1) European interoperability software component (provides/receives data in EEHRxF), (2) European logging software component (provides logging information on access by health professionals).
+- **Evidence:**
+  - Interoperability: FHIR R5-aligned models provide a foundation, but no formal EEHRxF component exists.
+  - Logging: No logging component. No access audit trail.
+- **Gaps:**
+  - No European interoperability software component (requires EEHRxF support — specs pending).
+  - **No European logging software component** — this is a critical gap. Article 25 explicitly mandates an access logging component.
 
-**Evidence:**
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/CLAUDE.md` — Technical documentation exists:
-  - Architecture overview, FHIR naming conventions, API contracts, auth flow.
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/docs/API.md` — API documentation with endpoint specifications.
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/tests/` — Unit, contract, and integration tests.
-- No formal conformity assessment (delegated acts pending).
-- No post-market surveillance or incident tracking system.
+### Art. 30 — Obligations of manufacturers of EHR Systems
 
-**Status:** ⚠️ **Partial Compliance**
+- **Status:** `partial`
+- **Priority:** HIGH
+- **Requirement:** Manufacturers shall: (a) ensure conformity with essential requirements, (b) draw up technical documentation (Art. 37), (c) carry out conformity assessment, (d) establish quality management systems, (e) implement post-market surveillance.
+- **Evidence:**
+  - Technical documentation: `docs/architecture/overview.md`, `docs/API.md`, `CLAUDE.md` with architecture, data flow, and testing strategy.
+  - Testing: Unit tests (`backend/tests/unit/`), contract tests (`backend/tests/contracts/`), integration tests, frontend contract smoke tests.
+  - 7-step pre-commit gate: `scripts/test_gate.sh`.
+- **Gaps:**
+  - No formal quality management system (ISO 13485 or equivalent).
+  - No conformity assessment procedure (delegated acts pending).
+  - No post-market surveillance system (no incident tracking, vulnerability scanning, or user feedback collection).
 
-**Gap Analysis:**
-- Technical documentation is present (Article 9(2)(a) satisfied).
-- Conformity assessment procedures undefined until delegated acts published (Article 9(7), expected Q2 2026).
-- No systematic incident tracking or post-market surveillance (Article 9(2)(g)).
+### Art. 37 — Technical documentation
 
-**Recommended Action:**
-1. **Pre-Production:** Create incident tracking system (GitHub Issues or dedicated table):
-   - Log bugs, security vulnerabilities, user reports.
-   - Track resolution status and timeline.
-2. **Post-Production (Month 1-3):** Implement automated vulnerability scanning (Dependabot, Snyk).
-3. **Q2 2026:** Review delegated acts and perform self-assessment or third-party audit as required.
+- **Status:** `partial`
+- **Priority:** HIGH
+- **Requirement:** Manufacturer shall draw up technical documentation before placing the EHR system on the market, including: system description, design and manufacturing information, performance characteristics, risk management.
+- **Evidence:**
+  - Architecture overview: `docs/architecture/overview.md`.
+  - API specification: `docs/API.md` with all endpoint contracts.
+  - Testing strategy: `docs/testing/TESTING_STRATEGY.md`.
+  - FHIR R5 alignment documented in `CLAUDE.md`.
+- **Gaps:**
+  - Documentation not structured per Annex II format (EHDS-specific technical file structure).
+  - No formal risk management documentation.
+  - No performance characteristics or stress testing results.
 
----
+### Art. 44 — Handling of risks posed by EHR systems and of serious incidents
 
-### 2.8 Quality & Safety Standards — EHDS Article 10
-
-**Requirement (Article 10):**
-> "EHR systems shall meet cybersecurity, reliability, and technical performance standards to ensure patient safety and data integrity."
-
-**Current Implementation:**
-
-**Evidence:**
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/config.py` — Configuration management with Pydantic `BaseSettings`:
-  - `DATABASE_URL` selector (local vs Supabase).
-  - JWT secret key configurable via `.env`.
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/database.py` — PostgreSQL 17 (local) or PostgreSQL 15 (Supabase) with async SQLAlchemy.
-- HTTPS enforced in production (Supabase provides TLS by default; local dev uses HTTP).
-- No formal SLA (service level agreement) for uptime or performance.
-
-**Status:** ⚠️ **Partial Compliance**
-
-**Gap Analysis:**
-- Database encryption at rest: **not explicitly configured** (relies on Supabase defaults or PostgreSQL file-level encryption if enabled).
-- No penetration testing or formal security audit.
-- No ISO 27001 or equivalent certification.
-- Delegated acts (Article 10(8), expected Q3 2026) will clarify whether small practices require third-party audits.
-
-**Recommended Action:**
-1. **Pre-Production (Critical):** Verify database encryption at rest:
-   - Supabase: Confirm encryption enabled in project settings.
-   - Local: Enable PostgreSQL `pgcrypto` or file-level encryption (LUKS/dm-crypt for Linux).
-2. **Post-Production (Month 1-3):** Conduct penetration testing or security audit (self-assessment or hire third party).
-3. **Future:** Evaluate ISO 27001 certification (likely optional for SME practices per delegated acts).
+- **Status:** `roadmap`
+- **Priority:** HIGH
+- **Requirement:** Manufacturers shall: (a) promptly take corrective action for non-conforming systems, (b) immediately inform national authorities of serious incidents, (c) maintain records of complaints and non-conformities.
+- **Evidence:** No incident response system detected.
+- **Gaps:**
+  - No incident tracking system (no dedicated table, no GitHub issue template for incidents).
+  - No serious incident reporting procedure.
+  - No documented corrective action workflow.
+  - No breach notification procedure (GDPR Art. 33: 72-hour notification to DPA).
 
 ---
 
-### 2.9 Cybersecurity Requirements — EHDS Article 12
+## Chapter 5: Additional Actions (MEDIUM)
 
-**Requirement (Article 12):**
-> "EHR systems shall implement state-of-the-art cybersecurity measures, including multi-factor authentication, encryption, and incident response plans."
+### Art. 86 — Storage of personal electronic health data for primary use
 
-**Current Implementation:**
+- **Status:** `implemented`
+- **Priority:** HIGH
+- **Requirement:** Personal electronic health data processed for primary use shall be stored in databases located within the Union.
+- **Evidence:**
+  - Local deployment: PostgreSQL 17 via Docker on practitioner's machine (Spain). Setup: `scripts/setup-local-db.sh`.
+  - Cloud deployment: Supabase EU region (Frankfurt/Ireland). Configuration: `backend/app/config.py` `DATABASE_URL` selector.
+  - No non-EU hosting options configured.
+- **Gaps:** None. All storage is within EU boundaries.
 
-**Evidence:**
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/api/auth.py` — JWT with bcrypt password hashing:
-  - Passwords never logged or stored in plaintext.
-  - Token expiry (8 hours) limits session hijacking window.
-- HTTPS in production (Supabase enforces TLS 1.2+).
-- No multi-factor authentication (MFA).
-- No encryption at rest for frontend `localStorage` (token stored in plaintext in browser).
-- No formal incident response plan or security contact.
+### Art. 88 — Third-country transfer of non-personal electronic data
 
-**Status:** ❌ **Non-Compliant**
+- **Status:** `not-applicable`
+- **Priority:** MEDIUM
+- **Requirement:** Covers transfers of non-personal electronic health data to third countries.
+- **Evidence:** ConsultaMed does not transfer any data outside the EU. No external API integrations to non-EU services.
+- **Gaps:** None currently. Monitor if future integrations involve non-EU services.
 
-**Gap Analysis:**
-- **No MFA** — HS256 JWT alone does not meet "state-of-the-art" cybersecurity per Article 12.
-- **No encryption at rest** for sensitive data (database relies on provider defaults; `localStorage` token is unencrypted).
-- **No incident response plan** — no documented procedures for data breaches, ransomware, or system compromise.
-- Delegated acts (Article 12(5), expected Q4 2026) will specify minimum cybersecurity baselines.
+### Art. 90 — Additional conditions for transfer of personal electronic health data to a third country
 
-**Recommended Action (Critical — Pre-Production):**
-1. **Implement MFA** for practitioner login (TOTP via `pyotp` + QR code setup page).
-2. **Encrypt database at rest** (verify Supabase encryption or enable PostgreSQL encryption).
-3. **Create incident response plan** (documented in `/docs/security/INCIDENT_RESPONSE.md`):
-   - Escalation contacts (technical lead, legal counsel).
-   - Data breach notification procedures (GDPR Article 33: 72-hour notification to DPA).
-   - Recovery procedures (backup restoration, credential rotation).
-4. **Encrypt frontend token storage** (use `IndexedDB` with Web Crypto API or server-side session cookies).
+- **Status:** `not-applicable`
+- **Priority:** MEDIUM
+- **Requirement:** Additional safeguards for personal health data transfers to third countries beyond GDPR Art. 49.
+- **Evidence:** No international transfers. All data processing within EU.
+- **Gaps:** None currently.
 
 ---
 
-### 2.10 Electronic Prescription — EHDS Article 8
+## Other Chapters (LOW / N-A)
 
-**Requirement (Article 8):**
-> "Member States shall ensure interoperability of electronic prescription systems to enable cross-border dispensation of medicinal products."
-
-**Current Implementation:**
-
-**Evidence:**
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/api/prescriptions.py` — PDF prescription generation:
-  - Uses WeasyPrint to render HTML templates.
-  - Includes practitioner details, patient data, medications, dosage, duration.
-  - PDF downloaded via `GET /api/v1/prescriptions/{encounter_id}/pdf`.
-- No integration with **Receta XXI** (Spain's national e-prescription system).
-- No support for EU cross-border e-prescription.
-
-**Status:** ⚠️ **Partial Compliance**
-
-**Gap Analysis:**
-- Spain mandates **Receta XXI** for public health system prescriptions; private practices can use paper or PDF prescriptions (legal under Spanish law).
-- EHDS Article 8 adds **EU-wide interoperability** requirement (patients should be able to fill prescriptions in other EU countries).
-- No machine-readable prescription format (PDF is human-readable only).
-
-**Recommended Action (Low Priority — Future Enhancement):**
-1. Monitor Spain's Receta XXI API availability for private practices (currently limited to public health centers).
-2. Implement FHIR `MedicationRequest` REST endpoint for machine-readable prescriptions.
-3. Evaluate EU e-prescription gateway integration (post-EHDS delegated acts publication).
+| **Chapter** | **Articles** | **Relevance** | **Notes** |
+|-------------|-------------|---------------|-----------|
+| 1 (General Provisions) | 1–2 | Reference | Definitions and scope. No implementation required. Art. 2 definitions used throughout this radar. |
+| 4 (Secondary Use) | 50–81 | N-A | Research/policy data reuse via HealthData@EU. Not applicable to ConsultaMed MVP. |
+| 5 (Capacity/Training) | 82–85, 87, 89, 91 | LOW | Institutional governance. No direct obligations for EHR manufacturers. |
+| 6–7 (Governance/Penalties) | 92–105 | LOW | EU-level governance. Art. 99 (penalties) relevant for awareness: up to €20M or 4% annual turnover for GDPR-linked violations. |
 
 ---
 
-### 2.11 EU Storage Obligation — EHDS Article 38
+## Key Definitions
 
-**Requirement (Article 38):**
-> "Electronic health data shall be stored within the European Union, unless an adequacy decision exists under GDPR Article 45."
+Terms from EHDS Regulation (EU) 2025/327, Article 2 (sourced from EHDS Explorer API):
 
-**Current Implementation:**
-
-**Evidence:**
-- `/Users/jaimepm/Library/Mobile Documents/com~apple~CloudDocs/Work/Guadalix/EHR_Guadalix/backend/app/config.py` — `DATABASE_URL` selector supports:
-  - **Local PostgreSQL 17** (Docker, hosted on practitioner's machine in Spain).
-  - **Supabase Cloud** (EU region, Frankfurt or Ireland data centers).
-- No non-EU hosting options configured.
-
-**Status:** ✅ **Compliant**
-
-**Gap Analysis:** None. All data storage is within EU boundaries.
-
-**Recommended Action:** Document data residency policy in `/docs/security/DATA_RESIDENCY.md` for audit trail.
-
----
-
-### 2.12 Audit Logging — GDPR Article 5(1)(a), ISO 27701
-
-**Requirement (GDPR Article 5(1)(a) — Lawfulness, Fairness, Transparency):**
-> "Processing shall be transparent to the data subject, including logging of access and modifications."
-
-**Requirement (ISO 27701 — Privacy Information Management):**
-> "Organizations shall log access to personal data, including user identity, timestamp, and action taken."
-
-**Current Implementation:**
-
-**Evidence:**
-- No audit logging system detected.
-- Database has `meta_created_at` and `meta_updated_at` timestamps on models, but **no user attribution** (cannot determine which practitioner modified a record).
-- No access logs for read operations (e.g., "Practitioner X viewed Patient Y's EHR on 2026-02-15").
-
-**Status:** ❌ **Non-Compliant**
-
-**Gap Analysis:**
-- GDPR Article 5(1)(a) requires transparency; audit logs are essential for demonstrating compliance.
-- EHDS Article 5 requires "audited access" for healthcare professionals.
-- No forensic capability (cannot investigate data breaches or unauthorized access).
-
-**Recommended Action (Critical — Pre-Production):**
-1. **Create `audit_log` table:**
-   - Fields: `id`, `practitioner_id`, `patient_id`, `action` (read/write/delete), `resource_type` (Patient/Encounter/etc.), `resource_id`, `timestamp`, `ip_address`.
-   - Immutable (no updates or deletes; retention per Spanish medical records law: 6 years).
-2. **Instrument all API endpoints** with audit log writes (before and after processing).
-3. **Provide audit log export** for patient right of access (GDPR Article 15: patient can request list of who accessed their data).
+| **Term** | **Definition** |
+|----------|---------------|
+| **Personal electronic health data** | Data concerning health of an identified/identifiable natural person, processed in electronic form. |
+| **Primary use** | Processing of personal electronic health data for provision of healthcare to assess, maintain, or restore health, including prescription and dispensation. |
+| **EHR system** | Any system where software allows personal electronic health data in priority categories to be stored, intermediated, exported, imported, converted, edited, or viewed, intended for use by healthcare providers or patients. |
+| **EHR** | A collection of electronic health data related to a natural person, collected in the health system, processed for provision of healthcare. |
+| **Electronic health data access service** | An online service enabling natural persons to access their own electronic health data. |
+| **Health professional access service** | A service, supported by an EHR system, enabling health professionals to access data of natural persons under their treatment. |
+| **European interoperability software component** | A software component of the EHR system which provides and receives personal electronic health data in the European electronic health record exchange format. |
+| **European logging software component** | A software component of the EHR system which provides logging information related to access by health professionals to priority categories. |
+| **Interoperability** | The ability of organisations, software applications, or devices to interact towards mutually beneficial goals, involving exchange of information without changing the content of the data. |
+| **Registration of electronic health data** | Recording of health data in electronic format, through manual entry, device collection, or conversion from non-electronic format. |
+| **Priority categories** | Mandatory data categories for primary use: patient summaries, e-prescriptions, e-dispensations, medical images/reports, laboratory results, discharge reports. |
+| **Health data holder** | Any natural or legal person in healthcare/care sectors that has the right or obligation to process personal electronic health data. |
+| **Serious incident** | Any malfunction or deterioration in characteristics/performance of an EHR system that directly or indirectly leads to death, serious harm to health, or serious disruption of critical infrastructure. |
+| **CE marking of conformity** | A marking by which the manufacturer indicates that the EHR system is in conformity with applicable requirements set out in this Regulation. |
 
 ---
 
-## 3. Risk Assessment
+## Gap Analysis Summary
 
-### Critical Risks (High Priority — Pre-Production Blockers)
+### Critical Gaps (Pre-Production Blockers)
 
-| Risk | Article | Impact | Penalty Exposure (EHDS Art. 68) |
-|------|---------|--------|----------------------------------|
-| **No patient self-service access** | Art. 3 | Violates fundamental patient right; GDPR Article 15 infringement. | Up to €20M or 4% annual turnover (GDPR) |
-| **No audit logging** | Art. 5, GDPR Art. 5 | Cannot demonstrate lawful processing; no forensic capability for breaches. | Up to €20M or 4% annual turnover (GDPR) |
-| **No MFA or encryption at rest** | Art. 12 | High risk of unauthorized access; data breach exposure. | Up to €10M or 2% annual turnover (EHDS) |
+| **#** | **Gap** | **Articles** | **Impact** |
+|-------|---------|-------------|------------|
+| 1 | **No patient-facing portal** | Art. 3, 4, 5, 6, 7 | Violates fundamental patient rights to access, insert, correct, and export EHR data. |
+| 2 | **No audit logging (European logging component)** | Art. 9, 11, 25 | Cannot track who accessed patient data; violates mandatory logging component requirement. |
+| 3 | **No incident response system** | Art. 44 | Cannot handle serious incidents or notify authorities within required timelines. |
+| 4 | **No data portability/export** | Art. 7, 15 | Patients cannot download their EHR in machine-readable format. |
 
-### Medium Risks (Post-Production — Month 1-3)
+### Medium Gaps (Post-Production, Month 1–3)
 
-| Risk | Article | Impact | Recommendation |
-|------|---------|--------|----------------|
-| **No patient correction workflow** | Art. 4, GDPR Art. 16 | Patients cannot self-service rectification requests. | Add patient portal correction request feature. |
-| **No incident response plan** | Art. 10, 12 | Delayed breach response; regulatory notification violations. | Document incident response procedures. |
-| **No FHIR REST API** | Art. 7, 11 | Limited interoperability; cannot participate in cross-border EHR exchange. | Implement FHIR JSON endpoint wrapper. |
+| **#** | **Gap** | **Articles** | **Impact** |
+|-------|---------|-------------|------------|
+| 5 | **No FHIR REST API** | Art. 15, 25 | Bespoke JSON API; no EEHRxF-compatible data exchange. FHIR R5 naming is a foundation. |
+| 6 | **No formal technical documentation (Annex II)** | Art. 37 | Docs exist but not structured per EHDS technical file requirements. |
+| 7 | **No quality management system** | Art. 30 | No ISO 13485 or equivalent; no formal post-market surveillance. |
+| 8 | **Incomplete priority categories** | Art. 14 | Missing: laboratory results, medical images, structured patient summary (IPS). |
+| 9 | **No access restriction mechanism** | Art. 8 | Patients cannot restrict which professionals see their data. |
 
-### Low Risks / Future Enhancements
+### Low Gaps (Future Enhancements)
 
-| Risk | Article | Impact | Recommendation |
-|------|---------|--------|----------------|
-| **No Receta XXI integration** | Art. 8 | PDF prescriptions acceptable for private practice, but limits patient convenience. | Monitor Receta XXI API availability for private practices. |
-| **No SNOMED CT coding** | Art. 11 | ICD-10 sufficient for MVP; SNOMED CT recommended for clinical concepts. | Evaluate SNOMED CT licensing and integration. |
-| **No formal certification** | Art. 13, 14-17 | Small practices may be exempt from certification (awaiting delegated acts). | Monitor delegated acts for SME thresholds. |
+| **#** | **Gap** | **Articles** | **Impact** |
+|-------|---------|-------------|------------|
+| 10 | **No patient opt-out mechanism** | Art. 10 | Await Spanish national transposition law. |
+| 11 | **No MyHealth@EU readiness** | Art. 23 | Cross-border exchange. Spain's timeline TBD. FHIR R5 alignment helps. |
+| 12 | **No EU database registration** | Art. 49 | EHR system registration in EU database. Framework not yet operational. |
+| 13 | **No CE marking** | Art. 41 | Conformity assessment framework pending delegated acts. |
 
 ---
 
-## 4. Implementation Roadmap
+## Implementation Roadmap
 
-### Phase 1: Pre-Production (Before Go-Live)
+### Phase 1: Pre-Production
 
-**Critical compliance gaps must be resolved before production deployment.**
+- [ ] **Audit Logging System (European Logging Component)** — Art. 9, 11, 25
+  - Create `audit_log` table: practitioner_id, patient_id, action (read/write/delete), resource_type, resource_id, timestamp, ip_address.
+  - Instrument all API endpoints with audit middleware.
+  - Immutable records (no update/delete). Retention: 6 years per Spanish medical records law.
 
-- [ ] **Audit Logging System** (Art. 5, GDPR Art. 5)
-  - Create `audit_log` table with practitioner attribution.
-  - Instrument all API endpoints (read/write/delete actions).
-  - Test audit log export for patient right of access.
+- [ ] **Incident Response Plan** — Art. 44, GDPR Art. 33
+  - Document breach notification procedures (72-hour DPA notification).
+  - Define escalation contacts and corrective action workflow.
+  - Create GitHub issue template for serious incidents.
 
-- [ ] **Multi-Factor Authentication (MFA)** (Art. 12)
-  - Implement TOTP-based MFA for practitioner login.
-  - Add QR code setup page for authenticator apps (Google Authenticator, Authy).
+- [ ] **Patient Data Export** — Art. 7
+  - Implement `GET /api/v1/patients/{id}/export` returning full EHR as JSON.
+  - Include: demographics, allergies, encounters, conditions, medications.
+  - Future: convert to FHIR Bundle when EEHRxF specs are available.
 
-- [ ] **Patient Self-Service Access Portal** (Art. 3)
-  - Implement patient authentication (email + password or Cl@ve).
-  - Create read-only patient portal routes: `/patient-portal/profile`, `/patient-portal/encounters`, `/patient-portal/allergies`.
-  - Add download EHR data feature (JSON or PDF export).
+### Phase 2: Post-Production (Month 1–3)
 
-- [ ] **Database Encryption at Rest** (Art. 10, 12)
-  - Verify Supabase encryption enabled.
-  - Document encryption configuration in `/docs/security/ENCRYPTION.md`.
+- [ ] **Patient Portal (Access Service)** — Art. 3, 4
+  - Patient authentication (email + password or Spanish Cl@ve integration).
+  - Read-only portal routes: profile, encounters, allergies, medications.
+  - Patient data download (JSON export from Phase 1).
 
-- [ ] **Incident Response Plan** (Art. 10, 12)
-  - Document breach notification procedures (GDPR Article 33: 72-hour DPA notification).
-  - Define escalation contacts (technical lead, legal counsel).
-  - Test backup restoration procedures.
+- [ ] **Patient Rectification Workflow** — Art. 6
+  - Patient-facing "Request Correction" feature.
+  - Practitioner review/approve/deny queue with audit trail.
 
-### Phase 2: Post-Production (Month 1-3)
+- [ ] **Technical Documentation (Annex II)** — Art. 37
+  - Structure existing docs into EHDS-compliant technical file.
+  - Add: risk management, performance characteristics, intended purpose statement.
 
-**Medium-priority improvements to strengthen compliance posture.**
-
-- [ ] **Patient Correction Workflow** (Art. 4, GDPR Art. 16)
-  - Add patient portal feature: "Request Correction" button.
-  - Create practitioner approval workflow with audit trail.
-
-- [ ] **FHIR REST API Wrapper** (Art. 7, 11)
-  - Implement read-only FHIR endpoints: `/fhir/Patient/{id}`, `/fhir/Encounter/{id}`.
-  - Test FHIR JSON serialization against FHIR R5 validator.
-
-- [ ] **Penetration Testing** (Art. 10)
-  - Conduct security audit (self-assessment or third-party).
-  - Remediate findings and document results.
-
-- [ ] **Data Residency Documentation** (Art. 38)
-  - Create `/docs/security/DATA_RESIDENCY.md` with hosting details.
+- [ ] **FHIR REST API Layer** — Art. 15, 25
+  - Read-only FHIR R5 endpoints: `/fhir/Patient/{id}`, `/fhir/Encounter/{id}`.
+  - FHIR JSON serialization over existing models.
+  - Validate against FHIR R5 profiles.
 
 ### Phase 3: Continuous Improvement (Month 4+)
 
-**Future enhancements aligned with EHDS evolution.**
+- [ ] **Priority Category Expansion** — Art. 14
+  - Laboratory results model and API.
+  - Medical imaging references.
+  - Structured International Patient Summary (IPS) profile.
 
-- [ ] **Monitor EEHRxF Delegated Acts** (Art. 7(9), expected Q2 2026)
-  - Review technical specifications upon publication.
-  - Assess implementation effort for full EEHRxF compliance.
+- [ ] **Patient Rights Expansion** — Art. 5, 8, 10
+  - Patient-contributed data fields with provenance tracking.
+  - Per-patient access restriction flags.
+  - Opt-out mechanism (pending Spanish transposition).
 
-- [ ] **SNOMED CT Integration** (Art. 11)
-  - Evaluate licensing and integration for diagnosis coding.
+- [ ] **Quality Management System** — Art. 30
+  - Formal QMS (ISO 13485 or equivalent for software).
+  - Post-market surveillance: vulnerability scanning, user feedback.
+  - Conformity assessment (pending delegated acts).
 
-- [ ] **Receta XXI API Integration** (Art. 8)
-  - Monitor API availability for private practices.
-  - Implement machine-readable prescription format.
-
-- [ ] **Consent Management Module** (Art. 4)
-  - Add patient consent tracking for secondary uses (research, public health).
-  - Implement opt-in/opt-out UI for HealthData@EU.
-
-- [ ] **Role-Based Access Control (RBAC)** (Art. 5)
-  - Define roles: admin, doctor, nurse, receptionist.
-  - Restrict data access based on practitioner role.
-
----
-
-## 5. References
-
-### Primary Legal Sources
-
-- **Regulation (EU) 2024/1689 — European Health Data Space (EHDS)**
-  - Chapter 2 (Art. 3-8): Access and Use of Electronic Health Data
-  - Chapter 3 (Art. 9-13): Requirements for EHR Systems
-  - Chapter 5 (Art. 38-39): Secondary Use and Storage Obligations
-  - Chapter 7 (Art. 68): Penalties
-
-- **Regulation (EU) 2016/679 — General Data Protection Regulation (GDPR)**
-  - Article 5: Principles of lawful processing
-  - Article 15: Right of access by data subject
-  - Article 16: Right to rectification
-  - Article 33: Notification of data breach to supervisory authority
-
-- **Ley Orgánica 3/2018 (LOPD-GDD) — Spanish Data Protection Law**
-  - Article 9: Health data processing requirements
-
-### Technical Guidance
-
-- **HL7 FHIR R5 Specification** — Resource structures for Patient, Encounter, Condition, MedicationRequest
-- **ISO/IEC 27701:2019** — Privacy Information Management System (PIMS)
-- **eHealth Network Guidelines on EHDS** — Interoperability and cross-border data exchange (pending publication)
+- [ ] **Cross-border Readiness** — Art. 23, 15
+  - Monitor EEHRxF delegated acts publication.
+  - MyHealth@EU integration assessment.
+  - CE marking when conformity framework is operational.
 
 ---
 
-## Appendix A: Code Inventory
+## Methodology
 
-| File Path | Purpose | EHDS Article | Status |
-|-----------|---------|--------------|--------|
-| `backend/app/models/patient.py` | Patient data model (FHIR R5) | Art. 7, 11 | ✅ FHIR-aligned |
-| `backend/app/validators/dni.py` | Spanish DNI/NIE validation | LOPD-GDD Art. 9 | ✅ Compliant |
-| `backend/app/api/auth.py` | JWT authentication (bcrypt) | Art. 5, 12 | ⚠️ Missing MFA |
-| `backend/app/config.py` | Database URL selector (EU storage) | Art. 38 | ✅ EU-only |
-| `backend/app/database.py` | PostgreSQL async engine | Art. 10 | ⚠️ Encryption unverified |
-| `frontend/src/lib/hooks/useAuthGuard.ts` | Frontend auth guard | Art. 5 | ⚠️ No MFA |
-| `backend/app/api/prescriptions.py` | PDF prescription generation | Art. 8 | ⚠️ No Receta XXI |
-| (Missing) | Audit logging system | Art. 5, GDPR Art. 5 | ❌ Non-existent |
-| (Missing) | Patient portal routes | Art. 3 | ❌ Non-existent |
-| (Missing) | Patient correction workflow | Art. 4, GDPR Art. 16 | ❌ Non-existent |
-| (Missing) | Incident response plan | Art. 10, 12 | ❌ Non-existent |
-| (Missing) | FHIR REST API | Art. 7, 11 | ❌ Non-existent |
+- **Data source:** EHDS Explorer API v2.0 (cache date: 2026-02-16)
+- **Codebase analysis:** Automated via ehds-compliance-radar Agent Skill
+- **Articles analyzed:** 59 (Chapters 1–3, 5 of Regulation (EU) 2025/327)
+- **Generated:** 2026-02-16
+- **Next recommended review:** 2026-05-16
 
 ---
 
-## Appendix B: Legal Citations
+## Appendix: Code Evidence Index
 
-### EHDS Article 3 (Patient Access)
-
-> "1. Member States shall ensure that natural persons have immediate, free-of-charge, and direct access to their electronic health data through electronic health data access services.
->
-> 2. Natural persons shall be able to access their electronic health data without undue delay and in a commonly used electronic format."
-
-**ConsultaMed Gap:** No patient-facing portal; patients cannot access EHR data directly.
-
-### EHDS Article 5 (Healthcare Professional Access)
-
-> "1. Member States shall ensure that healthcare professionals have secure access to electronic health data for the purposes of providing healthcare to natural persons.
->
-> 2. Access by healthcare professionals shall be audited to ensure traceability and accountability."
-
-**ConsultaMed Gap:** Authentication present, but no audit logging of access events.
-
-### EHDS Article 12 (Cybersecurity)
-
-> "1. EHR systems shall implement state-of-the-art cybersecurity measures, including:
-> (a) multi-factor authentication;
-> (b) encryption of data at rest and in transit;
-> (c) incident detection and response capabilities."
-
-**ConsultaMed Gap:** No MFA, unverified encryption at rest, no incident response plan.
-
-### GDPR Article 15 (Right of Access)
-
-> "The data subject shall have the right to obtain from the controller confirmation as to whether or not personal data concerning him or her are being processed, and access to the personal data and [...] information on [...] the recipients to whom the personal data have been disclosed."
-
-**ConsultaMed Gap:** No audit log to provide list of recipients (practitioners who accessed patient data).
+| **File** | **Purpose** | **Articles** | **Status** |
+|----------|-------------|-------------|------------|
+| `backend/app/models/patient.py` | FHIR R5 Patient model | Art. 13, 15, 16 | ✅ Implemented |
+| `backend/app/models/encounter.py` | FHIR R5 Encounter with SOAP fields | Art. 13, 14 | ✅ Implemented |
+| `backend/app/models/condition.py` | FHIR R5 Condition with ICD-10 | Art. 13, 15 | ✅ Implemented |
+| `backend/app/models/medication_request.py` | FHIR R5 MedicationRequest with SNOMED CT | Art. 13, 14, 15 | ✅ Implemented |
+| `backend/app/models/allergy.py` | FHIR R5 AllergyIntolerance | Art. 13 | ✅ Implemented |
+| `backend/app/validators/dni.py` | Spanish DNI/NIE validation | Art. 16 | ✅ Implemented |
+| `backend/app/api/auth.py` | JWT authentication (bcrypt + HS256) | Art. 11, 12 | ⚠️ Partial (no audit log) |
+| `backend/app/api/patients.py` | Patient CRUD + PATCH clear-intent | Art. 6, 13 | ⚠️ Partial (practitioner-only) |
+| `backend/app/api/encounters.py` | Encounter CRUD + SOAP | Art. 13, 14 | ✅ Implemented |
+| `backend/app/api/prescriptions.py` | PDF prescription generation | Art. 14 | ✅ Implemented |
+| `backend/app/services/base.py` | FHIR R5 interaction naming | Art. 15 | ✅ Implemented |
+| `backend/app/config.py` | DB URL selector (EU storage) | Art. 86 | ✅ Implemented |
+| `frontend/src/lib/hooks/useAuthGuard.ts` | Frontend auth guard | Art. 11, 12 | ⚠️ Partial (no MFA) |
+| `frontend/src/lib/hooks/use-encounter-form.ts` | Encounter form with SOAP + conditions + medications | Art. 13, 14 | ✅ Implemented |
+| `docs/architecture/overview.md` | Architecture documentation | Art. 37 | ⚠️ Partial (not Annex II) |
+| *(missing)* | Audit logging system | Art. 9, 11, 25 | ❌ Roadmap |
+| *(missing)* | Patient portal | Art. 3, 4 | ❌ Roadmap |
+| *(missing)* | Patient data export | Art. 7 | ❌ Roadmap |
+| *(missing)* | Incident response | Art. 44 | ❌ Roadmap |
+| *(missing)* | FHIR REST API | Art. 15, 25 | ❌ Roadmap |
 
 ---
 
-**End of Report**
+**This radar is technical orientation, not legal certification. Review with legal counsel before making compliance claims.**
 
----
-
-**Next Steps:**
-1. Review this radar with legal counsel for interpretation accuracy.
-2. Prioritize Phase 1 roadmap items for pre-production implementation.
-3. Update radar after delegated acts publication (Q2-Q4 2026).
-4. Rerun compliance analysis after major architecture changes.
-
-**Skill Version:** 1.0.0
-**Last Updated:** 2026-02-15
+**Skill version:** 1.0
+**Next recommended review:** 2026-05-16
 **Maintained by:** ConsultaMed Team

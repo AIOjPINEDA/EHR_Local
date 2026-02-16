@@ -42,6 +42,52 @@ A static script can download data but cannot reason about code semantics. An LLM
 - Reads from the generated radar document (not from EHDS API at runtime).
 - Will be designed separately when Phase 1 is stable.
 
+#### Phase 2 Data Contract
+
+Phase 2 viewer consumes `docs/compliance/EHDS_COMPLIANCE_RADAR.md` as its data source. The radar markdown follows a strict structure that Phase 2 must parse:
+
+**Article entry format** (one per `### Art. N —` heading):
+```markdown
+### Art. N — Article Title
+
+- **Status:** `implemented` | `partial` | `roadmap` | `not-applicable`
+- **Priority:** HIGH | MEDIUM | LOW
+- **Requirement:** [one-line summary of what the article requires]
+- **Evidence:** [file paths and feature descriptions]
+- **Gaps:** [bullet list of what's missing]
+```
+
+**Summary table** (in Executive Summary section):
+```markdown
+| **Status** | **Count** | **% of Assessed** |
+|------------|-----------|-------------------|
+| Implemented | N | X% |
+| Partial | N | X% |
+| Roadmap | N | X% |
+| Not Applicable | — | — |
+```
+
+**Gap tables** (in Gap Analysis Summary section):
+```markdown
+| **#** | **Gap** | **Articles** | **Impact** |
+```
+
+**Sections to display in viewer:**
+1. Executive Summary → dashboard card with status pie/bar chart
+2. Chapter 2 articles → collapsible accordion per article
+3. Chapter 3 articles → collapsible accordion per article
+4. Chapter 5 articles → collapsible accordion per article
+5. Gap Analysis → priority-sorted list with severity badges
+6. Implementation Roadmap → phase timeline view
+
+**Status badge colors:**
+- `implemented` → green
+- `partial` → amber/yellow
+- `roadmap` → red
+- `not-applicable` → grey
+
+**Parsing approach:** Regex-based markdown parsing at build time (Next.js `getStaticProps` or server component). No runtime markdown parsing. Generate a JSON intermediate from the markdown during build.
+
 ## Architecture
 
 ### Skill structure
@@ -111,7 +157,7 @@ Based on analysis of all 105 articles:
 | Ch.6-7 Governance | 92-98 | N/A | Institutional. No technical action required. |
 | Ch.8-9 Misc/Final | 99-105 | Low | Penalties (99), timelines (105). Awareness only. |
 
-**Result**: ~35 articles are actionable for ConsultaMed. The skill focuses depth on these.
+**Result**: 59 articles cached (Ch. 1–3, 5). Of these, 23 are HIGH/MEDIUM relevance and assessed in depth. The skill focuses on these actionable articles.
 
 ## Skill Workflow
 
@@ -168,16 +214,18 @@ Produce `docs/compliance/EHDS_COMPLIANCE_RADAR.md` using the template in `assets
 ## Chapter 2: Primary Use (HIGH relevance)
 
 ### Art. 3 — Right of natural persons to access their personal electronic health data
-- **Status**: `implemented`
-- **Evidence**: `GET /api/v1/patients/:id` returns full patient record. Frontend: `/patients/[id]/page.tsx`.
-- **Gaps**: Patient self-service portal not yet available (practitioner-mediated access only).
-- **Priority**: HIGH
-
-### Art. 5 — Right to insert information in their own EHR
 - **Status**: `roadmap`
-- **Evidence**: None.
-- **Gaps**: No patient-facing data entry. Currently practitioner-only registration.
-- **Priority**: MEDIUM (requires patient portal)
+- **Priority**: HIGH
+- **Requirement**: Immediate, free-of-charge access to EHR data through access services.
+- **Evidence**: Practitioner-mediated access only. `GET /api/v1/patients/{id}` requires practitioner JWT.
+- **Gaps**: No patient portal, no patient authentication, no direct patient access.
+
+### Art. 13 — Registration of personal electronic health data
+- **Status**: `implemented`
+- **Priority**: HIGH
+- **Requirement**: Health data registered in structured electronic format.
+- **Evidence**: FHIR R5 models (Patient, Encounter, Condition, MedicationRequest), SOAP fields, ICD-10/SNOMED CT coding.
+- **Gaps**: None.
 
 [... continues for each relevant article ...]
 
@@ -212,7 +260,7 @@ Key EHDS definitions relevant to ConsultaMed (sourced from API).
 | Major PR merged (new endpoints, models, or schemas) | Run `/ehds-compliance` to check if new features affect compliance state | Developer |
 | Every 3 months (minimum) | Full regeneration even if no code changes, to verify cache freshness | Developer |
 | EHDS regulation amendment | Script detects via `dateModified` change. Skill flags new/changed articles | Automatic (on next run) |
-| Phase 2 viewer built | Radar document becomes data source for frontend visualization | Developer |
+| Phase 2 viewer built | Radar document becomes data source for frontend visualization (see Phase 2 Data Contract above) | Developer |
 
 ### What the skill does NOT do
 
@@ -244,3 +292,4 @@ Key EHDS definitions relevant to ConsultaMed (sourced from API).
 ---
 
 *Design approved: 2026-02-15*
+*Phase 1 completed + Phase 2 data contract added: 2026-02-16*

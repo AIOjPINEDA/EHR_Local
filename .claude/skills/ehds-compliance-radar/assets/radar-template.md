@@ -1,97 +1,98 @@
 # EHDS Compliance Radar — ConsultaMed
 
 > **Auto-generated:** {{GENERATION_DATE}}
-> **Based on:** Regulation (EU) 2024/1860 (EHDS)
-> **Analyzed Chapters:** 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13
-> **Last Manual Review:** {{LAST_MANUAL_REVIEW_DATE}}
+> **Regulation:** (EU) 2025/327 — European Health Data Space
+> **EHDS API cache:** {{CACHE_DATE}}
+> **Analyzed:** {{TOTAL_ARTICLES}} articles from Chapters 1–3, 5
 
 ---
 
 ## Executive Summary
 
-| **Metric** | **Count** | **% of Total** |
-|------------|-----------|----------------|
-| **HIGH relevance** | {{HIGH_COUNT}} | {{HIGH_PERCENTAGE}}% |
-| **MEDIUM relevance** | {{MEDIUM_COUNT}} | {{MEDIUM_PERCENTAGE}}% |
-| **LOW relevance** | {{LOW_COUNT}} | {{LOW_PERCENTAGE}}% |
-| **N/A** | {{NA_COUNT}} | {{NA_PERCENTAGE}}% |
-| **Total articles analyzed** | {{TOTAL_COUNT}} | 100% |
+| **Status** | **Count** | **% of Analyzed** |
+|------------|-----------|-------------------|
+| Implemented | {{IMPLEMENTED_COUNT}} | {{IMPLEMENTED_PCT}}% |
+| Partial | {{PARTIAL_COUNT}} | {{PARTIAL_PCT}}% |
+| Roadmap | {{ROADMAP_COUNT}} | {{ROADMAP_PCT}}% |
+| Not Applicable | {{NA_COUNT}} | {{NA_PCT}}% |
+| **Total HIGH/MEDIUM articles** | {{TOTAL_ASSESSED}} | 100% |
 
-**Key Takeaway:**
 {{EXECUTIVE_SUMMARY_TEXT}}
 
 ---
 
-## Chapter 2: Primary Use of Electronic Health Data (HIGH Relevance)
-
-**Why this matters for ConsultaMed:**
-This chapter defines core EHR obligations — patient access rights, data portability, and cross-border exchange. As a **Spanish private practice EHR**, ConsultaMed must comply with patient data rights and prepare for MyHealth@EU integration (though Spain's exact timeline is TBD).
-
-### Analyzed Articles
+## Chapter 2: Primary Use of Electronic Health Data (HIGH)
 
 {{CHAPTER_2_ARTICLES}}
 
 ---
 
-## Chapter 3: Electronic Health Record Systems (HIGH Relevance)
-
-**Why this matters for ConsultaMed:**
-This chapter sets certification, security, and interoperability requirements for EHR vendors. While ConsultaMed is a **private practice internal tool**, Article 14 mandates FHIR-based data portability, and Article 16's cybersecurity baseline applies to all health data holders.
-
-### Analyzed Articles
+## Chapter 3: EHR Systems (HIGH)
 
 {{CHAPTER_3_ARTICLES}}
 
 ---
 
-## Chapter 5: Additional Actions to Facilitate Primary Use (MEDIUM Relevance)
-
-**Why this matters for ConsultaMed:**
-Chapter 5 addresses wellness apps, European EHR Exchange Format (EEHRxF), and interoperability standards. While **EEHRxF is not mandatory for micro-practices**, ConsultaMed's existing FHIR R5 alignment positions it well for future adoption. Article 23's wellness app interoperability requirements are **N/A** (ConsultaMed is not a wellness app).
-
-### Analyzed Articles
+## Chapter 5: Additional Actions (MEDIUM)
 
 {{CHAPTER_5_ARTICLES}}
 
 ---
 
-## Other Chapters (LOW / N/A Relevance)
+## Other Chapters (LOW / N-A)
 
-The following chapters have **limited or no direct impact** on ConsultaMed as a micro-practice EHR:
-
-| **Chapter** | **Scope** | **Relevance** | **Reason** |
-|-------------|-----------|---------------|------------|
+| **Chapter** | **Articles** | **Relevance** | **Notes** |
+|-------------|-------------|---------------|-----------|
 {{OTHER_CHAPTERS_TABLE}}
 
 ---
 
-## Key Definitions (Article 2)
-
-**Terms used in this radar:**
+## Key Definitions
 
 {{KEY_DEFINITIONS}}
 
 ---
 
-## Methodology & Update Policy
+## Gap Analysis Summary
 
-1. **Automated Extraction:**
-   Articles are parsed from `references/regulation-eu-2024-1860.json` and cross-referenced with `references/relevance-matrix.md`.
+### Critical Gaps (Pre-Production Blockers)
 
-2. **Relevance Criteria:**
-   - **HIGH:** Direct legal obligation or certification requirement
-   - **MEDIUM:** Preparatory work or optional standards alignment
-   - **LOW:** Informational or applies to member states only
-   - **N/A:** Explicitly out of scope (e.g., secondary use, research)
+{{CRITICAL_GAPS}}
 
-3. **Human Review Cadence:**
-   - **Quarterly:** Review HIGH/MEDIUM items for regulatory updates
-   - **Annually:** Full re-audit of all chapters
-   - **Ad-hoc:** When Spain publishes implementation decrees or MyHealth@EU timelines
+### Medium Gaps (Post-Production, Month 1–3)
 
-4. **Version Control:**
-   This radar is versioned in `.claude/skills/ehds-compliance-radar/outputs/`. Check `LAST_MANUAL_REVIEW_DATE` above for staleness.
+{{MEDIUM_GAPS}}
+
+### Low Gaps (Future Enhancements)
+
+{{LOW_GAPS}}
 
 ---
 
-**Questions?** See `.claude/skills/ehds-compliance-radar/README.md` or ask the EHDS compliance skill.
+## Implementation Roadmap
+
+### Phase 1: Pre-Production
+
+{{PHASE_1_ROADMAP}}
+
+### Phase 2: Post-Production (Month 1–3)
+
+{{PHASE_2_ROADMAP}}
+
+### Phase 3: Continuous Improvement (Month 4+)
+
+{{PHASE_3_ROADMAP}}
+
+---
+
+## Methodology
+
+- **Data source:** EHDS Explorer API v2.0 (cache date: {{CACHE_DATE}})
+- **Codebase analysis:** Automated via ehds-compliance-radar Agent Skill
+- **Articles analyzed:** {{TOTAL_ARTICLES}} (Chapters 1–3, 5)
+- **Generated:** {{GENERATION_DATE}}
+- **Next recommended review:** {{NEXT_REVIEW_DATE}}
+
+---
+
+**This radar is technical orientation, not legal certification. Review with legal counsel before making compliance claims.**
