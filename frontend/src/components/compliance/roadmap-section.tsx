@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Square } from "lucide-react";
-import type { RadarData, RoadmapItem } from "@/lib/compliance/types";
+import type { RoadmapItem, RoadmapPhases } from "@/lib/compliance/types";
 
 interface PhaseCardProps {
   title: string;
@@ -45,7 +45,7 @@ function PhaseCard({ title, items }: PhaseCardProps) {
   );
 }
 
-export function RoadmapSection({ roadmap }: { roadmap: RadarData["roadmap"] }) {
+export function RoadmapSection({ roadmap }: { roadmap: RoadmapPhases }) {
   return (
     <section>
       <h2 className="mb-3 text-lg font-semibold text-gray-900">Roadmap de Implementación</h2>

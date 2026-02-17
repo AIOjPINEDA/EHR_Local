@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Gap, RadarData } from "@/lib/compliance/types";
+import type { Gap, GapsByPriority } from "@/lib/compliance/types";
 
 interface GapTableProps {
   title: string;
@@ -44,7 +44,7 @@ function GapTable({ title, gaps, accentClass }: GapTableProps) {
   );
 }
 
-export function GapAnalysisSection({ gaps }: { gaps: RadarData["gaps"] }) {
+export function GapAnalysisSection({ gaps }: { gaps: GapsByPriority }) {
   return (
     <section>
       <h2 className="mb-3 text-lg font-semibold text-gray-900">Análisis de Gaps</h2>

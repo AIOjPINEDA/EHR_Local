@@ -2,15 +2,25 @@ import fs from "fs";
 import path from "path";
 import type {
   ArticleAssessment,
-  ChapterSection,
-  ComplianceStatus,
+  Chapter,
+  Definition,
   Gap,
-  Priority,
+  GapsByPriority,
   RadarData,
   RadarMetadata,
   RadarSummary,
   RoadmapItem,
+  RoadmapPhases,
 } from "./types";
+import { isComplianceStatus, isPriority } from "./types";
+
+function extractSection(text: string, h2Header: string): string {
+  return text.split(`## ${h2Header}`)[1]?.split(/\n## (?!#)/)[0] ?? "";
+}
+
+function extractSubsection(section: string, h3Header: string): string {
+  return section.split(`### ${h3Header}`)[1]?.split(/\n### |$/)[0] ?? "";
+}
 
 function parseMetadata(text: string): RadarMetadata {
   const generatedAt = text.match(/\*\*Auto-generated:\*\*\s*(.+)/)?.[1]?.trim() ?? "";
@@ -22,7 +32,7 @@ function parseMetadata(text: string): RadarMetadata {
 }
 
 function parseSummary(text: string): RadarSummary {
-  const section = text.split("## Executive Summary")[1]?.split(/\n## /)[0] ?? "";
+  const section = extractSection(text, "Executive Summary");
   const implemented = parseInt(section.match(/\|\s*Implemented\s*\|\s*(\d+)/)?.[1] ?? "0", 10);
   const partial = parseInt(section.match(/\|\s*Partial\s*\|\s*(\d+)/)?.[1] ?? "0", 10);
   const roadmap = parseInt(section.match(/\|\s*Roadmap\s*\|\s*(\d+)/)?.[1] ?? "0", 10);
@@ -38,42 +48,28 @@ function parseArticle(block: string): ArticleAssessment | null {
   const articleNumber = parseInt(headerMatch[1], 10);
   const title = headerMatch[2].trim();
 
-  const statusMatch = block.match(/\*\*Status:\*\*\s*`(\w[\w-]*)`/);
-  const status = (statusMatch?.[1] ?? "roadmap") as ComplianceStatus;
+  const rawStatus = block.match(/\*\*Status:\*\*\s*`(\w[\w-]*)`/)?.[1] ?? "";
+  const status = isComplianceStatus(rawStatus) ? rawStatus : "roadmap";
 
-  const priorityMatch = block.match(/\*\*Priority:\*\*\s*(HIGH|MEDIUM|LOW)/);
-  const priority = (priorityMatch?.[1] ?? "MEDIUM") as Priority;
+  const rawPriority = block.match(/\*\*Priority:\*\*\s*(HIGH|MEDIUM|LOW)/)?.[1] ?? "";
+  const priority = isPriority(rawPriority) ? rawPriority : "MEDIUM";
 
   const requirementMatch = block.match(/\*\*Requirement:\*\*\s*(.+)/);
   const requirement = requirementMatch?.[1]?.trim() ?? "";
 
   const evidenceMatch = block.match(/\*\*Evidence:\*\*\s*([\s\S]*?)(?=\n- \*\*Gaps|\n###|\n---|\n## |$)/);
-  let evidence = "";
-  if (evidenceMatch) {
-    evidence = evidenceMatch[1]
-      .split("\n")
-      .map((l) => l.replace(/^\s*-\s*/, "").trim())
-      .filter(Boolean)
-      .join(" ");
-  }
+  const evidence = evidenceMatch
+    ? evidenceMatch[1].replace(/\n\s*-?\s*/g, " ").trim()
+    : "";
 
-  const gaps: string[] = [];
-  const gapsMatch = block.match(/\*\*Gaps:\*\*\s*([\s\S]*?)(?=\n###|\n---|\n## |$)/);
-  if (gapsMatch) {
-    const gapLines = gapsMatch[1].split("\n");
-    for (const line of gapLines) {
-      const gapItem = line.match(/^\s+-\s+(.+)/);
-      if (gapItem) {
-        gaps.push(gapItem[1].trim());
-      }
-    }
-  }
+  const gapsBlock = block.match(/\*\*Gaps:\*\*\s*([\s\S]*?)(?=\n###|\n---|\n## |$)/)?.[1] ?? "";
+  const gaps = Array.from(gapsBlock.matchAll(/^\s+-\s+(.+)/gm), (m) => m[1].trim());
 
   return { articleNumber, title, status, priority, requirement, evidence, gaps };
 }
 
-function parseChapters(text: string): ChapterSection[] {
-  const chapters: ChapterSection[] = [];
+function parseChapters(text: string): Chapter[] {
+  const chapters: Chapter[] = [];
   const chapterRegex = /## Chapter (\d+):\s*(.+?)\s*\((\w+)\)/g;
   let match;
 
@@ -121,16 +117,12 @@ function parseGapTable(section: string): Gap[] {
   return gaps;
 }
 
-function parseGaps(text: string): RadarData["gaps"] {
-  const gapSection = text.split("## Gap Analysis Summary")[1]?.split(/\n## (?!#)/)[0] ?? "";
-  const criticalSection = gapSection.split("### Critical Gaps")[1]?.split(/\n### /)[0] ?? "";
-  const mediumSection = gapSection.split("### Medium Gaps")[1]?.split(/\n### /)[0] ?? "";
-  const lowSection = gapSection.split("### Low Gaps")[1]?.split(/\n### |$/)[0] ?? "";
-
+function parseGaps(text: string): GapsByPriority {
+  const section = extractSection(text, "Gap Analysis Summary");
   return {
-    critical: parseGapTable(criticalSection),
-    medium: parseGapTable(mediumSection),
-    low: parseGapTable(lowSection),
+    critical: parseGapTable(extractSubsection(section, "Critical Gaps")),
+    medium: parseGapTable(extractSubsection(section, "Medium Gaps")),
+    low: parseGapTable(extractSubsection(section, "Low Gaps")),
   };
 }
 
@@ -139,22 +131,13 @@ function parseRoadmapPhase(section: string): RoadmapItem[] {
   const itemBlocks = section.split(/(?=^- \[ \])/m);
 
   for (const block of itemBlocks) {
-    const headerMatch = block.match(
-      /- \[ \]\s*\*\*(.+?)\*\*\s*—\s*(.+)/
-    );
+    const headerMatch = block.match(/- \[ \]\s*\*\*(.+?)\*\*\s*—\s*(.+)/);
     if (!headerMatch) continue;
 
     const title = headerMatch[1].trim();
     const articles = headerMatch[2].trim();
-    const details: string[] = [];
-
-    const lines = block.split("\n").slice(1);
-    for (const line of lines) {
-      const detailMatch = line.match(/^\s+-\s+(.+)/);
-      if (detailMatch) {
-        details.push(detailMatch[1].trim());
-      }
-    }
+    const bodyText = block.split("\n").slice(1).join("\n");
+    const details = Array.from(bodyText.matchAll(/^\s+-\s+(.+)/gm), (m) => m[1].trim());
 
     items.push({ title, articles, details });
   }
@@ -162,22 +145,18 @@ function parseRoadmapPhase(section: string): RoadmapItem[] {
   return items;
 }
 
-function parseRoadmap(text: string): RadarData["roadmap"] {
-  const roadmapSection = text.split("## Implementation Roadmap")[1]?.split(/\n## (?!#)/)[0] ?? "";
-  const phase1Section = roadmapSection.split("### Phase 1:")[1]?.split(/\n### /)[0] ?? "";
-  const phase2Section = roadmapSection.split("### Phase 2:")[1]?.split(/\n### /)[0] ?? "";
-  const phase3Section = roadmapSection.split("### Phase 3:")[1]?.split(/\n### |$/)[0] ?? "";
-
+function parseRoadmap(text: string): RoadmapPhases {
+  const section = extractSection(text, "Implementation Roadmap");
   return {
-    phase1: parseRoadmapPhase(phase1Section),
-    phase2: parseRoadmapPhase(phase2Section),
-    phase3: parseRoadmapPhase(phase3Section),
+    phase1: parseRoadmapPhase(extractSubsection(section, "Phase 1:")),
+    phase2: parseRoadmapPhase(extractSubsection(section, "Phase 2:")),
+    phase3: parseRoadmapPhase(extractSubsection(section, "Phase 3:")),
   };
 }
 
-function parseDefinitions(text: string): RadarData["definitions"] {
-  const section = text.split("## Key Definitions")[1]?.split(/\n## /)[0] ?? "";
-  const definitions: RadarData["definitions"] = [];
+function parseDefinitions(text: string): Definition[] {
+  const section = extractSection(text, "Key Definitions");
+  const definitions: Definition[] = [];
   const rows = section.match(/\|\s*\*\*(.+?)\*\*\s*\|([^|]+)\|/g);
   if (!rows) return definitions;
 
@@ -206,14 +185,26 @@ export function parseRadarMarkdown(): RadarData | null {
 
   if (!fs.existsSync(radarPath)) return null;
 
-  const text = fs.readFileSync(radarPath, "utf-8");
+  try {
+    const text = fs.readFileSync(radarPath, "utf-8");
 
-  return {
-    metadata: parseMetadata(text),
-    summary: parseSummary(text),
-    chapters: parseChapters(text),
-    gaps: parseGaps(text),
-    roadmap: parseRoadmap(text),
-    definitions: parseDefinitions(text),
-  };
+    const data: RadarData = {
+      metadata: parseMetadata(text),
+      summary: parseSummary(text),
+      chapters: parseChapters(text),
+      gaps: parseGaps(text),
+      roadmap: parseRoadmap(text),
+      definitions: parseDefinitions(text),
+    };
+
+    if (data.summary.total === 0 && data.chapters.length === 0) {
+      console.warn("[compliance] Radar markdown found but contains no parseable content");
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("[compliance] Failed to parse radar markdown:", error);
+    return null;
+  }
 }

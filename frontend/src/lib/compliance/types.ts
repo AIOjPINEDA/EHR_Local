@@ -1,6 +1,17 @@
 export type ComplianceStatus = "implemented" | "partial" | "roadmap" | "not-applicable";
 export type Priority = "HIGH" | "MEDIUM" | "LOW";
 
+const VALID_STATUSES = new Set<string>(["implemented", "partial", "roadmap", "not-applicable"]);
+const VALID_PRIORITIES = new Set<string>(["HIGH", "MEDIUM", "LOW"]);
+
+export function isComplianceStatus(value: string): value is ComplianceStatus {
+  return VALID_STATUSES.has(value);
+}
+
+export function isPriority(value: string): value is Priority {
+  return VALID_PRIORITIES.has(value);
+}
+
 export interface RadarMetadata {
   generatedAt: string;
   cacheDate: string;
@@ -25,7 +36,7 @@ export interface ArticleAssessment {
   gaps: string[];
 }
 
-export interface ChapterSection {
+export interface Chapter {
   number: number;
   title: string;
   relevance: string;
@@ -45,11 +56,28 @@ export interface RoadmapItem {
   details: string[];
 }
 
+export interface GapsByPriority {
+  critical: Gap[];
+  medium: Gap[];
+  low: Gap[];
+}
+
+export interface RoadmapPhases {
+  phase1: RoadmapItem[];
+  phase2: RoadmapItem[];
+  phase3: RoadmapItem[];
+}
+
+export interface Definition {
+  term: string;
+  definition: string;
+}
+
 export interface RadarData {
   metadata: RadarMetadata;
   summary: RadarSummary;
-  chapters: ChapterSection[];
-  gaps: { critical: Gap[]; medium: Gap[]; low: Gap[] };
-  roadmap: { phase1: RoadmapItem[]; phase2: RoadmapItem[]; phase3: RoadmapItem[] };
-  definitions: Array<{ term: string; definition: string }>;
+  chapters: Chapter[];
+  gaps: GapsByPriority;
+  roadmap: RoadmapPhases;
+  definitions: Definition[];
 }

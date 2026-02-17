@@ -9,9 +9,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ArticleCard } from "./article-card";
 import { StatusBadge } from "./status-badge";
-import type { ChapterSection as ChapterSectionType } from "@/lib/compliance/types";
+import type { Chapter } from "@/lib/compliance/types";
 
-export function ChapterSection({ chapter }: { chapter: ChapterSectionType }) {
+export function ChapterSection({ chapter }: { chapter: Chapter }) {
   return (
     <section>
       <div className="mb-3 flex items-center gap-3">

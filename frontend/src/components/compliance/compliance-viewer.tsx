@@ -1,5 +1,3 @@
-"use client";
-
 import { RadarSummaryCard } from "./radar-summary-card";
 import { ChapterSection } from "./chapter-section";
 import { GapAnalysisSection } from "./gap-analysis-section";
