@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, NotebookTabs, UsersRound } from "lucide-react";
+import { LayoutDashboard, NotebookTabs, ShieldCheck, UsersRound } from "lucide-react";
 
 export interface PrimaryNavItem {
   href: string;
@@ -30,5 +30,12 @@ export const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
     description: "Protocolos y tratamientos",
     icon: NotebookTabs,
     match: "prefix",
+  },
+  {
+    href: "/compliance",
+    label: "Compliance",
+    description: "Radar EHDS y gaps",
+    icon: ShieldCheck,
+    match: "exact",
   },
 ];
