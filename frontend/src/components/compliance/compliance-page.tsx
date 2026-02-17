@@ -1,5 +1,6 @@
 "use client";
 
+import { FileWarning } from "lucide-react";
 import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 import { HospitalBrand } from "@/components/branding/hospital-brand";
 import { PrimaryNav } from "@/components/navigation/primary-nav";
@@ -34,9 +35,13 @@ export function CompliancePage({ data }: { data: RadarData | null }) {
           <ComplianceViewer data={data} />
         ) : (
           <div className="rounded-lg border border-gray-200 bg-white p-12 text-center shadow-sm">
-            <p className="text-gray-500">
-              Ejecuta el skill <code>/ehds-compliance</code> en Claude Code para generar el
-              documento de compliance.
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-yellow-50">
+              <FileWarning className="h-6 w-6 text-yellow-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Radar no disponible</h3>
+            <p className="mt-2 text-gray-500">
+              Ejecuta el skill <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm">/ehds-compliance</code> en
+              Claude Code para generar el documento de compliance.
             </p>
           </div>
         )}
