@@ -12,7 +12,7 @@ Last updated: 2026-02-18
 - Stack (active in codebase):
   - Frontend: Next.js 14 + TypeScript strict + Tailwind/shadcn
   - Backend: FastAPI + SQLAlchemy async + Pydantic v2 + JWT/bcrypt auth
-  - Database: PostgreSQL 15 (Supabase-managed)
+  - Database: PostgreSQL 17 (local Docker) / Supabase-managed (cloud)
 - Planned / not yet adopted as primary runtime:
   - Supabase Auth
   - Full end-to-end RLS enforcement in all production paths
