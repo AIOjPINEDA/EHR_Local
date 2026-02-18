@@ -3,7 +3,7 @@
 > Canonical source of truth: `AGENTS.md` at repo root.
 > Keep this file as a short operational summary for GitHub Copilot.
 
-Last updated: 2026-02-14
+Last updated: 2026-02-18
 
 ## Project Context
 
@@ -67,10 +67,22 @@ Recommended local gate:
 
 ## Workflow Alignment
 
-- New active specs live in `docs/specs/`.
-- `.archive/` is local-only historical material and is not versioned in git.
-- `.specify/` is optional in this repository and not required for the default delivery workflow.
-- If documentation drift is detected by guardrails during MVP, treat it as warning-first and resolve before release hardening.
+### Task delegation
+Tasks are delegated via **GitHub Issues**. When you receive an issue assignment:
+- The issue spec (Objetivo, Contexto, Criterios de aceptación, Restricciones) is the source of truth.
+- Use `Fixes #N` in your commit message to close the issue automatically.
+- Label taxonomy: `type:security/infra/architecture/bug`, `priority:critical/high/medium/low`
+
+### Execution cycle (SDD)
+**Clarify → Plan → Tasks → Implement → Analyze**
+- Run `./scripts/test_gate.sh` before each commit.
+- If the spec is incomplete, surface it before implementing.
+
+### Spec and archive
+- New feature specs: `docs/specs/` (see `docs/specs/README.md` for naming conventions)
+- Historical archive: `.archive/` (local-only, not in git)
+- `.specify/`: optional/experimental, not required for the delivery gate
+- Documentation drift: warning mode during MVP (signal without blocking)
 
 ## Coding Requirements
 

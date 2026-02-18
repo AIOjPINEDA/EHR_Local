@@ -1,14 +1,17 @@
 # Backlog de Tareas Pendientes
 
-> Tareas identificadas pero diferidas. Actualizar estado al completar o descartar.
+> **Este fichero está siendo migrado a GitHub Issues** como backlog canónico.
+> Las tareas con número de issue ya están delegadas — este fichero conserva el contexto
+> extendido como referencia. Ver issues abiertos en GitHub para el estado actual.
 
 ## Resumen
 
 | ID | Tarea | Categoría | Prioridad | Estado |
 |----|-------|-----------|-----------|--------|
-| T-01 | Habilitar RLS en todas las tablas de Supabase | Seguridad | **ALTA** | Pendiente |
-| T-02 | Rotar credenciales Supabase/PostgreSQL | Seguridad | Media | Pendiente |
-| T-03 | Migrar entorno Python canónico a `root/.venv` | Arquitectura | Baja | Pendiente |
+| T-01 | Habilitar RLS en todas las tablas de Supabase | Seguridad | **CRÍTICA** | [Issue #15](https://github.com/AIOjPINEDA/EHR_Local/issues/15) |
+| T-02 | Rotar credenciales Supabase/PostgreSQL | Seguridad | Media | [Issue #17](https://github.com/AIOjPINEDA/EHR_Local/issues/17) |
+| T-03 | Migrar entorno Python canónico a `root/.venv` | Arquitectura | Baja | Pendiente (sin issue) |
+| T-04 | Hardening del health check (503 real + SELECT 1) | Infra | Alta | [Issue #16](https://github.com/AIOjPINEDA/EHR_Local/issues/16) |
 
 ---
 

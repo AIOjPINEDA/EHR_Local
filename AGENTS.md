@@ -28,8 +28,7 @@
 - JWT + bcrypt authentication
 
 #### Database (Supabase)
-- PostgreSQL 15.x
-- Supabase-managed infrastructure
+- PostgreSQL 17 (local Docker) / Supabase-managed (cloud)
 - Security model aligned to RLS-required production target
 
 ### Planned / Not yet adopted
@@ -158,13 +157,45 @@ Data models follow FHIR nomenclature:
 
 ## Agentic Workflow Mode (Current)
 
-- Canonical workflow for this repo is:
-  1. `AGENTS.md`
-  2. `docs/architecture/overview.md`
-  3. `docs/playbooks/agentic-repo-bootstrap.md`
-- Historical archive material is local-only (`.archive/`) and intentionally not versioned in git.
-- `.specify/` is optional/experimental in this repository and is not part of the required delivery gate.
-- Documentation drift checks run in warning mode during MVP hardening (signal without blocking).
+### Reading order at session start
+
+1. `AGENTS.md` (this file) — canonical contract
+2. `docs/architecture/overview.md` — system design
+3. `docs/playbooks/agentic-repo-bootstrap.md` — repo bootstrap reference
+
+### Task delegation protocol
+
+All tasks are delegated via **GitHub Issues** in this repo. Before implementing anything:
+
+- Check open issues for context and spec
+- Issues carry: Objetivo, Contexto, Criterios de aceptación, Restricciones
+- Commit convention: `Fixes #N` in the commit message closes the issue automatically
+
+Active label taxonomy: `type:security/infra/architecture/bug`, `priority:critical/high/medium/low`
+
+### Execution cycle (SDD — Spec-Driven Development)
+
+Once you have an issue, the expected execution cycle is:
+
+**Clarify → Plan → Tasks → Implement → Analyze**
+
+- **Clarify**: validate ambiguities before planning. Ask the human if unclear.
+- **Plan**: propose the approach before touching code.
+- **Tasks**: decompose into independently testable units.
+- **Implement**: run `./scripts/test_gate.sh` locally before each commit.
+- **Analyze**: verify that docs/architecture reflect the implemented state.
+
+If implementation reveals the spec was incomplete, update the spec before continuing — not after.
+
+### Active specs
+
+New feature specs live in `docs/specs/`. See `docs/specs/README.md` for naming and bundle conventions.
+
+### Archive and experimental flags
+
+- Historical archive: `.archive/` (local-only, not in git)
+- `.specify/`: optional/experimental, not required for the delivery gate
+- Documentation drift: warning mode during MVP (signal without blocking)
 
 ## Architecture
 
@@ -179,4 +210,4 @@ See `docs/architecture/overview.md` for system design.
 
 ---
 
-*Last updated: 2026-02-10*
+*Last updated: 2026-02-18*
