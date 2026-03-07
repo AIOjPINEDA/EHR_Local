@@ -126,6 +126,7 @@ flowchart LR
 ## Database Runtime Selection
 
 - Backend uses a single runtime selector: `DATABASE_URL`.
+- Non-database runtime settings use the `CONSULTAMED_*` prefix to avoid shell-level env collisions.
 - Local profile example: `backend/.env.local.example`.
 - `backend/.env.supabase.example` remains only as a transitional/historical reference and is not an actively supported runtime profile.
 - Operator path for the current MVP is: set `DATABASE_URL` in `backend/.env` to the local PostgreSQL instance.
@@ -193,26 +194,33 @@ Authentication is implemented using JWT tokens with bcrypt password hashing:
 ## Frontend Responsibilities
 
 | Layer | Responsibility |
-| --- | --- |
-| src/app/ | Route pages (dashboard, patients, encounters, templates) |
-| src/lib/api/client.ts | API wrapper with /api/v1 prefix, auth header, and centralized error handling |
-| src/lib/stores/auth-store.ts | Lightweight auth state + persistence |
-| src/lib/hooks/ | Reusable React hooks (useAuthGuard, usePagination) |
-| src/lib/hooks/useAuthGuard.ts | Auth guard with loading state (prevents flash of unprotected content) |
-| src/lib/hooks/usePagination.ts | Abstract pagination hook (FHIR Bundle Links ready, hides limit/offset from UI) |
-| src/lib/hooks/use-encounter-form.ts | Shared encounter form state/submit logic for create (POST) and edit (PUT) flows |
-| src/components/ui/ | Shared UI primitives |
-| src/types/api.ts | Manual bridge and FE-only API types |
-| src/types/api.generated.ts | Auto-generated types from OpenAPI schema |
+|------|----------------|
+| `src/app/` | Route pages (dashboard, patients, encounters, templates) |
+| `src/lib/api/client.ts` | Compact API wrapper with shared request building for JSON, form, and blob flows |
+| `src/lib/stores/auth-store.ts` | Lightweight auth state + persistence |
+| `src/lib/hooks/` | Reusable React hooks (`useAuthGuard`, `usePagination`) |
+| `src/lib/hooks/useAuthGuard.ts` | Auth guard with loading state (prevents flash of unprotected content) |
+| `src/lib/hooks/usePagination.ts` | Abstract pagination hook (FHIR Bundle Links ready, hides limit/offset from UI) |
+| `src/lib/hooks/use-encounter-form.ts` | Shared encounter form state/submit logic for create (POST) and edit (PUT) flows |
+| `src/components/ui/` | Shared UI primitives |
+| `src/types/api.ts` | Minimal type bridge and compatibility aliases where generated types still need cleanup |
+| `src/types/api.generated.ts` | Auto-generated types from OpenAPI schema |
+
+## Frontend Library Status
+
+- Default runtime data access uses `ApiClient`, local component state, and `authStore`.
+- TanStack Query, React Hook Form, and Zod are installed but are not yet standardized in runtime flows.
 
 ## Architecture Integrity Guardrails
 
 ConsultaMed enforces architecture integrity through explicit guardrails that run both locally and in CI:
 
-1. Local developer gate: `./scripts/test_gate.sh`
-2. Backend architecture checks: `backend/tests/unit/test_architecture_dead_code_guards.py`
-3. CI backend test execution: `pytest tests/ -v --tb=short`
-4. OpenAPI schema hash verification: `./scripts/verify-schema-hash.sh`
+1. Shared tooling entrypoint: `node scripts/repo-tool.mjs`
+2. Local developer gate: `./scripts/test_gate.sh` or `powershell -ExecutionPolicy Bypass -File scripts/repo-tool.ps1 test-gate`
+3. Backend architecture checks: `backend/tests/unit/test_architecture_dead_code_guards.py`
+4. CI Linux full gate: `node scripts/repo-tool.mjs test-gate`
+5. CI Windows smoke gate: `powershell -ExecutionPolicy Bypass -File scripts/repo-tool.ps1 test-gate --skip-build`
+6. OpenAPI schema hash verification: `node scripts/repo-tool.mjs verify-schema-hash`
 
 These controls prevent drift between declared architecture and implemented behavior. In particular:
 
@@ -245,11 +253,11 @@ Schemas are structured following FHIR R5 resource independence:
 - **Unidirectional imports**: `Encounter` imports atomic schemas (prevents circular dependencies)
 - **Reusability**: Atomic schemas can be used in multiple contexts (e.g., direct CRUD, nested in Encounter)
 
-```
+```text
 app/schemas/
-├── condition.py       # ConditionCreate, ConditionResponse (atomic)
-├── medication.py      # MedicationCreate, MedicationResponse (atomic)
-└── encounter.py       # EncounterCreate/Update/Response (imports atomic schemas)
+|-- condition.py       # ConditionCreate, ConditionResponse (atomic)
+|-- medication.py      # MedicationCreate, MedicationResponse (atomic)
+`-- encounter.py       # EncounterCreate/Update/Response (imports atomic schemas)
 ```
 
 ### Service Layer (FHIR Interactions)
@@ -283,11 +291,11 @@ raise HTTPException(status_code=404, detail="Paciente no encontrado")
 raise_not_found("Paciente")
 ```
 
-Frontend uses centralized error response handler in `ApiClient`:
+Frontend uses centralized error handling in `ApiClient`:
 
 ```typescript
 private async handleErrorResponse(response: Response): Promise<never> {
-  const error = await response.json().catch(() => ({ detail: 'Error desconocido' }));
+  const error = await response.json().catch(() => ({ detail: "Error desconocido" }));
   throw new Error(error.detail);
 }
 ```
@@ -322,7 +330,7 @@ consultamed/
 │   │   ├── app/              # Next.js 14 App Router pages
 │   │   ├── lib/
 │   │   │   ├── api/
-│   │   │   │   └── client.ts # API wrapper with centralized errors
+│   │   │   │   └── client.ts # Compact API wrapper (JSON/form/blob)
 │   │   │   ├── hooks/        # Reusable React hooks
 │   │   │   │   ├── useAuthGuard.ts
 │   │   │   │   └── usePagination.ts
@@ -337,11 +345,14 @@ consultamed/
 ├── sidecars/
 │   └── hapi-fhir/            # Implemented local HAPI starter baseline
 ├── scripts/
+│   ├── repo-tool.mjs         # Shared cross-platform tooling entrypoint
+│   ├── repo-tool.ps1         # Windows wrapper for repo-tool.mjs
 │   ├── generate-types.sh
 │   ├── start-hapi-sidecar.sh
 │   ├── stop-hapi-sidecar.sh
 │   ├── verify-schema-hash.sh
-│   └── test_gate.sh
+│   ├── test_gate.sh
+│   └── windows/
 ├── docs/
 │   ├── architecture/
 │   ├── plans/
@@ -350,4 +361,4 @@ consultamed/
 └── (local-only archive, not versioned in git)
 ```
 
-*Last updated: 2026-03-13*
+*Last updated: 2026-05-30*
