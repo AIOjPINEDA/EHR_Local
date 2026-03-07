@@ -5,7 +5,7 @@ Export the FastAPI OpenAPI schema to a JSON file.
 Usage:
     python scripts/export-openapi.py [output_path]
 
-This runs without starting the server — it just imports the app
+This runs without starting the server - it just imports the app
 and calls app.openapi() to get the spec.
 """
 import json
@@ -41,7 +41,7 @@ def main() -> None:
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(schema, f, indent=2, ensure_ascii=False)
 
-    print(f"✅ OpenAPI schema v{schema['info']['version']} exported to {output_path}")
+    print(f"OpenAPI schema v{schema['info']['version']} exported to {output_path}")
 
 
 if __name__ == "__main__":
