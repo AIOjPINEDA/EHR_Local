@@ -130,8 +130,8 @@ flowchart LR
 - Local profile example: `backend/.env.local.example`.
 - `backend/.env.supabase.example` remains only as a transitional/historical reference and is not an actively supported runtime profile.
 - Operator path for the current MVP is: set `DATABASE_URL` in `backend/.env` to the local PostgreSQL instance.
-- Infrastructure provisioning (Docker + migrations) remains in `./scripts/setup-local-db.sh`; that bootstrap reads SQL from `database/migrations/`.
-- Script path: run from repo root (`./scripts/setup-local-db.sh`) or from `backend/` as `../scripts/setup-local-db.sh`.
+- Infrastructure provisioning (Docker + migrations) is centralized in `node scripts/repo-tool.mjs setup-local-db`; that bootstrap reads SQL from `database/migrations/`.
+- Compatibility wrappers remain available at `./scripts/setup-local-db.sh` and `powershell -ExecutionPolicy Bypass -File scripts/repo-tool.ps1 setup-local-db`.
 
 ## Authentication Model (Current)
 
@@ -347,6 +347,7 @@ consultamed/
 ├── scripts/
 │   ├── repo-tool.mjs         # Shared cross-platform tooling entrypoint
 │   ├── repo-tool.ps1         # Windows wrapper for repo-tool.mjs
+│   ├── setup-local-db.sh     # POSIX wrapper for repo-tool.mjs setup-local-db
 │   ├── generate-types.sh
 │   ├── start-hapi-sidecar.sh
 │   ├── stop-hapi-sidecar.sh
@@ -359,6 +360,7 @@ consultamed/
 │   ├── playbooks/
 │   └── specs/                # Active specs
 └── (local-only archive, not versioned in git)
+```
 ```
 
 *Last updated: 2026-05-30*

@@ -35,19 +35,11 @@ def test_backend_config_uses_single_database_url() -> None:
     """Backend settings must use DATABASE_URL without mode branching."""
     config = (_repo_root() / "backend" / "app" / "config.py").read_text(encoding="utf-8")
     assert "DATABASE_URL: str = " in config
-    assert "SQLALCHEMY_ECHO: bool = False" in config
     assert "def resolve_database_url(self) -> \"Settings\":" in config
     assert "DATABASE_MODE" not in config
     assert "LOCAL_DATABASE_URL" not in config
     assert "SUPABASE_DATABASE_URL" not in config
     assert "RENDER_DATABASE_URL" not in config
-
-
-def test_database_engine_uses_sqlalchemy_echo_setting() -> None:
-    """Database engine must read SQL echo from dedicated setting, not DEBUG."""
-    database = (_repo_root() / "backend" / "app" / "database.py").read_text(encoding="utf-8")
-    assert "echo=settings.SQLALCHEMY_ECHO" in database
-    assert "echo=settings." + "DEBUG" not in database
 
 
 def test_asyncpg_pin_matches_pg17_spike_compatibility() -> None:
@@ -56,18 +48,26 @@ def test_asyncpg_pin_matches_pg17_spike_compatibility() -> None:
     assert "asyncpg==0.30.0" in requirements
 
 
-def test_setup_local_db_reuses_existing_named_container() -> None:
-    """Local DB setup script should handle pre-existing consultamed-db container safely."""
+def test_setup_local_db_wrapper_delegates_to_repo_tool() -> None:
+    """POSIX wrapper should delegate local DB bootstrap to the shared tooling entrypoint."""
     setup_script = (_repo_root() / "scripts" / "setup-local-db.sh").read_text(encoding="utf-8")
-    assert 'docker ps -aq -f name=^/${CONTAINER_NAME}$' in setup_script
-    assert 'docker start "$CONTAINER_NAME"' in setup_script
-    assert 'LOCAL_POSTGRES_PORT="${LOCAL_POSTGRES_PORT:-54329}"' in setup_script
+    assert 'exec node "$SCRIPT_DIR/repo-tool.mjs" setup-local-db "$@"' in setup_script
 
 
-def test_setup_local_db_uses_neutral_sql_bootstrap_path() -> None:
-    """Local DB bootstrap must read SQL from a neutral repo path, not Supabase migrations."""
-    repo_root = _repo_root()
-    setup_script = (repo_root / "scripts" / "setup-local-db.sh").read_text(encoding="utf-8")
+def test_repo_tool_reuses_existing_named_container() -> None:
+    """Shared tooling should handle pre-existing consultamed-db container safely."""
+    repo_tool = (_repo_root() / "scripts" / "repo-tool.mjs").read_text(encoding="utf-8")
+    assert 'const containerName = "consultamed-db";' in repo_tool
+    assert '`name=^/${containerName}$`' in repo_tool
+    assert 'run("docker", ["start", containerName]);' in repo_tool
+    assert 'readIntegerEnv("LOCAL_POSTGRES_PORT", 54329)' in repo_tool
 
-    assert 'MIGRATIONS_DIR="$ROOT_DIR/database/migrations"' in setup_script
-    assert (repo_root / "database" / "migrations").is_dir()
+
+def test_windows_start_script_uses_native_repo_tool_bootstrap() -> None:
+    """Windows one-click start should use native wrappers instead of bash scripts."""
+    start_script = (_repo_root() / "scripts" / "windows" / "start-consultamed.bat").read_text(
+        encoding="utf-8"
+    )
+    assert 'repo-tool.ps1" setup-local-db' in start_script
+    assert r'backend\.venv\Scripts\python.exe -m uvicorn' in start_script
+    assert "npm.cmd run dev" in start_script

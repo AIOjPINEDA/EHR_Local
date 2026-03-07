@@ -53,7 +53,11 @@ npm run dev                         # Dev server (port 3000)
 
 ### Unified Local Gate
 ```bash
-./scripts/test_gate.sh              # Backend + Frontend gate before PR/commit
+./scripts/test_gate.sh
+node scripts/repo-tool.mjs test-gate
+powershell -ExecutionPolicy Bypass -File scripts/repo-tool.ps1 test-gate
+node scripts/repo-tool.mjs setup-local-db
+powershell -ExecutionPolicy Bypass -File scripts/repo-tool.ps1 setup-local-db
 ```
 
 ## Security Constraints
