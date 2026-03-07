@@ -31,11 +31,13 @@
 - PostgreSQL 17 (local Docker) / Supabase-managed (cloud)
 - Security model aligned to RLS-required production target
 
+### Installed but not yet standardized
+- TanStack Query, React Hook Form, and Zod are installed in frontend dependencies but are not the default runtime data/form layer yet.
+
 ### Planned / Not yet adopted
 - Supabase Auth as primary runtime auth provider (current runtime auth is JWT in FastAPI).
 - Full end-to-end RLS enforcement in all production deployment paths.
-- TanStack Query and Zustand as default frontend state/data layer.
-- React Hook Form + Zod as unified frontend form/validation standard.
+- Zustand as default frontend state layer.
 
 ## Executable Commands
 
@@ -44,33 +46,42 @@
 cd backend
 source .venv/bin/activate
 pytest tests/unit tests/contracts -v --tb=short  # Run fast test suite (default for PR)
-pytest tests/ -v --tb=short        # Run full suite (includes integration when present)
-ruff check .                        # Lint
-black .                             # Format
-isort .                             # Sort imports
-mypy app --ignore-missing-imports   # Type check
-uvicorn app.main:app --reload       # Dev server (port 8000)
+pytest tests/ -v --tb=short                      # Run full suite (includes integration when present)
+python -m ruff check app tests                   # Lint
+python -m mypy app --ignore-missing-imports      # Type check
+uvicorn app.main:app --reload                    # Dev server (port 8000)
+```
+
+Windows PowerShell:
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+python -m pytest tests/unit tests/contracts -v --tb=short
+python -m ruff check app tests
+python -m mypy app --ignore-missing-imports
+uvicorn app.main:app --reload
 ```
 
 ### Frontend
 ```bash
 cd frontend
-npm test                            # Run tests
-npm run lint                        # ESLint
-npm run type-check                  # TypeScript check
-npm run generate:types              # Regenerate types from OpenAPI
-npm run format                      # Prettier
-npm run dev                         # Dev server (port 3000)
+npm test
+npm run lint
+npm run type-check
+npm run generate:types
+npm run dev
 ```
 
 ### Unified Local Gate
 ```bash
-./scripts/test_gate.sh              # Backend + Frontend gate before PR/commit
+./scripts/test_gate.sh
+node scripts/repo-tool.mjs test-gate
+powershell -ExecutionPolicy Bypass -File scripts/repo-tool.ps1 test-gate
 ```
 
 ## Security Constraints
 
-> ⚠️ CRITICAL: This is a healthcare application handling sensitive patient data.
+> CRITICAL: This is a healthcare application handling sensitive patient data.
 
 1. **GDPR / LOPD-GDD Compliance**: All patient data processing must comply with Spanish and EU data protection regulations.
 2. **RLS Mandatory**: Every table with patient data MUST use Row Level Security.
@@ -100,13 +111,13 @@ Data models follow FHIR nomenclature:
 - Docstrings in Spanish for medical domain terms
 - Variable/function names in English
 - PEP 8 + Black formatting (line-length: 100)
-- Ruff for linting, isort for imports
+- Ruff for linting
 
 ### TypeScript
 - Strict mode enabled
 - No `any` types
 - Types auto-generated from OpenAPI (`npm run generate:types`)
-- FE-only types manually defined in `src/types/api.ts`
+- FE-only compatibility aliases live in `src/types/api.ts`
 - Components in PascalCase
 - Custom hooks prefixed with `use`
 
@@ -147,6 +158,7 @@ Data models follow FHIR nomenclature:
 ## Definition of Done
 
 - `./scripts/test_gate.sh` passes locally (includes schema hash check).
+- `node scripts/repo-tool.mjs test-gate` passes locally (or the PowerShell wrapper on Windows).
 - `cd backend && .venv/bin/pytest tests/unit/test_architecture_dead_code_guards.py -v` passes.
 - New infrastructural abstractions (routing wrappers, validators, service helpers) have at least one runtime consumer and one automated test.
 - Architecture and agent contract documentation reflect implemented state (not aspirational state).
@@ -159,33 +171,33 @@ Data models follow FHIR nomenclature:
 
 ### Reading order at session start
 
-1. `AGENTS.md` (this file) — canonical contract
-2. `docs/architecture/overview.md` — system design
-3. `docs/playbooks/agentic-repo-bootstrap.md` — repo bootstrap reference
+1. `AGENTS.md` (this file) - canonical contract
+2. `docs/architecture/overview.md` - system design
+3. `docs/playbooks/agentic-repo-bootstrap.md` - repo bootstrap reference
 
 ### Task delegation protocol
 
 All tasks are delegated via **GitHub Issues** in this repo. Before implementing anything:
 
 - Check open issues for context and spec
-- Issues carry: Objetivo, Contexto, Criterios de aceptación, Restricciones
+- Issues carry: Objetivo, Contexto, Criterios de aceptacion, Restricciones
 - Commit convention: `Fixes #N` in the commit message closes the issue automatically
 
 Active label taxonomy: `type:security/infra/architecture/bug`, `priority:critical/high/medium/low`
 
-### Execution cycle (SDD — Spec-Driven Development)
+### Execution cycle (SDD - Spec-Driven Development)
 
 Once you have an issue, the expected execution cycle is:
 
-**Clarify → Plan → Tasks → Implement → Analyze**
+**Clarify -> Plan -> Tasks -> Implement -> Analyze**
 
 - **Clarify**: validate ambiguities before planning. Ask the human if unclear.
 - **Plan**: propose the approach before touching code.
 - **Tasks**: decompose into independently testable units.
-- **Implement**: run `./scripts/test_gate.sh` locally before each commit.
+- **Implement**: run the unified repository gate locally before each commit.
 - **Analyze**: verify that docs/architecture reflect the implemented state.
 
-If implementation reveals the spec was incomplete, update the spec before continuing — not after.
+If implementation reveals the spec was incomplete, update the spec before continuing - not after.
 
 ### Active specs
 
@@ -210,4 +222,4 @@ See `docs/architecture/overview.md` for system design.
 
 ---
 
-*Last updated: 2026-02-18*
+*Last updated: 2026-03-07*
