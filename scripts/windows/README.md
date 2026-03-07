@@ -28,13 +28,13 @@ Desde la raiz del repo:
 
 ## Requisitos
 
-- Docker Desktop en ejecucion
+- Docker Desktop instalado
 - Python venv configurado en `backend/.venv`
 - Node.js instalado
 
 ## Que hace `start-consultamed.bat`
 
-1. Verifica que Docker este corriendo.
+1. Verifica `docker` en `PATH` e intenta arrancar Docker Desktop si el daemon no esta listo.
 2. Ejecuta `repo-tool.ps1 setup-local-db` para levantar PostgreSQL y aplicar migraciones.
 3. Abre una ventana con Backend FastAPI (puerto 8000).
 4. Abre una ventana con Frontend Next.js (puerto 3000).
