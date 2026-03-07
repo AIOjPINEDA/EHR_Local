@@ -3,28 +3,47 @@ ConsultaMed Backend - Configuration Settings
 """
 from functools import lru_cache
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings from environment variables."""
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        populate_by_name=True,
+    )
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:54329/consultamed"
 
     # JWT Authentication
-    JWT_SECRET_KEY: str = "change-me-in-production"
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
+    JWT_SECRET_KEY: str = Field(
+        default="change-me-in-production",
+        validation_alias="CONSULTAMED_JWT_SECRET_KEY",
+    )
+    JWT_ALGORITHM: str = Field(
+        default="HS256",
+        validation_alias="CONSULTAMED_JWT_ALGORITHM",
+    )
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=480,
+        validation_alias="CONSULTAMED_ACCESS_TOKEN_EXPIRE_MINUTES",
+    )  # 8 hours
 
     # CORS
-    FRONTEND_URL: str = "http://localhost:3000"
+    FRONTEND_URL: str = Field(
+        default="http://localhost:3000",
+        validation_alias="CONSULTAMED_FRONTEND_URL",
+    )
 
     # Environment
-    ENVIRONMENT: str = "development"
-    DEBUG: bool = True
+    ENVIRONMENT: str = Field(
+        default="development",
+        validation_alias="CONSULTAMED_ENVIRONMENT",
+    )
+    DEBUG: bool = Field(default=True, validation_alias="CONSULTAMED_DEBUG")
 
     @staticmethod
     def _ensure_asyncpg(url: str) -> str:

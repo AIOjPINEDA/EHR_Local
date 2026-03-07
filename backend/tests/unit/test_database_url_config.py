@@ -27,3 +27,25 @@ def test_settings_only_exposes_single_database_selector() -> None:
     assert "LOCAL_DATABASE_URL" not in field_names
     assert "SUPABASE_DATABASE_URL" not in field_names
     assert "RENDER_DATABASE_URL" not in field_names
+
+
+def test_settings_ignore_generic_debug_env_collision(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Generic DEBUG env vars from the shell should not affect backend settings."""
+    monkeypatch.setenv("DEBUG", "release")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.DEBUG is True
+
+
+def test_settings_read_namespaced_runtime_envs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Runtime env should be read from CONSULTAMED_* namespaced variables."""
+    monkeypatch.setenv("CONSULTAMED_DEBUG", "false")
+    monkeypatch.setenv("CONSULTAMED_FRONTEND_URL", "https://consulta.example")
+    monkeypatch.setenv("CONSULTAMED_ACCESS_TOKEN_EXPIRE_MINUTES", "60")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.DEBUG is False
+    assert settings.FRONTEND_URL == "https://consulta.example"
+    assert settings.ACCESS_TOKEN_EXPIRE_MINUTES == 60
