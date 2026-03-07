@@ -9,7 +9,7 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit --incremental false",
     "test": "node scripts/contracts-smoke.mjs",
-    "generate:types": "../scripts/generate-types.sh"
+    "generate:types": "node ../scripts/repo-tool.mjs generate-types"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
