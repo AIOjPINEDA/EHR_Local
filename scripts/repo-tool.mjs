@@ -15,6 +15,7 @@ const FRONTEND_OPENAPI = path.join(FRONTEND_DIR, "openapi.json");
 const FRONTEND_HASH = path.join(FRONTEND_DIR, ".openapi-hash");
 const FRONTEND_TYPES = path.join(FRONTEND_DIR, "src", "types", "api.generated.ts");
 const IS_WINDOWS = process.platform === "win32";
+const SLEEP_STATE = new Int32Array(new SharedArrayBuffer(4));
 
 const [command, ...restArgs] = process.argv.slice(2);
 
@@ -23,30 +24,72 @@ function fail(message, exitCode = 1) {
   process.exit(exitCode);
 }
 
-function run(commandName, args, options = {}) {
+function execute(commandName, args, options = {}) {
   const result = spawnSync(commandName, args, {
     cwd: options.cwd ?? REPO_ROOT,
     env: { ...process.env, ...(options.env ?? {}) },
     shell: options.shell ?? false,
-    stdio: "inherit",
+    stdio: options.captureOutput ? "pipe" : "inherit",
+    encoding: options.captureOutput ? "utf8" : undefined,
+    input: options.input,
   });
 
   if (result.error) {
     fail(`Failed to execute ${commandName}: ${result.error.message}`);
   }
 
-  if (result.status !== 0) {
+  if (!options.allowFailure && result.status !== 0) {
+    if (options.captureOutput && result.stderr) {
+      const stderr = result.stderr.trim();
+      if (stderr) {
+        console.error(stderr);
+      }
+    }
     process.exit(result.status ?? 1);
   }
+
+  return result;
+}
+
+function run(commandName, args, options = {}) {
+  execute(commandName, args, options);
+}
+
+function capture(commandName, args, options = {}) {
+  const result = execute(commandName, args, {
+    ...options,
+    allowFailure: options.allowFailure ?? false,
+    captureOutput: true,
+  });
+
+  return {
+    status: result.status ?? 1,
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? "",
+  };
 }
 
 function probe(commandName, args, cwd = REPO_ROOT) {
-  const result = spawnSync(commandName, args, {
+  const result = capture(commandName, args, {
     cwd,
-    stdio: "ignore",
+    allowFailure: true,
   });
 
-  return !result.error && result.status === 0;
+  return result.status === 0;
+}
+
+function sleepMs(milliseconds) {
+  Atomics.wait(SLEEP_STATE, 0, 0, milliseconds);
+}
+
+function readIntegerEnv(name, fallback) {
+  const rawValue = process.env[name] ?? String(fallback);
+
+  if (!/^\d+$/.test(rawValue)) {
+    fail(`${name} must be an integer (current: ${rawValue})`);
+  }
+
+  return Number.parseInt(rawValue, 10);
 }
 
 function getPythonCandidates() {
@@ -196,16 +239,211 @@ function generateTypes() {
   exportOpenApi();
 
   const typeGenerator = resolveOpenApiTypesCommand();
-  run(
-    typeGenerator.command,
-    [...typeGenerator.args, FRONTEND_OPENAPI, "-o", FRONTEND_TYPES],
-    {
-      cwd: FRONTEND_DIR,
-    },
-  );
+  run(typeGenerator.command, [...typeGenerator.args, FRONTEND_OPENAPI, "-o", FRONTEND_TYPES], {
+    cwd: FRONTEND_DIR,
+  });
 
   updateSchemaHash();
   console.log("Type generation pipeline completed.");
+}
+
+function resolveComposeCommand() {
+  if (probe("docker", ["compose", "version"])) {
+    return { command: "docker", args: ["compose"] };
+  }
+
+  if (probe("docker-compose", ["--version"])) {
+    return { command: "docker-compose", args: [] };
+  }
+
+  fail("Neither 'docker compose' nor 'docker-compose' is available.");
+}
+
+function escapeSqlLiteral(value) {
+  return value.replace(/'/g, "''");
+}
+
+function setupLocalDb() {
+  const migrationsDir = path.join(REPO_ROOT, "supabase", "migrations");
+  const composeFile = path.join(REPO_ROOT, "docker-compose.yml");
+  const containerName = "consultamed-db";
+  const dbUser = "postgres";
+  const dbName = "consultamed";
+  const localPostgresPort = readIntegerEnv("LOCAL_POSTGRES_PORT", 54329);
+  const readinessTimeoutSeconds = readIntegerEnv("READINESS_TIMEOUT_SECONDS", 180);
+  const readinessIntervalSeconds = 2;
+
+  if (readinessTimeoutSeconds < readinessIntervalSeconds) {
+    fail(`READINESS_TIMEOUT_SECONDS must be >= ${readinessIntervalSeconds}`);
+  }
+
+  if (!fs.existsSync(migrationsDir)) {
+    fail(`Migrations directory not found: ${migrationsDir}`);
+  }
+
+  if (!fs.existsSync(composeFile)) {
+    fail(`Compose file not found: ${composeFile}`);
+  }
+
+  if (!probe("docker", ["--version"])) {
+    fail("Docker is not installed or not available in PATH.");
+  }
+
+  const compose = resolveComposeCommand();
+
+  if (!probe("docker", ["info"])) {
+    fail("Docker daemon is not running. Start Docker Desktop/Engine and try again.");
+  }
+
+  const existingContainerId = capture("docker", ["ps", "-aq", "-f", `name=^/${containerName}$`], {
+    cwd: REPO_ROOT,
+  }).stdout.trim();
+
+  if (existingContainerId) {
+    const currentMappedPort = capture(
+      "docker",
+      [
+        "inspect",
+        "-f",
+        '{{with index .NetworkSettings.Ports "5432/tcp"}}{{(index . 0).HostPort}}{{end}}',
+        containerName,
+      ],
+      { allowFailure: true },
+    ).stdout.trim();
+
+    if (!currentMappedPort || currentMappedPort !== String(localPostgresPort)) {
+      const currentMappedPortDisplay = currentMappedPort || "<none>";
+      console.log(
+        `Found existing container '${containerName}' with host port ${currentMappedPortDisplay} (expected: ${localPostgresPort}).`,
+      );
+      console.log("Recreating container to apply current port mapping...");
+      run("docker", ["rm", "-f", containerName]);
+      run(compose.command, [...compose.args, "-f", composeFile, "up", "-d", "db"]);
+    } else {
+      console.log(`Found existing container '${containerName}' (id: ${existingContainerId}). Reusing it.`);
+      const existingContainerStatus = capture(
+        "docker",
+        ["inspect", "-f", "{{.State.Status}}", containerName],
+        { allowFailure: true },
+      ).stdout.trim() || "unknown";
+
+      if (existingContainerStatus !== "running") {
+        console.log(`Starting existing container '${containerName}'...`);
+        run("docker", ["start", containerName]);
+      }
+    }
+  } else {
+    console.log("Starting PostgreSQL container...");
+    run(compose.command, [...compose.args, "-f", composeFile, "up", "-d", "db"]);
+  }
+
+  console.log(`Local PostgreSQL host port: ${localPostgresPort}`);
+  console.log(`Waiting for database readiness (timeout: ${readinessTimeoutSeconds}s)...`);
+
+  const maxAttempts = Math.floor(readinessTimeoutSeconds / readinessIntervalSeconds);
+  let ready = false;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (probe("docker", ["exec", containerName, "pg_isready", "-U", dbUser, "-d", dbName])) {
+      ready = true;
+      break;
+    }
+
+    if (attempt % 5 === 0) {
+      console.log(`Still waiting for PostgreSQL... ${attempt * readinessIntervalSeconds}s elapsed`);
+    }
+
+    sleepMs(readinessIntervalSeconds * 1000);
+  }
+
+  if (!ready) {
+    console.error(`Database did not become ready in time (${readinessTimeoutSeconds}s).`);
+    const logs = capture("docker", ["logs", "--tail", "40", containerName], {
+      allowFailure: true,
+    }).stdout.trim();
+
+    if (logs) {
+      console.error("Last container logs:");
+      console.error(logs);
+    }
+
+    process.exit(1);
+  }
+
+  console.log("Ensuring schema_migrations table exists...");
+  run(
+    "docker",
+    ["exec", "-i", containerName, "psql", "-U", dbUser, "-d", dbName, "-v", "ON_ERROR_STOP=1"],
+    {
+      input: [
+        "CREATE TABLE IF NOT EXISTS schema_migrations (",
+        "  filename TEXT PRIMARY KEY,",
+        "  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+        ");",
+      ].join("\n"),
+    },
+  );
+
+  const migrationFiles = fs
+    .readdirSync(migrationsDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".sql"))
+    .map((entry) => entry.name)
+    .sort();
+
+  if (migrationFiles.length === 0) {
+    fail(`No SQL migrations found in ${migrationsDir}`);
+  }
+
+  console.log(`Found ${migrationFiles.length} migration files.`);
+
+  for (const filename of migrationFiles) {
+    const escapedFilename = escapeSqlLiteral(filename);
+    const alreadyApplied = capture(
+      "docker",
+      [
+        "exec",
+        containerName,
+        "psql",
+        "-U",
+        dbUser,
+        "-d",
+        dbName,
+        "-tAc",
+        `SELECT 1 FROM schema_migrations WHERE filename = '${escapedFilename}' LIMIT 1;`,
+      ],
+      { allowFailure: false },
+    ).stdout.trim();
+
+    if (alreadyApplied === "1") {
+      console.log(`Skipping already applied migration: ${filename}`);
+      continue;
+    }
+
+    console.log(`Applying migration: ${filename}`);
+    run(
+      "docker",
+      ["exec", "-i", containerName, "psql", "-U", dbUser, "-d", dbName, "-v", "ON_ERROR_STOP=1"],
+      {
+        input: fs.readFileSync(path.join(migrationsDir, filename), "utf-8"),
+      },
+    );
+
+    run("docker", [
+      "exec",
+      containerName,
+      "psql",
+      "-U",
+      dbUser,
+      "-d",
+      dbName,
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-c",
+      `INSERT INTO schema_migrations (filename) VALUES ('${escapedFilename}') ON CONFLICT (filename) DO NOTHING;`,
+    ]);
+  }
+
+  console.log("Local database setup complete.");
 }
 
 function backendChecks({ runIntegration = false } = {}) {
@@ -264,6 +502,9 @@ switch (command) {
   case "verify-schema-hash":
     verifySchemaHash({ update: parseFlag("--update") });
     break;
+  case "setup-local-db":
+    setupLocalDb();
+    break;
   case "backend-checks":
     backendChecks({ runIntegration: parseFlag("--integration") });
     break;
@@ -278,6 +519,6 @@ switch (command) {
     break;
   default:
     fail(
-      "Usage: node scripts/repo-tool.mjs <generate-types|verify-schema-hash|backend-checks|frontend-checks|test-gate> [options]",
+      "Usage: node scripts/repo-tool.mjs <generate-types|verify-schema-hash|setup-local-db|backend-checks|frontend-checks|test-gate> [options]",
     );
 }

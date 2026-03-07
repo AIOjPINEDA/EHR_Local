@@ -42,8 +42,8 @@ flowchart TB
 - Local profile example: `backend/.env.local.example`.
 - Supabase profile example: `backend/.env.supabase.example`.
 - Operator switch: edit `DATABASE_URL` in `backend/.env`.
-- Infrastructure provisioning (Docker + migrations) remains in `./scripts/setup-local-db.sh` and is independent from runtime selector logic.
-- Script path: run from repo root (`./scripts/setup-local-db.sh`) or from `backend/` as `../scripts/setup-local-db.sh`.
+- Infrastructure provisioning (Docker + migrations) is centralized in `node scripts/repo-tool.mjs setup-local-db`.
+- Compatibility wrappers remain available at `./scripts/setup-local-db.sh` and `powershell -ExecutionPolicy Bypass -File scripts/repo-tool.ps1 setup-local-db`.
 
 ## Authentication Model (Current)
 
@@ -245,6 +245,7 @@ EHR_Guadalix/
 |-- scripts/
 |   |-- repo-tool.mjs         # Shared cross-platform tooling entrypoint
 |   |-- repo-tool.ps1         # Windows wrapper for repo-tool.mjs
+|   |-- setup-local-db.sh     # POSIX wrapper for repo-tool.mjs setup-local-db
 |   |-- generate-types.sh     # POSIX compatibility wrapper
 |   |-- verify-schema-hash.sh
 |   |-- test_gate.sh

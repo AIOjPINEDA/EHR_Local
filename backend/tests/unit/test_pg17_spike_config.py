@@ -48,9 +48,26 @@ def test_asyncpg_pin_matches_pg17_spike_compatibility() -> None:
     assert "asyncpg==0.30.0" in requirements
 
 
-def test_setup_local_db_reuses_existing_named_container() -> None:
-    """Local DB setup script should handle pre-existing consultamed-db container safely."""
+def test_setup_local_db_wrapper_delegates_to_repo_tool() -> None:
+    """POSIX wrapper should delegate local DB bootstrap to the shared tooling entrypoint."""
     setup_script = (_repo_root() / "scripts" / "setup-local-db.sh").read_text(encoding="utf-8")
-    assert 'docker ps -aq -f name=^/${CONTAINER_NAME}$' in setup_script
-    assert 'docker start "$CONTAINER_NAME"' in setup_script
-    assert 'LOCAL_POSTGRES_PORT="${LOCAL_POSTGRES_PORT:-54329}"' in setup_script
+    assert 'exec node "$SCRIPT_DIR/repo-tool.mjs" setup-local-db "$@"' in setup_script
+
+
+def test_repo_tool_reuses_existing_named_container() -> None:
+    """Shared tooling should handle pre-existing consultamed-db container safely."""
+    repo_tool = (_repo_root() / "scripts" / "repo-tool.mjs").read_text(encoding="utf-8")
+    assert 'const containerName = "consultamed-db";' in repo_tool
+    assert '`name=^/${containerName}$`' in repo_tool
+    assert 'run("docker", ["start", containerName]);' in repo_tool
+    assert 'readIntegerEnv("LOCAL_POSTGRES_PORT", 54329)' in repo_tool
+
+
+def test_windows_start_script_uses_native_repo_tool_bootstrap() -> None:
+    """Windows one-click start should use native wrappers instead of bash scripts."""
+    start_script = (_repo_root() / "scripts" / "windows" / "start-consultamed.bat").read_text(
+        encoding="utf-8"
+    )
+    assert 'repo-tool.ps1" setup-local-db' in start_script
+    assert r'backend\.venv\Scripts\python.exe -m uvicorn' in start_script
+    assert "npm.cmd run dev" in start_script
