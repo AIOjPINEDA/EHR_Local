@@ -1,13 +1,21 @@
 /**
  * ConsultaMed Frontend - API Client
- * 
- * Cliente para comunicación con el backend FastAPI.
+ *
+ * Cliente para comunicacion con el backend FastAPI.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 interface ApiError {
   detail: string;
+}
+
+type ResponseMode = "json" | "blob";
+
+interface ApiRequestOptions extends Omit<RequestInit, "headers"> {
+  contentType?: string | null;
+  headers?: HeadersInit;
+  responseMode?: ResponseMode;
 }
 
 class ApiClient {
@@ -22,118 +30,101 @@ class ApiClient {
     this.token = token;
   }
 
-  /**
-   * Centralized error handler for all API responses.
-   * Parses error.detail from backend or returns fallback message.
-   */
+  private buildUrl(endpoint: string): string {
+    return `${this.baseUrl}/api/v1${endpoint}`;
+  }
+
+  private buildHeaders(contentType: string | null, headers?: HeadersInit): Headers {
+    const resolvedHeaders = new Headers(headers);
+
+    if (contentType) {
+      resolvedHeaders.set("Content-Type", contentType);
+    }
+
+    if (this.token) {
+      resolvedHeaders.set("Authorization", `Bearer ${this.token}`);
+    }
+
+    return resolvedHeaders;
+  }
+
   private async handleErrorResponse(response: Response): Promise<never> {
     const error: ApiError = await response.json().catch(() => ({
-      detail: 'Error desconocido',
+      detail: "Error desconocido",
     }));
     throw new Error(error.detail);
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseUrl}/api/v1${endpoint}`;
-
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
-
-    if (this.token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
-    }
-
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
-
+  private async parseResponse<T>(response: Response, responseMode: ResponseMode): Promise<T> {
     if (!response.ok) {
       await this.handleErrorResponse(response);
     }
 
-    // Handle 204 No Content
+    if (responseMode === "blob") {
+      return response.blob() as Promise<T>;
+    }
+
     if (response.status === 204) {
       return {} as T;
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
+  }
+
+  private async request<T>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> {
+    const { contentType = "application/json", headers, responseMode = "json", ...requestInit } =
+      options;
+
+    const response = await fetch(this.buildUrl(endpoint), {
+      ...requestInit,
+      headers: this.buildHeaders(contentType, headers),
+    });
+
+    return this.parseResponse<T>(response, responseMode);
   }
 
   async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' });
+    return this.request<T>(endpoint, { method: "GET" });
   }
 
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'POST',
+      method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
   async postForm<T>(endpoint: string, formData: URLSearchParams): Promise<T> {
-    const url = `${this.baseUrl}/api/v1${endpoint}`;
-
-    const headers: HeadersInit = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
-
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
+    return this.request<T>(endpoint, {
+      method: "POST",
+      contentType: "application/x-www-form-urlencoded",
       body: formData.toString(),
     });
-
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
-    }
-
-    return response.json();
   }
 
   async put<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'PUT',
+      method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
   async patch<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'PATCH',
+      method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
   async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+    return this.request<T>(endpoint, { method: "DELETE" });
   }
 
-  // Download PDF as blob
   async downloadPdf(endpoint: string): Promise<Blob> {
-    const url = `${this.baseUrl}/api/v1${endpoint}`;
-
-    const headers: HeadersInit = {};
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-
-    const response = await fetch(url, { headers });
-
-    if (!response.ok) {
-      await this.handleErrorResponse(response);
-    }
-
-    return response.blob();
+    return this.request<Blob>(endpoint, {
+      contentType: null,
+      responseMode: "blob",
+    });
   }
 }
 

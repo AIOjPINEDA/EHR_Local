@@ -6,7 +6,7 @@ import Link from "next/link";
 import { api } from "@/lib/api/client";
 import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
-import { Patient, PatientCreate } from "@/types/api";
+import type { Patient, PatientCreate } from "@/types/api";
 
 export default function NewPatientPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
