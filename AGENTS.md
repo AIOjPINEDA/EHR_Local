@@ -166,6 +166,13 @@ Data models follow FHIR nomenclature:
 - `docs/specs/`: proposed change scope, decisions, and phased plans.
 - GitHub Issues: only active execution backlog.
 
+### Repository-specific agents
+
+- `consultamed-governance-auditor`: audit governance, architecture/spec separation, obsolete docs, shim alignment, and backlog drift specifically in this repository.
+- `consultamed-governance-remediator`: apply approved governance cleanup in this repository after an audit or explicit user approval.
+
+Use these agents when the task is primarily documentation-governance work inside ConsultaMed rather than general implementation work.
+
 ### Task delegation protocol
 
 All tasks are delegated via **GitHub Issues** in this repo. Before implementing anything:
