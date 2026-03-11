@@ -20,7 +20,7 @@ Se implementó un **sidecar local HAPI FHIR R5** en `sidecars/hapi-fhir/` usando
 - corre separado de FastAPI;
 - usa su propia PostgreSQL dedicada (`consultamed-hapi-db`, host `localhost:54330` por defecto);
 - publica una superficie FHIR mínima y controlada;
-- recibe datos desde ConsultaMed mediante una **ETL one-way, repetible e idempotente**;
+- recibe datos desde ConsultaMed mediante una **ETL one-way, repetible, idempotente y convergente sin exigir `--reset` para limpiar recursos stale del subset aprobado**;
 - deja a **FastAPI como fuente de verdad** para escrituras, autenticación y lógica clínica.
 
 Traducido a lenguaje práctico:
@@ -148,24 +148,24 @@ El contenido SOAP actual no se perdió. En esta baseline se conserva mediante un
 
 ### 7.1 Qué se publica realmente
 
-La superficie local aprobada queda limitada a:
+La superficie local aprobada queda limitada, por interacción/operación HAPI, a:
 
 - `CapabilityStatement` (`/fhir/metadata`)
 - `read`
-- `search`
-- respuestas `Bundle` derivadas de búsqueda
+- `search` (`SEARCH_TYPE`)
+- recuperación de páginas `Bundle` derivadas de búsqueda (`_getpages`)
 
-No se publica una API FHIR general completa.
+No se publica una API FHIR general completa ni otros GET/operations del starter. Ejemplos explícitamente no expuestos al público: `_history`, `vread`, `$meta`, `$get-resource-counts` y cualquier operación fuera del subset aprobado.
 
 ### 7.2 Qué escrituras están bloqueadas
 
-Las escrituras públicas están cerradas. El interceptor `ReadOnlyModeInterceptor` solo permite operaciones no-GET cuando la petición lleva la cabecera interna:
+Las escrituras públicas y las operaciones no aprobadas están cerradas. El interceptor `ReadOnlyModeInterceptor` solo permite operaciones fuera de la whitelist pública cuando la petición lleva la cabecera interna:
 
 - `X-Consultamed-ETL-Key`
 
 y esa clave coincide con `CONSULTAMED_ETL_API_KEY`.
 
-En local, el valor por defecto es `consultamed-local-etl`, pero puedes cambiarlo si exportas la variable antes de arrancar y cargar.
+En local, el valor por defecto es `consultamed-local-etl`, pero puedes cambiarlo si exportas la variable antes de arrancar y cargar. Esto mantiene a FastAPI como source of truth, evita dual-write y deja las escrituras generales fuera de la superficie pública.
 
 ### 7.3 Qué se audita
 
@@ -209,10 +209,11 @@ No debes asumir que HAPI sustituye a ConsultaMed ni que ya existe una API FHIR g
 |---|---|
 | Arranque reproducible de HAPI local | Sí |
 | PostgreSQL dedicada para HAPI | Sí |
-| ETL inicial repetible del subset clínico | Sí |
+| ETL convergente del subset clínico sin `--reset` obligatorio | Sí |
 | `CapabilityStatement` consistente con el subset | Sí |
 | `read` y `search` sobre 6 recursos | Sí |
 | Respuestas `Bundle` de búsqueda | Sí |
+| Healthcheck con readiness real y espera a `healthy` | Sí |
 | Auditoría mínima sanitizada | Sí |
 
 ### 9.2 Límites explícitos de la baseline
@@ -310,6 +311,7 @@ Qué hace este script:
 - espera a que respondan:
   - `http://localhost:8090/actuator/health`
   - `http://localhost:8090/fhir/metadata`
+- y no da el arranque por bueno hasta que el contenedor queda `healthy`, usando `HealthCheck.java` contra `http://127.0.0.1:8080/actuator/health/readiness`.
 
 ### Paso 4. Carga el subset clínico inicial
 
@@ -324,8 +326,9 @@ Qué hace realmente:
 3. usa `backend/.venv/bin/python` si está disponible;
 4. ejecuta `backend/scripts/load_hapi_clinical_subset.py`;
 5. lee el snapshot desde ConsultaMed;
-6. hace PUT upserts al sidecar en orden determinista;
-7. compara conteos origen/destino y verifica referencias de muestra.
+6. reconcilia y elimina recursos stale del subset aprobado en orden inverso de dependencias;
+7. hace PUT upserts al sidecar en orden determinista;
+8. compara conteos origen/destino y verifica referencias de muestra.
 
 ### Paso 5. Si necesitas una recarga completamente limpia
 
@@ -333,7 +336,7 @@ Qué hace realmente:
 ./scripts/load-hapi-clinical-subset.sh --reset
 ```
 
-`--reset` baja el compose del sidecar con volúmenes (`down -v`) antes de volver a cargar. Úsalo cuando quieras borrar la persistencia FHIR local y reconstruirla desde cero.
+`--reset` baja el compose del sidecar con volúmenes (`down -v`) antes de volver a cargar. Úsalo solo cuando quieras borrar la persistencia FHIR local y reconstruirla desde cero; ya no es necesario para eliminar recursos stale del subset aprobado en recargas normales.
 
 ## 12. Cómo verificar que realmente funciona
 
@@ -341,13 +344,17 @@ Qué hace realmente:
 
 ```bash
 curl -fsS http://localhost:8090/actuator/health
+curl -fsS http://localhost:8090/actuator/health/readiness
 curl -fsS http://localhost:8090/fhir/metadata
+docker inspect --format '{{.State.Health.Status}}' consultamed-hapi-sidecar
 ```
 
 Debes obtener:
 
 - un health OK del sidecar;
+- una readiness `UP` del runtime real;
 - un `CapabilityStatement` coherente con el subset aprobado.
+- el contenedor en estado `healthy`.
 
 ### 12.2 Verificación por conteos
 
@@ -387,7 +394,7 @@ Si quieres evidencia automatizada relacionada con esta baseline:
 
 ```bash
 cd backend
-.venv/bin/pytest tests/unit/test_hapi_sidecar_bootstrap.py tests/unit/test_fhir_base_mapping.py tests/unit/test_hapi_clinical_etl.py -v --tb=short
+.venv/bin/pytest tests/unit/test_hapi_public_surface.py tests/unit/test_hapi_sidecar_bootstrap.py tests/unit/test_fhir_base_mapping.py tests/unit/test_hapi_clinical_etl.py -v --tb=short
 .venv/bin/pytest tests/unit/test_architecture_dead_code_guards.py -v --tb=short
 ```
 

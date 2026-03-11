@@ -68,7 +68,7 @@ flowchart LR
     subgraph Sidecar["Sidecar · HAPI FHIR R5 bootstrap"]
         Starter["Official starter image\nDockerized local runtime"]
         Overlay["Read-only interceptor\nCapabilityStatement customization"]
-        Ops["/fhir/metadata\n/actuator/health"]
+        Ops["/fhir/metadata\n/actuator/health + readiness-backed healthcheck"]
     end
 
     subgraph Data["Data"]
@@ -113,15 +113,16 @@ flowchart LR
 
 - The local interoperability sidecar lives under `sidecars/hapi-fhir/` and runs independently from FastAPI.
 - Startup helpers: `./scripts/start-hapi-sidecar.sh` and `./scripts/stop-hapi-sidecar.sh`.
-- Initial subset ETL helper: `./scripts/load-hapi-clinical-subset.sh [--reset]`.
+- Initial subset ETL helper: `./scripts/load-hapi-clinical-subset.sh` (reloads converge without `--reset`; `--reset` is only for a clean local wipe).
 - Local endpoints include:
   - `http://localhost:8090/fhir/metadata`
   - `http://localhost:8090/actuator/health`
-- The current baseline keeps the sidecar localhost-bound and limits the published surface to `CapabilityStatement`, `read`, `search`, and search `Bundle` for the approved subset.
-- Public write operations remain closed; non-read operations are reserved for the local ETL path via the internal `X-Consultamed-ETL-Key` header.
+- Startup waits for `/actuator/health`, `/fhir/metadata`, and Docker health=`healthy`; the container healthcheck is backed by the runtime readiness signal at `/actuator/health/readiness`.
+- The current baseline keeps the sidecar localhost-bound and restricts the public surface at interaction/operation level to `CapabilityStatement`, `read`, `search`, and search `Bundle` page retrieval for the approved subset.
+- Non-approved GET endpoints/operations such as `_history`, `vread`, `$meta`, and `$get-resource-counts` are not publicly exposed; public write operations remain closed and internal ETL writes require the `X-Consultamed-ETL-Key` header.
 - The sidecar emits a minimal audit trail for top-level FHIR requests using request ID + method + interaction + resource type/id + outcome, without logging request URLs, query strings, payload bodies, or authorization material.
 - HAPI now persists on a dedicated local PostgreSQL container (`consultamed-hapi-db`, default host port `54330`).
-- FastAPI keeps its own operational PostgreSQL path (`consultamed-db` / `DATABASE_URL`), remains independently startable, and stays the source of truth for product writes, auth, and business logic.
+- FastAPI keeps its own operational PostgreSQL path (`consultamed-db` / `DATABASE_URL`), remains independently startable, and stays the source of truth for product writes, auth, and business logic; HAPI remains a local sidecar with no public general writes or dual-write path.
 - HAPI schema lifecycle stays owned by the official starter on sidecar startup; ConsultaMed migrations do not run against the sidecar database.
 
 ## Database Runtime Selection
