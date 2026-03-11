@@ -6,20 +6,23 @@ This project uses a centralized agent contract for consistent AI collaboration.
 
 👉 **See [AGENTS.md](./AGENTS.md)** for all rules, commands, constraints, and project context.
 
-This repo uses a spec-anchored brownfield workflow.
+If this file conflicts with `AGENTS.md`, follow `AGENTS.md`.
 
 ## Quick Context
 
 - **Project**: Electronic Health Record (EHR) for private medical practices in Spain
 - **Phase**: MVP Complete, pending production deployment
-- **Stack**: FastAPI (Python 3.11+) + Next.js 14 (TypeScript) + PostgreSQL/Supabase
+- **Stack**: FastAPI (Python 3.11+) + Next.js 14 (TypeScript) + PostgreSQL/Supabase + local HAPI FHIR R5 sidecar baseline
 - **Domain**: Healthcare with FHIR R5 alignment
+- **Source of truth**: FastAPI remains the operational source of truth; the HAPI sidecar is an implemented local interoperability layer with dedicated PostgreSQL
+- **FHIR surface**: `CapabilityStatement`, `read`, `search`, and search `Bundle` for the approved subset
+- **Gate caveat**: `./scripts/test_gate.sh` is still the target before commit, but inherited `mypy` debt can keep the global gate red; report it as residual risk
 
 ## Workflow Summary
 
 - `AGENTS.md`: operational rules and repository-wide constraints
 - `docs/architecture/overview.md`: implemented architecture only
-- `docs/specs/`: proposed changes and phased plans
+- `docs/specs/`: proposed changes plus retained historical decision context
 - GitHub Issues: only active execution backlog
 
 Execution cycle: `Clarify → Plan → Tasks → Implement → Analyze`
@@ -49,7 +52,7 @@ Use the lightest artifact that fits the change:
 - Modify security validators without approval
 - Log PII (patient data)
 
-Do not use legacy planning notes as a second backlog or as architecture truth.
+Do not use legacy planning notes or retained spec bundles as a second backlog or as architecture truth.
 
 ## Related Files
 

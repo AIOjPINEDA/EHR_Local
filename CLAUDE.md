@@ -1,136 +1,32 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This shim intentionally defers to `AGENTS.md`. If anything here conflicts with `AGENTS.md`, follow `AGENTS.md`.
 
-## Project
+## Read First
 
-ConsultaMed — lightweight EHR for private medical practices in Spain (1-2 physicians, ~50 consultations/month). Healthcare domain with FHIR R5 alignment and GDPR/LOPD-GDD compliance. Phase: MVP complete, pending production deployment.
+1. `AGENTS.md`
+2. `docs/architecture/overview.md`
+3. `docs/playbooks/agentic-repo-bootstrap.md`
 
-Canonical source of truth: `AGENTS.md` at repo root.
+## Repo Snapshot
 
-## Commands
+- FastAPI remains the operational source of truth for writes, auth, and business logic.
+- The HAPI FHIR R5 sidecar under `sidecars/hapi-fhir/` is an implemented local baseline, not a proposed future track.
+- The published/local FHIR surface is intentionally limited to `CapabilityStatement`, `read`, `search`, and search `Bundle` for the approved subset.
+- HAPI uses a dedicated local PostgreSQL path; ConsultaMed product migrations do not run against that sidecar database.
+- GitHub Issues are the only active execution backlog. Specs keep change scope, decisions, and historical context; they are not status boards.
+- `./scripts/test_gate.sh` is still the pre-commit target, but the current repo carries inherited `mypy` debt that can keep the global gate red. Report that precisely instead of claiming it fixed.
 
-### Pre-commit gate (run from repo root)
+## Common Commands
+
 ```bash
-./scripts/test_gate.sh                # 7-step gate: backend tests + ruff + mypy + frontend lint + type-check + tests + schema hash
+./scripts/test_gate.sh
+cd backend && source .venv/bin/activate && pytest tests/unit tests/contracts -v --tb=short
+cd frontend && npm run lint && npm run type-check && npm test
 ```
 
-### Backend (from `backend/`, activate `.venv` first)
-```bash
-source .venv/bin/activate
-pytest tests/unit tests/contracts -v --tb=short   # Fast suite (default for PR)
-pytest tests/unit/test_some_file.py::test_name -v  # Single test
-pytest tests/ -v --tb=short                        # Full suite
-RUN_INTEGRATION=1 pytest tests/integration -v      # Integration tests (opt-in, needs DB)
-ruff check .                                       # Lint
-black .                                            # Format
-isort .                                            # Sort imports
-mypy app --ignore-missing-imports                  # Type check
-uvicorn app.main:app --reload --port 8000          # Dev server
-```
+## Guardrails
 
-### Frontend (from `frontend/`)
-```bash
-npm test              # Contract smoke tests
-npm run lint          # ESLint
-npm run type-check    # TypeScript strict check
-npm run generate:types  # Regenerate types from OpenAPI (needs backend running)
-npm run dev           # Dev server (port 3000)
-```
-
-### Database (from repo root)
-```bash
-./scripts/setup-local-db.sh    # Docker PostgreSQL 17 + migrations (port 54329)
-```
-
-## Workflow
-
-### Working model
-- `AGENTS.md` — operational rules and repository-wide constraints.
-- `docs/architecture/overview.md` — implemented architecture only.
-- `docs/specs/` — proposed changes, decisions, and phased plans.
-- GitHub Issues — only active execution backlog.
-
-### Execution cycle
-**Clarify → Plan → Tasks → Implement → Analyze**
-
-- Use GitHub Issues as the execution source of truth.
-- Do not use legacy planning notes as a second backlog.
-- Specs document proposed change; they do not replace implemented architecture docs.
-- `tasks.md` is optional and temporary; avoid keeping it after execution tracking moves to Issues.
-
-### Spec usage
-- Small or low-risk changes: work directly from the issue if already clear.
-- Medium-risk changes: add `spec.md`.
-- Large, multi-phase, compliance-sensitive, or cross-stack changes: use `spec.md` + `plan.md`.
-
-## Architecture
-
-**Stack**: Next.js 14 App Router (TypeScript) → FastAPI REST API (Python 3.11+, async) → PostgreSQL (Supabase or local Docker)
-
-### Backend (`backend/app/`)
-- **`api/`** — Route modules mounted under `/api/v1`: `auth`, `patients`, `encounters`, `templates`, `prescriptions`. Aggregated in `api/router.py`.
-  - **`api/exceptions.py`** — Centralized HTTPException helpers: `raise_not_found`, `raise_bad_request`, `raise_unauthorized`, `raise_forbidden`. Use these instead of direct `HTTPException` calls for consistency.
-- **`models/`** — SQLAlchemy async ORM with FHIR R5 naming: `Patient`, `Practitioner`, `Encounter`, `Condition`, `MedicationRequest`, `AllergyIntolerance`, `Template`. UUID PKs, `meta_created_at`/`meta_updated_at` timestamps.
-- **`schemas/`** — Atomic FHIR R5 Pydantic v2 schemas (`ConfigDict(from_attributes=True)`). Independent resources (Condition, Medication) prevent circular imports. Encounter imports atomic schemas unidirectionally.
-  - **`schemas/condition.py`** — `ConditionCreate`, `ConditionResponse` (atomic, FHIR-aligned)
-  - **`schemas/medication.py`** — `MedicationCreate`, `MedicationResponse` (atomic, FHIR-aligned)
-  - **`schemas/encounter.py`** — `EncounterCreate`, `EncounterResponse` (imports atomic schemas)
-- **`services/`** — Business logic layer extending `BaseService[T]` with FHIR R5 interaction naming: `read`, `search`, `create`, `update`, `patch`, `delete`. Receives `AsyncSession`, raises `ValueError` on validation failures (API layer converts to 400).
-  - **`services/base.py`** — Base service class with FHIR naming conventions and `commit_and_refresh` helper (accepts any model type via TypeVar M).
-- **`validators/`** — Domain validators: `dni.py` (Spanish DNI/NIE), `clinical.py` (birth_date, gender). **Never modify DNI/NIE validators without explicit approval.**
-- **`templates/`** — HTML templates for WeasyPrint PDF prescription generation.
-- **`config.py`** — Pydantic `BaseSettings` loading from `.env`. Single `DATABASE_URL` controls local vs Supabase.
-- **`database.py`** — Async engine + session factory (`get_db` dependency).
-
-**Auth flow**: JWT (HS256) + bcrypt. `get_current_practitioner()` is the FastAPI dependency for protected routes. Token in `Authorization: Bearer` header.
-
-**Data flow**: API routes → Services → Models → Database. Services handle validation and transactions.
-
-### Frontend (`frontend/src/`)
-- **`app/`** — Pages: `/login`, `/dashboard`, `/patients`, `/patients/[id]`, `/patients/[id]/encounters/new`, `/encounters/[id]`, `/settings/templates`.
-- **`lib/api/client.ts`** — Singleton `ApiClient` with token injection, centralized error handling (`handleErrorResponse`), JSON + form-data + blob (PDF) support. Base URL from `NEXT_PUBLIC_API_URL`.
-- **`lib/stores/auth-store.ts`** — Custom observable store persisting JWT + practitioner to `localStorage` (`consultamed_auth` key).
-- **`lib/hooks/`** — Reusable React hooks for common patterns:
-  - **`useAuthGuard.ts`** — Centralized auth guard with loading state. Prevents flash of unprotected content during auth validation. Use in all protected pages.
-  - **`usePagination.ts`** — Abstract pagination hook (FHIR Bundle Links ready). Hides limit/offset from UI, exposes `nextPage()`, `prevPage()`, `hasNext`, `hasPrev`. Future-proof for cursor-based pagination.
-  - **`useEncounterForm.ts`** — Encounter form state management.
-  - **`useDebouncedValue.ts`** — Debounced value for search inputs.
-  - **`useAutocompleteList.ts`** — Autocomplete list management.
-- **`types/api.ts`** — Manual bridge re-exporting generated types with friendly aliases (e.g., `Patient = Schema["PatientResponse"]`).
-- **`types/api.generated.ts`** — Auto-generated from OpenAPI via `npm run generate:types`. Do not edit manually.
-- **`components/ui/`** — shadcn/ui primitives (Radix-based). `cn()` utility for Tailwind class merging.
-
-**Type pipeline**: Backend OpenAPI schema → `scripts/generate-types.sh` → `api.generated.ts` → consumed via `api.ts` bridge. Schema hash verified by `scripts/verify-schema-hash.sh`.
-
-### Tests
-- **Backend**: `tests/unit/` (pure logic), `tests/contracts/` (API schema validation), `tests/integration/` (opt-in with `RUN_INTEGRATION=1`). Each file uses one marker: `@pytest.mark.unit`, `@pytest.mark.contract`, or `@pytest.mark.integration`.
-- **Frontend**: `npm test` runs `scripts/contracts-smoke.mjs` (40+ assertion-based contract checks).
-- **Architecture guard**: `tests/unit/test_architecture_dead_code_guards.py` prevents dead route wrappers and unused validators.
-
-## Rules
-
-### Coding style
-- **Python**: Type hints mandatory, docstrings in Spanish for medical terms, names in English, Black formatting (line-length 100), ruff + isort
-- **TypeScript**: Strict mode, no `any`, PascalCase components, `use`-prefixed hooks
-- Models follow FHIR R5 naming conventions
-
-### Ask first
-- Adding dependencies to `requirements.txt` or `package.json`
-- Modifying database schema, RLS policies, or migrations
-- Changing Pydantic schemas (triggers type regeneration)
-- Creating new API endpoints
-- Changing auth flow or PDF templates
-
-### Never
-- Bypass authentication in any endpoint
-- Modify `app/validators/dni.py` or `app/validators/nie.py` without explicit approval
-- Log PII (patient names, DNI, health data)
-- Remove existing tests
-- Commit without running `./scripts/test_gate.sh`
-
-### Architecture invariants
-- Every new route-group `layout.tsx` must have at least one `page.tsx` consumer
-- Every validator in `app/validators/` must have a runtime consumer and a test
-- `backend/.venv` is the canonical Python environment (never use root `.venv` for backend)
-- `DATABASE_URL` in `backend/.env` is the single selector for local vs Supabase DB
+- Use `backend/.venv` as the canonical backend Python environment.
+- Do not treat legacy planning docs or spec bundles as a second backlog.
+- See `AGENTS.md` for ask-first actions, protected validators, and repository-wide rules.
