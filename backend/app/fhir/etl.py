@@ -18,12 +18,29 @@ from app.fhir.clinical_mapping import (
     encounter_to_fhir_resource,
     medication_request_to_fhir_resource,
 )
-from app.models import AllergyIntolerance, Condition, Encounter, MedicationRequest, Patient, Practitioner
+from app.models import (
+    AllergyIntolerance,
+    Condition,
+    Encounter,
+    MedicationRequest,
+    Patient,
+    Practitioner,
+)
 
 
 DEFAULT_HAPI_BASE_URL = "http://localhost:8090/fhir"
 DEFAULT_ETL_API_KEY = "consultamed-local-etl"
 ETL_API_KEY_HEADER = "X-Consultamed-ETL-Key"
+RESOURCE_TYPE_ORDER = (
+    "Patient",
+    "Practitioner",
+    "Encounter",
+    "Condition",
+    "MedicationRequest",
+    "AllergyIntolerance",
+)
+RESOURCE_DELETE_ORDER = tuple(reversed(RESOURCE_TYPE_ORDER))
+SEARCH_PAGE_SIZE = 200
 
 
 @dataclass(slots=True)
@@ -103,7 +120,10 @@ def build_load_plan(snapshot: ClinicalSubsetSnapshot) -> list[LoadBatch]:
         LoadBatch("Patient", [patient_to_fhir_resource(patient) for patient in snapshot.patients]),
         LoadBatch(
             "Practitioner",
-            [practitioner_to_fhir_resource(practitioner) for practitioner in snapshot.practitioners],
+            [
+                practitioner_to_fhir_resource(practitioner)
+                for practitioner in snapshot.practitioners
+            ],
         ),
         LoadBatch(
             "Encounter",
@@ -135,7 +155,9 @@ def validate_snapshot_references(snapshot: ClinicalSubsetSnapshot) -> None:
 
     for encounter in snapshot.encounters:
         if encounter.subject_id not in patient_ids:
-            raise ValueError(f"Encounter {encounter.id} references missing Patient {encounter.subject_id}")
+            raise ValueError(
+                f"Encounter {encounter.id} references missing Patient {encounter.subject_id}"
+            )
         if encounter.participant_id not in practitioner_ids:
             raise ValueError(
                 f"Encounter {encounter.id} references missing Practitioner {encounter.participant_id}"
@@ -143,7 +165,9 @@ def validate_snapshot_references(snapshot: ClinicalSubsetSnapshot) -> None:
 
     for condition in snapshot.conditions:
         if condition.subject_id not in patient_ids:
-            raise ValueError(f"Condition {condition.id} references missing Patient {condition.subject_id}")
+            raise ValueError(
+                f"Condition {condition.id} references missing Patient {condition.subject_id}"
+            )
         if condition.encounter_id not in encounter_ids:
             raise ValueError(
                 f"Condition {condition.id} references missing Encounter {condition.encounter_id}"
@@ -185,6 +209,20 @@ def _source_counts(snapshot: ClinicalSubsetSnapshot) -> dict[str, int]:
     }
 
 
+def _source_ids(snapshot: ClinicalSubsetSnapshot) -> dict[str, set[str]]:
+    """Expose the current source ids per resource type for reconciliation."""
+    return {
+        "Patient": {patient.id for patient in snapshot.patients},
+        "Practitioner": {practitioner.id for practitioner in snapshot.practitioners},
+        "Encounter": {encounter.id for encounter in snapshot.encounters},
+        "Condition": {condition.id for condition in snapshot.conditions},
+        "MedicationRequest": {
+            medication_request.id for medication_request in snapshot.medication_requests
+        },
+        "AllergyIntolerance": {allergy.id for allergy in snapshot.allergies},
+    }
+
+
 def _first_ids(snapshot: ClinicalSubsetSnapshot) -> dict[str, str]:
     """Expose one deterministic sample id per resource type for manual follow-up."""
     sample_ids: dict[str, str] = {}
@@ -210,9 +248,56 @@ def _fetch_resource_count(base_url: str, resource_type: str, api_key: str) -> in
     return int(response.get("total", 0) or 0)
 
 
-def _fetch_resource(base_url: str, resource_type: str, resource_id: str, api_key: str) -> dict[str, Any]:
+def _fetch_resource(
+    base_url: str, resource_type: str, resource_id: str, api_key: str
+) -> dict[str, Any]:
     """Fetch a single FHIR resource for post-load verification."""
     return _json_request(f"{base_url}/{resource_type}/{resource_id}", method="GET", api_key=api_key)
+
+
+def _fetch_resource_ids(base_url: str, resource_type: str, api_key: str) -> list[str]:
+    """List current HAPI ids for one resource type, following Bundle pagination if needed."""
+    next_url = (
+        f"{base_url}/{resource_type}?"
+        f"{parse.urlencode({'_elements': 'id', '_count': SEARCH_PAGE_SIZE})}"
+    )
+    seen_urls: set[str] = set()
+    resource_ids: list[str] = []
+
+    while next_url and next_url not in seen_urls:
+        seen_urls.add(next_url)
+        bundle = _json_request(next_url, method="GET", api_key=api_key)
+        for entry in bundle.get("entry", []):
+            resource = entry.get("resource") or {}
+            resource_id = resource.get("id")
+            if resource_id:
+                resource_ids.append(str(resource_id))
+
+        next_url = None
+        for link in bundle.get("link", []):
+            if link.get("relation") == "next" and link.get("url"):
+                next_url = str(link["url"])
+                break
+
+    return resource_ids
+
+
+def _reconcile_stale_resources(
+    snapshot: ClinicalSubsetSnapshot, base_url: str, api_key: str
+) -> None:
+    """Delete stale target resources in reverse dependency order so reloads converge without reset."""
+    source_ids = _source_ids(snapshot)
+
+    for resource_type in RESOURCE_DELETE_ORDER:
+        stale_ids = sorted(
+            set(_fetch_resource_ids(base_url, resource_type, api_key)) - source_ids[resource_type]
+        )
+        for resource_id in stale_ids:
+            _json_request(
+                f"{base_url}/{resource_type}/{resource_id}",
+                method="DELETE",
+                api_key=api_key,
+            )
 
 
 def _verify_sample_resources(snapshot: ClinicalSubsetSnapshot, base_url: str, api_key: str) -> None:
@@ -221,7 +306,10 @@ def _verify_sample_resources(snapshot: ClinicalSubsetSnapshot, base_url: str, ap
         expected = encounter_to_fhir_resource(snapshot.encounters[0])
         actual = _fetch_resource(base_url, "Encounter", snapshot.encounters[0].id, api_key)
         assert actual["subject"]["reference"] == expected["subject"]["reference"]
-        assert actual["participant"][0]["actor"]["reference"] == expected["participant"][0]["actor"]["reference"]
+        assert (
+            actual["participant"][0]["actor"]["reference"]
+            == expected["participant"][0]["actor"]["reference"]
+        )
 
     if snapshot.conditions:
         expected = condition_to_fhir_resource(snapshot.conditions[0])
@@ -255,7 +343,9 @@ def _verify_sample_resources(snapshot: ClinicalSubsetSnapshot, base_url: str, ap
 async def load_source_snapshot() -> ClinicalSubsetSnapshot:
     """Read the operational dataset needed for the initial HAPI load."""
     async with async_session_maker() as session:
-        patients = list((await session.execute(select(Patient).order_by(Patient.id))).scalars().all())
+        patients = list(
+            (await session.execute(select(Patient).order_by(Patient.id))).scalars().all()
+        )
         practitioners = list(
             (await session.execute(select(Practitioner).order_by(Practitioner.id))).scalars().all()
         )
@@ -264,14 +354,18 @@ async def load_source_snapshot() -> ClinicalSubsetSnapshot:
                 await session.execute(
                     select(Encounter).order_by(Encounter.period_start, Encounter.id)
                 )
-            ).scalars().all()
+            )
+            .scalars()
+            .all()
         )
         conditions = list(
             (
                 await session.execute(
                     select(Condition).order_by(Condition.recorded_date, Condition.id)
                 )
-            ).scalars().all()
+            )
+            .scalars()
+            .all()
         )
         medication_requests = list(
             (
@@ -281,7 +375,9 @@ async def load_source_snapshot() -> ClinicalSubsetSnapshot:
                         MedicationRequest.id,
                     )
                 )
-            ).scalars().all()
+            )
+            .scalars()
+            .all()
         )
         allergies = list(
             (
@@ -291,7 +387,9 @@ async def load_source_snapshot() -> ClinicalSubsetSnapshot:
                         AllergyIntolerance.id,
                     )
                 )
-            ).scalars().all()
+            )
+            .scalars()
+            .all()
         )
 
     return ClinicalSubsetSnapshot(
@@ -315,6 +413,8 @@ async def run_clinical_subset_etl(
     snapshot = await load_source_snapshot()
     validate_snapshot_references(snapshot)
     source_counts = _source_counts(snapshot)
+
+    _reconcile_stale_resources(snapshot, resolved_base_url, resolved_api_key)
 
     for batch in build_load_plan(snapshot):
         for resource in batch.resources:
