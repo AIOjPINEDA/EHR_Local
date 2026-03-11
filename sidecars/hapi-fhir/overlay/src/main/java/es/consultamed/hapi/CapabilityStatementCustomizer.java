@@ -32,7 +32,7 @@ public class CapabilityStatementCustomizer {
 
         statement.getSoftware().setName("ConsultaMed HAPI Sidecar").setVersion("wave-1e-read-search");
         statement.setDescription(
-            "ConsultaMed local HAPI FHIR R5 sidecar. Public surface is CapabilityStatement, read, and search on the agreed six-resource subset; FastAPI remains the source of truth."
+            "ConsultaMed local HAPI FHIR R5 sidecar. Public surface is CapabilityStatement, read, and search on the agreed six-resource subset, including search Bundle page retrieval; FastAPI remains the source of truth."
         );
 
         statement.getRest().forEach(rest -> {
@@ -40,6 +40,7 @@ public class CapabilityStatementCustomizer {
                 "ConsultaMed local surface: metadata plus read/search on the agreed six-resource subset."
             );
             rest.getInteraction().clear();
+            rest.getOperation().clear();
             rest.getResource().removeIf(resource -> !ALLOWED_RESOURCE_TYPES.contains(resource.getType()));
             rest.getResource().forEach(this::restrictInteractions);
         });
