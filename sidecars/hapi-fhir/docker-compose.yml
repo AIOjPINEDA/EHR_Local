@@ -36,7 +36,7 @@ services:
     ports:
       - "127.0.0.1:${LOCAL_HAPI_PORT:-8090}:8080"
     healthcheck:
-      test: ["CMD", "java", "-cp", "/app", "HealthCheck"]
+      test: ["CMD", "java", "-cp", "/app/extra-classes/consultamed-hapi-overlay.jar", "es.consultamed.hapi.HealthCheck"]
       interval: 30s
       timeout: 10s
       start_period: 90s

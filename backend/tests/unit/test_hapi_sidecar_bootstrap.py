@@ -51,8 +51,34 @@ def test_hapi_sidecar_compose_keeps_dedicated_local_postgres_and_health_checks()
     assert 'test: ["CMD-SHELL", "pg_isready -U ${HAPI_DB_USER:-hapi} -d ${HAPI_DB_NAME:-hapi_fhir}"]' in compose
     assert "SPRING_CONFIG_ADDITIONAL_LOCATION: file:///app/config/consultamed.application.yaml" in compose
     assert "HAPI_DB_HOST: hapi-postgres" in compose
-    assert '["CMD", "java", "-cp", "/app", "HealthCheck"]' in compose
+    assert (
+        '["CMD", "java", "-cp", "/app/extra-classes/consultamed-hapi-overlay.jar", '
+        '"es.consultamed.hapi.HealthCheck"]'
+    ) in compose
+    assert '["CMD", "java", "-cp", "/app", "HealthCheck"]' not in compose
     assert "consultamed-db" not in compose
+
+
+def test_hapi_sidecar_healthcheck_helper_probes_runtime_readiness_endpoint() -> None:
+    """The runtime helper must probe the in-container readiness endpoint and fail closed."""
+    helper = (
+        _repo_root()
+        / "sidecars"
+        / "hapi-fhir"
+        / "overlay"
+        / "src"
+        / "main"
+        / "java"
+        / "es"
+        / "consultamed"
+        / "hapi"
+        / "HealthCheck.java"
+    ).read_text(encoding="utf-8")
+
+    assert "HttpClient" in helper
+    assert "http://127.0.0.1:8080/actuator/health/readiness" in helper
+    assert "\\\"status\\\":\\\"UP\\\"" in helper
+    assert "System.exit(1)" in helper
 
 
 def test_hapi_sidecar_config_stays_r5_public_read_search_on_postgres() -> None:
