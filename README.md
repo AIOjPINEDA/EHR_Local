@@ -62,17 +62,26 @@
 
 Necesitas **backend + frontend** activos.
 
-Todos los comandos con `./scripts/...` asumen que estás en la **raíz del repo** (`EHR_Guadalix/`).
-Si estás dentro de `backend/`, usa `../scripts/...`.
+Los comandos `./scripts/...` asumen que estás en la **raíz del repo** (`EHR_Guadalix/`).
 
 <details>
 <summary><strong> Pasos rápidos de uso diario</strong></summary>
 
 1) Base de datos:
 
-- Perfil local (`DATABASE_URL` apuntando a PostgreSQL 17 local): levanta la base con:
-- desde raíz: `./scripts/setup-local-db.sh`
-- desde `backend/`: `../scripts/setup-local-db.sh`
+- Perfil local (`DATABASE_URL` apuntando a PostgreSQL 17 local):
+
+Desde la raíz del repo:
+
+```bash
+./scripts/setup-local-db.sh
+```
+
+Desde `backend/`:
+
+```bash
+../scripts/setup-local-db.sh
+```
 
 - Perfil Supabase (`DATABASE_URL` apuntando a Supabase): no levantes DB local.
 
