@@ -7,7 +7,6 @@ Este índice centraliza la documentación vigente para evitar información dispe
 - `README.md`: quickstart del proyecto y estado general.
 - `docs/USER_GUIDE.md`: guía de uso funcional para médicos.
 - `docs/release/DEPLOYMENT_GUIDE.md`: pasos de despliegue.
-- `docs/release/v1-readiness-checklist.md`: checklist de readiness del piloto.
 
 ## Técnica
 
@@ -31,6 +30,7 @@ Este índice centraliza la documentación vigente para evitar información dispe
 
 - Material histórico local en `.archive/` (no versionado en git).
 - Planificación retirada o reemplazada por specs/issues: conservar solo en `.archive/` cuando sea necesario.
+- Evidencia de verificaciones o readiness cerrados: consultar git history si hace falta contexto histórico.
 
 Si hay conflicto entre documentos, priorizar:
 1. `AGENTS.md`
