@@ -1,35 +1,35 @@
-# Issue Seeding Guide: HAPI FHIR R5 Baseline
+# Guia De Apertura De Issues: Base HAPI FHIR R5
 
-## Purpose
+## Proposito
 
-Servir de handoff para que un agente futuro pueda abrir GitHub Issues consistentes con la spec v2.
+Servir de traspaso para que un agente futuro pueda abrir GitHub Issues consistentes con la spec v2.
 
 No es backlog activo ni tablero de ejecucion.
 
-## Usage Rule
+## Regla De Uso
 
 - usar este documento solo como semilla para futuras issues
 - si cambia la direccion de la iniciativa, actualizar primero la spec
 - no mantener este archivo como seguimiento vivo de ejecucion
 
-## Recommended Issue Sequence
+## Secuencia Recomendada De Issues
 
-### Issue 1 - Bootstrap del sidecar HAPI
+### Issue 1 - Arranque del servicio sidecar HAPI
 
 **Objetivo**
 
-Levantar un sidecar HAPI FHIR JPA Server basado en el starter oficial.
+Levantar un servicio sidecar HAPI FHIR JPA Server basado en el starter oficial.
 
 **Criterios de aceptacion**
 
 - existe estructura base HAPI usando el starter oficial
 - el servicio arranca localmente con configuracion declarativa
-- el runtime actual de FastAPI no se modifica
+- el entorno de ejecucion actual de FastAPI no se modifica
 - `/fhir/metadata` responde correctamente
 
 **Restricciones**
 
-- no introducir capacidades avanzadas fuera del baseline
+- no introducir capacidades avanzadas fuera de la linea base
 - no exponer HAPI como API publica principal
 
 **Dependencias**
@@ -46,7 +46,7 @@ Provisionar la base PostgreSQL dedicada para HAPI y cerrar dialecto y persistenc
 
 - HAPI usa una base PostgreSQL separada
 - el dialecto HAPI PostgreSQL queda configurado explicitamente
-- el boundary entre DB transaccional y DB FHIR queda documentado
+- la frontera entre DB transaccional y DB FHIR queda documentada
 - el lifecycle de migraciones HAPI queda documentado
 
 **Restricciones**
@@ -61,7 +61,7 @@ Provisionar la base PostgreSQL dedicada para HAPI y cerrar dialecto y persistenc
 
 **Objetivo**
 
-Definir la operacion minima segura del sidecar HAPI.
+Definir la operacion minima segura del servicio sidecar HAPI.
 
 **Criterios de aceptacion**
 
@@ -120,7 +120,7 @@ Completar el subset clinico inicial y su ETL repetible.
 
 - Issue 4
 
-### Issue 6 - Read/search FHIR y validacion funcional del subset
+### Issue 6 - Lectura/busqueda FHIR y validacion funcional del subset
 
 **Objetivo**
 
@@ -141,16 +141,16 @@ Verificar que HAPI expone una superficie FHIR util sobre el subset cargado.
 
 - Issue 5
 
-### Issue 7 - Seguridad, auditoria y validacion baseline
+### Issue 7 - Seguridad, auditoria y validacion de linea base
 
 **Objetivo**
 
-Introducir el baseline minimo de control clinico sobre HAPI.
+Introducir la linea base minima de control clinico sobre HAPI.
 
 **Criterios de aceptacion**
 
 - existe estrategia inicial con `AuthorizationInterceptor`
-- existe baseline de auditoria con BALP o equivalente documentado
+- existe linea base de auditoria con BALP o equivalente documentado
 - `RepositoryValidatingInterceptor` o mecanismo equivalente queda integrado
 - la terminologia minima del subset queda resuelta o claramente acotada
 
@@ -162,12 +162,12 @@ Introducir el baseline minimo de control clinico sobre HAPI.
 
 - Issue 6
 
-## Ready Check Before Opening Issues
+## Verificacion Previa A La Apertura De Issues
 
 Antes de abrir cualquiera de estas issues, el agente ejecutor debe validar que siguen siendo ciertas estas decisiones:
 
-1. sidecar HAPI como topologia elegida
+1. servicio sidecar HAPI como topologia elegida
 2. PostgreSQL dedicada para HAPI
-3. FastAPI como source of truth inicial
+3. FastAPI como fuente de verdad inicial
 4. subset inicial limitado a seis recursos
-5. read/search como alcance funcional de primera ola
+5. `read` y `search` como alcance funcional de primera ola

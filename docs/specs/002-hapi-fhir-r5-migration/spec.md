@@ -1,24 +1,24 @@
-# Feature Specification v2: HAPI FHIR R5 Baseline For ConsultaMed
+# Especificacion v2: Base HAPI FHIR R5 Para ConsultaMed
 
 **Feature Branch**: `002-hapi-fhir-r5-migration`
 **Created**: 2026-03-11
 **Status**: Draft v2
 **Last Updated**: 2026-03-11
 
-## Purpose
+## Proposito
 
 Definir una base HAPI FHIR R5 minima, funcional y mantenible para ConsultaMed.
 
 Esta spec no describe implementacion inmediata. Su funcion es dejar cerradas las decisiones necesarias para que otro agente pueda abordar la iniciativa de forma ordenada en el futuro.
 
-## Workflow Position
+## Posicion En El Flujo De Trabajo
 
 - este bundle documenta cambio propuesto, no backlog activo
 - el backlog activo sigue siendo GitHub Issues
 - no debe existir `tasks.md` persistente en este bundle
-- el handoff a ejecucion futura se concentra en `issue-seeding.md`
+- el traspaso a ejecucion futura se concentra en `issue-seeding.md`
 
-## Current State
+## Estado Actual
 
 ConsultaMed ya parte de una base favorable:
 
@@ -33,7 +33,7 @@ Limitaciones actuales:
 - no existe repositorio FHIR nativo
 - validacion, auditoria e interoperabilidad FHIR siguen siendo parciales
 
-## Target State
+## Estado Objetivo
 
 El objetivo de esta iniciativa es dejar definida una primera capacidad FHIR con estas caracteristicas:
 
@@ -41,36 +41,36 @@ El objetivo de esta iniciativa es dejar definida una primera capacidad FHIR con 
 2. FastAPI sigue siendo la fuente de verdad operacional.
 3. HAPI expone `CapabilityStatement`, `read` y `search` para un subset inicial de recursos.
 4. Los datos llegan a HAPI mediante ETL repetible e idempotente.
-5. Seguridad, auditoria, validacion y operacion quedan definidas en baseline suficiente para entorno clinico interno controlado.
+5. Seguridad, auditoria, validacion y operacion quedan definidas en una linea base suficiente para entorno clinico interno controlado.
 
-## Closed Decisions
+## Decisiones Cerradas
 
 ### D-001 Topology
 
-HAPI se adopta como sidecar progresivo. No es el system of record inicial.
+HAPI se adopta como servicio sidecar progresivo. No es el sistema de registro inicial.
 
-### D-002 Bootstrap
+### D-002 Arranque Base
 
 La base de arranque sera el starter oficial `hapi-fhir-jpaserver-starter`.
 
-### D-003 Runtime
+### D-003 Entorno De Ejecucion
 
-Baseline tecnico:
+Linea base tecnica:
 
 - JDK 17+
 - HAPI FHIR actual soportado por la documentacion vigente
 - PostgreSQL con `HapiFhirPostgresDialect`
 - configuracion declarativa
 
-### D-004 Source Of Truth
+### D-004 Fuente De Verdad
 
-Durante la primera fase funcional, FastAPI + PostgreSQL actual siguen siendo authoritative para escrituras y logica clinica.
+Durante la primera fase funcional, FastAPI + PostgreSQL actual siguen siendo la fuente de verdad para escrituras y logica clinica.
 
-### D-005 Database Boundary
+### D-005 Frontera De Base De Datos
 
 HAPI usara PostgreSQL separada. No compartira base fisica con la operativa del producto en el arranque.
 
-### D-006 Interaction Scope
+### D-006 Alcance De Interacciones
 
 La primera entrega FHIR se limita a:
 
@@ -85,7 +85,7 @@ Quedan fuera:
 - transacciones FHIR de negocio
 - capacidades avanzadas como subscriptions, MDM, HFQL, LastN, CDS Hooks, Clinical Reasoning y SMART on FHIR
 
-### D-007 Resource Scope
+### D-007 Alcance De Recursos
 
 Subset inicial:
 
@@ -98,28 +98,28 @@ Subset inicial:
 
 Los templates clinicos quedan fuera de FHIR en esta fase.
 
-### D-008 Data Strategy
+### D-008 Estrategia De Datos
 
 La estrategia inicial sera ETL one-way, repetible e idempotente. No habra dual-write ni sincronizacion bidireccional en la primera fase.
 
-## In Scope
+## Dentro De Alcance
 
 - base HAPI FHIR JPA Server moderna y operable
 - capa FHIR R5 minima alineada con el MVP
 - mapping inicial del dominio actual al subset acordado
 - estrategia inicial de ETL y rollback
-- baseline de seguridad, auditoria, validacion y operacion
+- linea base de seguridad, auditoria, validacion y operacion
 - politica de upgrades y migraciones HAPI
 
-## Out Of Scope
+## Fuera De Alcance
 
 - mover escrituras clinicas a HAPI
 - reemplazar FastAPI como backend principal
 - compartir base transaccional entre producto y HAPI
 - resolver EHDS final o perfiles nacionales avanzados como requisito inicial
-- introducir componentes avanzados de HAPI no necesarios para el baseline
+- introducir componentes avanzados de HAPI no necesarios para la linea base
 
-## Mapping Direction
+## Direccion De Mapeo
 
 ### Patient
 
@@ -160,14 +160,14 @@ La estrategia inicial sera ETL one-way, repetible e idempotente. No habra dual-w
 - `patient_id` -> `AllergyIntolerance.patient`
 - `clinical_status` -> `AllergyIntolerance.clinicalStatus`
 
-## Baselines
+## Linea Base
 
 ### Security
 
 - HAPI no sera la API publica principal del producto
 - el acceso inicial sera interno o fuertemente controlado
 - `AuthorizationInterceptor` es el punto de enforcement preferente
-- BALP se considera baseline de auditoria
+- BALP se considera linea base de auditoria
 
 ### Validation And Terminology
 
@@ -190,7 +190,7 @@ La estrategia inicial sera ETL one-way, repetible e idempotente. No habra dual-w
 - logging suficiente sin PHI innecesaria
 - estrategia documentada de upgrades y migraciones HAPI
 
-## Success Criteria
+## Criterios De Exito
 
 La iniciativa queda bien definida si permite abrir trabajo futuro con claridad en:
 
@@ -199,9 +199,9 @@ La iniciativa queda bien definida si permite abrir trabajo futuro con claridad e
 3. subset inicial de recursos e interacciones
 4. estrategia de IDs y referencias
 5. ETL inicial y rollback
-6. baseline de seguridad, auditoria, validacion y operacion
+6. linea base de seguridad, auditoria, validacion y operacion
 
-## Definition Of Ready For Issue Creation
+## Criterio De Preparacion Para Crear Issues
 
 El bundle estara listo para derivar GitHub Issues cuando existan, al menos:
 
@@ -209,12 +209,12 @@ El bundle estara listo para derivar GitHub Issues cuando existan, al menos:
 - decision cerrada de frontera de base de datos
 - subset inicial definido
 - estrategia de IDs y referencias escrita
-- baseline de seguridad, auditoria y validacion definido
+- linea base de seguridad, auditoria y validacion definida
 - plan inicial de ETL y rollback definido
 
-## References
+## Referencias
 
 - documentacion oficial actual de HAPI FHIR visible al 2026-03-11
-- `hapi-fhir-jpaserver-starter` como bootstrap adoptado
+- `hapi-fhir-jpaserver-starter` como base de arranque adoptada
 - repo legado `aio-fhir` como referencia de patrones utiles y anti-patrones
 - estado implementado de ConsultaMed en este repositorio

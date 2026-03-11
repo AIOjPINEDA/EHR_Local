@@ -1,34 +1,34 @@
-# Implementation Plan v2: HAPI FHIR R5 Baseline
+# Plan v2: Base HAPI FHIR R5
 
 **Branch**: `002-hapi-fhir-r5-migration`
 **Date**: 2026-03-11
 **Spec**: `docs/specs/002-hapi-fhir-r5-migration/spec.md`
 **Status**: Draft v2
 
-## Purpose
+## Proposito
 
 Ordenar la futura ejecucion de la iniciativa sin convertir este documento en backlog operativo.
 
-## Execution Order
+## Orden De Ejecucion
 
-1. levantar sidecar HAPI moderno y observable
+1. levantar servicio sidecar HAPI moderno y observable
 2. preparar PostgreSQL dedicada y ciclo de persistencia HAPI
 3. definir mapping e IDs del subset inicial
 4. ejecutar ETL repetible
 5. habilitar lectura y busqueda FHIR
-6. cerrar baseline de seguridad, auditoria y validacion
+6. cerrar linea base de seguridad, auditoria y validacion
 
-## Phase 0 - Decisions Already Closed
+## Fase 0 - Decisiones Ya Cerradas
 
-- sidecar HAPI JPA Server
+- servicio sidecar HAPI JPA Server
 - starter oficial
 - JDK 17+
 - PostgreSQL dedicada para HAPI
-- FastAPI como source of truth inicial
+- FastAPI como fuente de verdad inicial
 - ETL one-way e idempotente
-- scope inicial limitado a `read` y `search`
+- alcance inicial limitado a `read` y `search`
 
-## Phase 1 - Runtime Baseline
+## Fase 1 - Linea Base De Ejecucion
 
 Objetivo: disponer de un HAPI levantable y aislado.
 
@@ -42,11 +42,11 @@ Incluye:
 
 Salida esperada:
 
-- sidecar operativo
-- boundary claro entre runtime actual y runtime HAPI
+- servicio sidecar operativo
+- frontera clara entre el entorno de ejecucion actual y el entorno de ejecucion HAPI
 - arranque reproducible
 
-## Phase 2 - Mapping And ETL Baseline
+## Fase 2 - Mapeo Y ETL Inicial
 
 Objetivo: trasladar el dominio actual al subset FHIR acordado sin tocar la operativa del MVP.
 
@@ -62,7 +62,7 @@ Salida esperada:
 - carga inicial de extremo a extremo
 - rollback simple por reset de base HAPI y recarga
 
-## Phase 3 - Read Surface
+## Fase 3 - Superficie De Lectura
 
 Objetivo: exponer una superficie FHIR util y acotada.
 
@@ -78,14 +78,14 @@ Salida esperada:
 - recursos legibles y buscables de forma coherente
 - FastAPI sigue intacto como API principal
 
-## Phase 4 - Security, Audit And Validation
+## Fase 4 - Seguridad, Auditoria Y Validacion
 
 Objetivo: evitar que la base FHIR nazca sin controles minimos.
 
 Incluye:
 
 - `AuthorizationInterceptor`
-- baseline de auditoria con BALP
+- linea base de auditoria con BALP
 - `RepositoryValidatingInterceptor`
 - terminologia minima del subset
 
@@ -95,7 +95,7 @@ Salida esperada:
 - validacion estructural definida
 - auditoria documentada y operativa
 
-## Phase 5 - Deferred Hardening
+## Fase 5 - Endurecimiento Diferido
 
 Objetivo: dejar explicitado lo que sigue despues sin bloquear la primera iteracion.
 
@@ -105,7 +105,7 @@ Incluye:
 - politica de upgrades HAPI
 - refinamientos posteriores de DB, perfiles y sincronizacion
 
-## Verification Baseline
+## Verificacion Minima
 
 - arranque del servidor
 - `CapabilityStatement`
@@ -114,14 +114,14 @@ Incluye:
 - integridad de referencias
 - contraste de conteos y muestras con la base actual
 
-## Deferred Items
+## Elementos Diferidos
 
 - sincronizacion incremental o CDC
-- convergencia futura del source of truth
+- convergencia futura de la fuente de verdad
 - perfiles nacionales o EHDS mas estrictos
 - particionado o multi-tenant
 - observabilidad avanzada
 
-## Handoff Rule
+## Regla De Traspaso
 
 La descomposicion a futuras issues se mantiene en `issue-seeding.md`. Este documento solo define orden y salidas esperadas por fase.
