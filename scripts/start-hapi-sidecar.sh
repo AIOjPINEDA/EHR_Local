@@ -30,6 +30,28 @@ fi
 echo "Building and starting ConsultaMed HAPI sidecar on localhost:${HAPI_PORT} with dedicated PostgreSQL on localhost:${HAPI_DB_PORT}..."
 "${COMPOSE_CMD[@]}" -f "$COMPOSE_FILE" up -d --build
 
+wait_for_container_health() {
+  local container_name="$1"
+  local label="$2"
+  local attempts=$((TIMEOUT_SECONDS / POLL_INTERVAL_SECONDS))
+
+  for _ in $(seq 1 "$attempts"); do
+    local health_status
+    health_status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$container_name" 2>/dev/null || true)
+
+    if [[ "$health_status" == "healthy" ]]; then
+      echo "${label} healthy: ${container_name}"
+      return 0
+    fi
+
+    sleep "$POLL_INTERVAL_SECONDS"
+  done
+
+  echo "Timed out waiting for ${label} to become healthy: ${container_name}" >&2
+  "${COMPOSE_CMD[@]}" -f "$COMPOSE_FILE" logs --tail 50 hapi-postgres hapi-sidecar >&2 || true
+  exit 1
+}
+
 wait_for_url() {
   local url="$1"
   local label="$2"
@@ -51,6 +73,7 @@ wait_for_url() {
 
 wait_for_url "http://localhost:${HAPI_PORT}/actuator/health" "HAPI health endpoint"
 wait_for_url "http://localhost:${HAPI_PORT}/fhir/metadata" "HAPI capability statement"
+wait_for_container_health "consultamed-hapi-sidecar" "HAPI sidecar container"
 
 echo "HAPI sidecar started successfully."
 echo "- Dedicated PostgreSQL: localhost:${HAPI_DB_PORT} (container: consultamed-hapi-db)"
