@@ -35,6 +35,64 @@ flowchart TB
     FastAPI <-->|Fallback| PG15
 ```
 
+## Component Architecture Diagram
+
+```mermaid
+flowchart LR
+    Browser["Desktop Browser"]
+
+    subgraph Frontend["Frontend · Next.js 14"]
+        Pages["App Router pages\nlogin · dashboard · patients · encounters · templates"]
+        Hooks["Hooks\nuseAuthGuard · usePagination · useEncounterForm"]
+        Store["Auth Store\nlocalStorage-backed session"]
+        ApiClient["ApiClient\nauth header + error handling"]
+        Types["TypeScript API Types\nmanual bridge + generated OpenAPI"]
+    end
+
+    subgraph Backend["Backend · FastAPI"]
+        Router["/api/v1 router\nauth · patients · encounters · prescriptions · templates"]
+        Auth["JWT Auth\nlogin + get_current_practitioner"]
+        Services["Service Layer\nBaseService + domain services"]
+        Schemas["Pydantic Schemas\nFHIR-aligned atomic resources"]
+        Models["SQLAlchemy Models\nPatient · Encounter · Condition · MedicationRequest"]
+        Validators["Validators\nclinical + DNI/NIE"]
+        PdfService["PDF Service\nWeasyPrint prescription generation"]
+    end
+
+    subgraph Data["Data"]
+        LocalPG["PostgreSQL 17\nlocal Docker profile"]
+        SupabasePG["Supabase Postgres\ncloud profile"]
+    end
+
+    subgraph Tooling["Quality + Contract Tooling"]
+        OpenAPI["OpenAPI schema export"]
+        TypeGen["generate-types.sh"]
+        Gate["test_gate.sh\narchitecture + contract checks"]
+    end
+
+    Browser --> Pages
+    Pages --> Hooks
+    Pages --> Store
+    Pages --> ApiClient
+    ApiClient --> Router
+    Types --> Pages
+    OpenAPI --> TypeGen
+    TypeGen --> Types
+
+    Router --> Auth
+    Router --> Services
+    Services --> Schemas
+    Services --> Validators
+    Services --> Models
+    Services --> PdfService
+    Models --> LocalPG
+    Models --> SupabasePG
+
+    Gate -. validates .-> Frontend
+    Gate -. validates .-> Backend
+    Gate -. verifies .-> OpenAPI
+```
+
 ## Database Runtime Selection
 
 - Backend uses a single runtime selector: `DATABASE_URL`.
