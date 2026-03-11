@@ -54,7 +54,7 @@
 | Autenticación | ✅ Funcional | bcrypt + JWT |
 | Pacientes / Consultas / Templates | ✅ Funcional | Flujo clínico MVP |
 | Recetas PDF | ✅ Funcional | WeasyPrint |
-| HAPI FHIR sidecar | ✅ Baseline local | Starter oficial + PostgreSQL dedicada; FastAPI sigue como source of truth y HAPI publica `CapabilityStatement` (`/fhir/metadata`), `read`, `search` y `Bundle` |
+| HAPI FHIR sidecar | ✅ Baseline local | Starter oficial + PostgreSQL dedicada; FastAPI sigue como source of truth y HAPI expone solo `CapabilityStatement` (`/fhir/metadata`), `read`, `search` y páginas `Bundle` del subset aprobado; `_history`, `$meta` y operaciones equivalentes no quedan públicas |
 | Gate local + CI | ⚠️ Activo con riesgo residual | checks ejecutándose, con rojo heredado de `mypy` pendiente de follow-up técnico fuera del alcance de la documentación |
 | Tipos API | ✅ Automáticos | OpenAPI → TypeScript |
 
@@ -107,6 +107,7 @@ npm run dev
 
 > El sidecar levanta su propia PostgreSQL dedicada (`consultamed-hapi-db`, host `localhost:54330`) y se mantiene separado de `consultamed-db`.
 > HAPI inicializa su esquema sobre esa base dedicada al arrancar; no reutilices la DB operacional ni apliques `supabase/migrations` sobre la base FHIR.
+> El arranque espera `http://localhost:8090/actuator/health`, `http://localhost:8090/fhir/metadata` y el estado Docker `healthy`; ese healthcheck usa la señal real de runtime `actuator/health/readiness` dentro del contenedor.
 
 5) URLs de trabajo:
 
@@ -177,8 +178,9 @@ docker ps --filter name=consultamed-hapi-db
 - `consultamed-db` (`localhost:54329`) sigue siendo la DB operacional de FastAPI.
 - `consultamed-hapi-db` (`localhost:54330`) queda reservada para HAPI FHIR.
 - El starter oficial de HAPI crea/actualiza su esquema al arrancar sobre la base dedicada.
-- La carga inicial del subset clínico se ejecuta con `./scripts/load-hapi-clinical-subset.sh --reset`.
-- La superficie publicada sigue limitada a `CapabilityStatement` (`/fhir/metadata`), `read`, `search` y respuestas `Bundle`; las escrituras quedan reservadas al ETL interno mediante `X-Consultamed-ETL-Key` en entorno local.
+- La carga/reconciliación del subset clínico se ejecuta con `./scripts/load-hapi-clinical-subset.sh`; en recargas normales converge sin `--reset` y elimina recursos stale del subset aprobado.
+- La superficie publicada sigue limitada a `CapabilityStatement` (`/fhir/metadata`), `read`, `search` y respuestas `Bundle`; operaciones GET no aprobadas como `_history`, `$meta` o `$get-resource-counts` no quedan expuestas públicamente.
+- FastAPI mantiene writes, auth y lógica clínica; HAPI sigue como sidecar local sin dual-write ni escrituras públicas generales, y las escrituras internas quedan reservadas al ETL mediante `X-Consultamed-ETL-Key`.
 - Para resetear **solo** la persistencia HAPI local: `docker compose -f sidecars/hapi-fhir/docker-compose.yml down -v --remove-orphans`
 
 </details>
