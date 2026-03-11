@@ -15,6 +15,7 @@ Este índice centraliza la documentación vigente para evitar información dispe
 - `docs/architecture/overview.md`: arquitectura implementada actualmente.
 - `docs/specs/`: specs activas nuevas.
 - `docs/playbooks/agentic-repo-bootstrap.md`: guía base agent-first.
+- GitHub Issues: backlog canónico de ejecución y priorización.
 
 ## Testing
 
@@ -25,15 +26,11 @@ Este índice centraliza la documentación vigente para evitar información dispe
 ## Compliance
 
 - `docs/compliance/EHDS_COMPLIANCE_RADAR.md`: radar de compliance EHDS (generado por Agent Skill).
-- `docs/plans/2026-02-15-ehds-compliance-radar-design.md`: diseño del sistema de compliance radar.
-
-## Planes
-
-- `docs/plans/PENDING_TASKS.md`: tareas pendientes no prioritarias y follow-ups operativos.
 
 ## Históricos (no fuente de verdad actual)
 
 - Material histórico local en `.archive/` (no versionado en git).
+- Planificación retirada o reemplazada por specs/issues: conservar solo en `.archive/` cuando sea necesario.
 
 Si hay conflicto entre documentos, priorizar:
 1. `AGENTS.md`

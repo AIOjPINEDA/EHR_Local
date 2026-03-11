@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ConsultaMed — lightweight EHR for private medical practices in Spain (1-2 physicians, ~50 consultations/month). Healthcare domain with FHIR R5 alignment and GDPR/LOPD-GDD compliance. Phase: MVP complete, pending production deployment.
 
+Canonical source of truth: `AGENTS.md` at repo root.
+
 ## Commands
 
 ### Pre-commit gate (run from repo root)
@@ -40,6 +42,27 @@ npm run dev           # Dev server (port 3000)
 ```bash
 ./scripts/setup-local-db.sh    # Docker PostgreSQL 17 + migrations (port 54329)
 ```
+
+## Workflow
+
+### Working model
+- `AGENTS.md` — operational rules and repository-wide constraints.
+- `docs/architecture/overview.md` — implemented architecture only.
+- `docs/specs/` — proposed changes, decisions, and phased plans.
+- GitHub Issues — only active execution backlog.
+
+### Execution cycle
+**Clarify → Plan → Tasks → Implement → Analyze**
+
+- Use GitHub Issues as the execution source of truth.
+- Do not use legacy planning notes as a second backlog.
+- Specs document proposed change; they do not replace implemented architecture docs.
+- `tasks.md` is optional and temporary; avoid keeping it after execution tracking moves to Issues.
+
+### Spec usage
+- Small or low-risk changes: work directly from the issue if already clear.
+- Medium-risk changes: add `spec.md`.
+- Large, multi-phase, compliance-sensitive, or cross-stack changes: use `spec.md` + `plan.md`.
 
 ## Architecture
 

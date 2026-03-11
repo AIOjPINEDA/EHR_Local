@@ -37,7 +37,7 @@
 2. `cd backend && .venv/bin/pytest tests/ -v --tb=short` -> PASS (`46 passed`)
 3. `cd frontend && npm run build` -> PASS (Next.js production build completed successfully)
 4. `rg -n "frontend/src/app/\\(main\\)/layout.tsx|validate_criticality\\(" .` -> PASS
-   - Matches only in historical planning doc: `docs/plans/2026-02-09-dead-code-governance-optimization.md`
+   - Matches only in a historical planning note that was later retired from the active docs surface.
 
 ## Files Changed / Removed
 
@@ -55,7 +55,6 @@
 - Updated: `AGENTS.md`
 - Updated: `docs/architecture/overview.md`
 - Updated: local-only archive material (`.archive/`, not versioned in git)
-- Updated: `docs/plans/2026-02-09-dead-code-governance-optimization.md`
 - Added: `docs/release/debt-cleanup-verification-2026-02-09.md`
 
 ## Residual Risks

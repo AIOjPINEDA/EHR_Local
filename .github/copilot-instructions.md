@@ -3,7 +3,7 @@
 > Canonical source of truth: `AGENTS.md` at repo root.
 > Keep this file as a short operational summary for GitHub Copilot.
 
-Last updated: 2026-02-18
+Last updated: 2026-03-11
 
 ## Project Context
 
@@ -67,22 +67,40 @@ Recommended local gate:
 
 ## Workflow Alignment
 
+Working model:
+
+- `AGENTS.md`: operational rules and repository-wide constraints.
+- `docs/architecture/overview.md`: implemented architecture only.
+- `docs/specs/`: proposed changes, decisions, and phased plans.
+- GitHub Issues: only active execution backlog.
+
 ### Task delegation
 Tasks are delegated via **GitHub Issues**. When you receive an issue assignment:
 - The issue spec (Objetivo, Contexto, Criterios de aceptación, Restricciones) is the source of truth.
 - Use `Fixes #N` in your commit message to close the issue automatically.
 - Label taxonomy: `type:security/infra/architecture/bug`, `priority:critical/high/medium/low`
 
+Do not use legacy planning notes or ad-hoc backlog documents as a second execution source.
+
 ### Execution cycle (SDD)
 **Clarify → Plan → Tasks → Implement → Analyze**
 - Run `./scripts/test_gate.sh` before each commit.
 - If the spec is incomplete, surface it before implementing.
+
+This repo follows a spec-anchored brownfield SDD model: specs document proposed change, not current runtime truth.
 
 ### Spec and archive
 - New feature specs: `docs/specs/` (see `docs/specs/README.md` for naming conventions)
 - Historical archive: `.archive/` (local-only, not in git)
 - `.specify/`: optional/experimental, not required for the delivery gate
 - Documentation drift: warning mode during MVP (signal without blocking)
+
+Use the lightest artifact that fits the change:
+
+- Small or low-risk changes: work directly from the issue if scope is already clear.
+- Medium-risk changes: add `spec.md`.
+- Large, multi-phase, compliance-sensitive, or cross-stack changes: use a bundle with `spec.md` and `plan.md`.
+- `tasks.md` is optional and temporary; do not keep it as a long-lived backlog after work moves to GitHub Issues.
 
 ## Coding Requirements
 

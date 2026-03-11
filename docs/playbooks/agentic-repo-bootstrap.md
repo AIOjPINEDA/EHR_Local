@@ -6,12 +6,30 @@ Framework base minimalista para cualquier repo: consistente para humanos y agent
 
 Aplica a trading, salud/FHIR, data y otros dominios.
 
+## Perfil brownfield regulado recomendado
+
+Para repos como ConsultaMed, la configuracion mas limpia es:
+
+- `AGENTS.md` como contrato operativo corto.
+- `docs/architecture/overview.md` como arquitectura implementada.
+- `docs/specs/` como superficie unica para cambios propuestos.
+- GitHub Issues como unico backlog activo de ejecucion.
+- Sin carpeta `plans/` paralela.
+
+## Working model recomendado
+
+- `AGENTS.md`: contrato operativo y reglas globales.
+- `docs/architecture/overview.md`: arquitectura implementada.
+- `docs/specs/`: cambio propuesto y decisiones.
+- GitHub Issues: unico backlog activo.
+- Archivos agent-specific (`copilot-instructions.md`, `CLAUDE.md`, `GEMINI.md`): shims breves alineados con `AGENTS.md`.
+
 ## Criterio de curacion
 
 | Decision | Detalle |
 |----------|---------|
 | **Se adopta** | Marco de 6 capas, boundaries explicitos (Always/Ask first/Never), checklist de bootstrap verificable, ciclo de trabajo agentico como feedback-loop, invariantes agnosticos de stack con perfiles concretos, config IDE como capa operativa |
-| **Se ajusta** | Solo fuentes oficiales en guia base; `specs/` separada de arquitectura; archivos agent-specific opcionales; conceptos de SDD sin dependencia de CLI externo; tooling como perfil; config IDE-specific en apendice |
+| **Se ajusta** | Solo fuentes oficiales en guia base; specs separadas de arquitectura; archivos agent-specific opcionales; conceptos de SDD sin dependencia de CLI externo; tooling como perfil; config IDE-specific en apendice |
 | **Se descarta** | Claims sin fuente primaria, estructura anticipada, toolkits prescriptivos, asumir stack o IDE especifico en invariantes universales |
 
 ---
@@ -23,7 +41,7 @@ Aplica a trading, salud/FHIR, data y otros dominios.
 | 0 | **Principios gobernantes** | Non-negotiables del proyecto (compliance, quality gates, constraints) | Seccion dedicada en `AGENTS.md` |
 | 1 | **Direccion** | Problema, fase y limites del agente | `AGENTS.md` |
 | 2 | **Arquitectura** | Estado real del sistema hoy, no aspiracional | `docs/architecture/overview.md` |
-| 3 | **Contrato de cambio** | In/out por iteracion | `specs/*.md` |
+| 3 | **Contrato de cambio** | In/out por iteracion | `docs/specs/*` o `specs/*`, segun politica del repo |
 | 4 | **Calidad automatica** | Checks minimos recurrentes | `.github/workflows/ci.yml` |
 | 5 | **Consistencia de tooling** | Una fuente de verdad para herramientas | Tooling manifest del stack (`pyproject.toml`, `package.json`, `go.mod`, etc.) |
 
@@ -49,9 +67,9 @@ repo/
 │   ├── settings.json                   # config compartida del proyecto
 │   └── extensions.json                 # extensiones recomendadas
 ├── docs/
-│   └── architecture/overview.md        # capa 2
-├── specs/                              # capa 3
-│   └── 001-foundation.md
+│   ├── architecture/overview.md        # capa 2
+│   └── specs/                          # capa 3 (o `specs/` en otros repos)
+│       └── 001-foundation.md
 └── <test-dir>/                         # tests/ | __tests__/ | *_test.go
     └── <smoke-test>
 ```
@@ -60,7 +78,7 @@ repo/
 |---------|-----------|
 | `AGENTS.md` | Contrato operativo canonico: principios, rol, commands, boundaries, security |
 | `docs/architecture/overview.md` | Estado real del sistema, nunca aspiracional |
-| `specs/*.md` | Scope de iteracion (ver formato unico vs bundle mas abajo) |
+| `docs/specs/*` o `specs/*` | Scope de iteracion y decisiones del cambio (ver formato unico vs bundle mas abajo) |
 | `<tooling-manifest>` | Config unificada de lint, format, tests y types del stack activo |
 | `.github/workflows/ci.yml` | Checks automaticos push/PR |
 | `<smoke-test>` | Red minima contra regresiones |
@@ -68,6 +86,7 @@ repo/
 | `.github/copilot-instructions.md` | *(opcional)* Instrucciones custom para Copilot |
 | `.github/agents/*.agent.md` | *(opcional)* Agentes custom con tools/instrucciones especializadas |
 | `CLAUDE.md` / `.claude/rules/` | *(opcional)* Memoria y reglas modulares para Claude Code |
+| `GEMINI.md` / equivalentes | *(opcional)* Shim breve para otros agentes, siempre subordinado a `AGENTS.md` |
 
 ---
 
@@ -95,6 +114,10 @@ Inspirado en Spec-Driven Development pero adaptado como patron ligero, sin depen
 | **Analyze** | Validar consistencia cross-artifact post-implementacion | ¿La arquitectura documentada sigue reflejando la realidad? |
 
 > **Principio**: el ciclo busca acelerar feedback-loops, no perfeccionar specs waterfall. Si la implementacion revela que la spec estaba incompleta, actualizar la spec es parte del flujo, no una excepcion.
+
+> **Regla de limpieza para brownfield**: no mantener una carpeta adicional de `plans/` como backlog paralelo si el repositorio ya usa GitHub Issues para ejecucion. Una carpeta de planes solo tiene sentido como historico temporal o migracion acotada.
+
+> **Regla de compactacion**: si un repositorio ya tiene `AGENTS.md`, arquitectura, specs e issues bien definidos, no anadir capas intermedias salvo que resuelvan una necesidad verificada.
 
 ---
 
@@ -164,7 +187,7 @@ async def get(x):
 
 ### Default: spec unica (recomendado para la mayoria de casos)
 ```text
-specs/
+docs/specs/
 ├── 001-foundation.md
 └── 002-feature-x.md
 ```
@@ -172,16 +195,22 @@ Un archivo por iteracion con: problema, scope (in/out), criterios de aceptacion,
 
 ### Escalado: spec bundle (para proyectos complejos o regulados)
 ```text
-specs/
+docs/specs/
 └── 001-feature-x/
     ├── spec.md       # Que y por que (funcional, agnostico de tech)
     ├── plan.md       # Como (stack, arquitectura, componentes)
-    └── tasks.md      # Unidades implementables y testeables
+  └── tasks.md      # Opcional y temporal; evitar usarlo como backlog permanente
 ```
 
 **Cuando escalar**: exploracion multi-stack, equipos con roles separados (PM → spec, architect → plan), specs estables con arquitectura evolutiva, dominios regulados donde la trazabilidad importa.
 
 **Estrategia de mantenimiento**: elegir por repo si las specs se mantienen actualizadas (*spec-anchored*) o si solo representan el intent inicial (*spec-first*). Declarar la politica en `AGENTS.md`.
+
+**ConsultaMed**: usa `docs/specs/`, mantiene arquitectura implementada en `docs/architecture/overview.md` y usa GitHub Issues como unico backlog activo de ejecucion.
+
+**Regla practica**: en brownfield, no crear `tasks.md` por defecto. Crear primero la spec y, si hace falta, el plan. Solo derivar `tasks.md` cuando ayude a abrir, revisar o reordenar issues.
+
+**Regla para shims de agentes**: archivos como `copilot-instructions.md`, `CLAUDE.md` o `GEMINI.md` deben resumir y remitir a `AGENTS.md`; no deben introducir una jerarquia ni un backlog paralelo.
 
 ---
 
@@ -190,7 +219,7 @@ specs/
 1. Definir fase actual (`foundation`, `growth`, `scale`).
 2. Crear `AGENTS.md` cubriendo las 7 core areas (incluyendo principios gobernantes).
 3. Documentar arquitectura real en `docs/architecture/overview.md`.
-4. Crear una spec minima de la iteracion en `specs/`.
+4. Crear una spec minima de la iteracion en `docs/specs/` o en el directorio de specs definido por el repo.
 5. Configurar tooling manifest del stack con lint + format + types + tests (ver perfiles abajo).
 6. Agregar smoke test minimo.
 7. Configurar `ci.yml` con gate: `<lint> && <type-check> && <tests>`.

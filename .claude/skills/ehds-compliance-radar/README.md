@@ -139,7 +139,7 @@ bash .claude/skills/ehds-compliance-radar/scripts/fetch-ehds-data.sh
 
 - **Spec del skill**: [agentskills.io](https://agentskills.io/specification)
 - **Documentación Claude Code Skills**: [code.claude.com/docs/en/skills](https://code.claude.com/docs/en/skills)
-- **Design doc**: [`docs/plans/2026-02-15-ehds-compliance-radar-design.md`](../../../docs/plans/2026-02-15-ehds-compliance-radar-design.md)
+- **Documento funcional activo**: [`docs/compliance/EHDS_COMPLIANCE_RADAR.md`](../../../docs/compliance/EHDS_COMPLIANCE_RADAR.md)
 - **EHDS Explorer API**: [api.ehdsexplorer.eu](https://api.ehdsexplorer.eu)
 
 ## ✅ Quality Checklist
@@ -154,7 +154,7 @@ bash .claude/skills/ehds-compliance-radar/scripts/fetch-ehds-data.sh
 
 ## 🚀 Próximos Pasos (Fase 2 - Fuera de Scope)
 
-Ver [`docs/plans/2026-02-15-ehds-compliance-radar-design.md`](../../../docs/plans/2026-02-15-ehds-compliance-radar-design.md) sección "Phase 2: Interactive Viewer" para el roadmap de visualización interactiva en la UI de ConsultaMed.
+Si se retoma una visualización interactiva del radar en la UI, documentarla mediante una spec activa o un issue dedicado según la gobernanza actual del repositorio.
 
 ---
 

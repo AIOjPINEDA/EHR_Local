@@ -151,17 +151,20 @@ Data models follow FHIR nomenclature:
 - New infrastructural abstractions (routing wrappers, validators, service helpers) have at least one runtime consumer and one automated test.
 - Architecture and agent contract documentation reflect implemented state (not aspirational state).
 
-## Active Specs
-
-- New active specs: `docs/specs/`
-
-## Agentic Workflow Mode (Current)
+## Agentic Workflow Mode
 
 ### Reading order at session start
 
 1. `AGENTS.md` (this file) — canonical contract
 2. `docs/architecture/overview.md` — system design
 3. `docs/playbooks/agentic-repo-bootstrap.md` — repo bootstrap reference
+
+### Working model
+
+- `AGENTS.md`: operational rules and repository-wide constraints.
+- `docs/architecture/overview.md`: implemented architecture only.
+- `docs/specs/`: proposed change scope, decisions, and phased plans.
+- GitHub Issues: only active execution backlog.
 
 ### Task delegation protocol
 
@@ -170,6 +173,9 @@ All tasks are delegated via **GitHub Issues** in this repo. Before implementing 
 - Check open issues for context and spec
 - Issues carry: Objetivo, Contexto, Criterios de aceptación, Restricciones
 - Commit convention: `Fixes #N` in the commit message closes the issue automatically
+
+GitHub Issues are the only active execution backlog. Do not treat files under
+legacy planning folders or backlog documents as a second source of truth for task status or priority.
 
 Active label taxonomy: `type:security/infra/architecture/bug`, `priority:critical/high/medium/low`
 
@@ -187,9 +193,22 @@ Once you have an issue, the expected execution cycle is:
 
 If implementation reveals the spec was incomplete, update the spec before continuing — not after.
 
-### Active specs
+This repository follows a **spec-anchored brownfield SDD** model.
+
+Do not use specs as a replacement for implemented architecture documentation.
+Do not keep long-lived task lists in spec bundles once work has moved to Issues.
+
+### Spec usage
 
 New feature specs live in `docs/specs/`. See `docs/specs/README.md` for naming and bundle conventions.
+New active specs: `docs/specs/`
+
+Use the lightest artifact that fits the change:
+
+- Small or low-risk changes: work directly from the issue if scope is already clear.
+- Medium-risk changes: add `spec.md`.
+- Large, multi-phase, compliance-sensitive, or cross-stack changes: use a bundle with `spec.md` and `plan.md`.
+- `tasks.md` is optional and temporary; create it only when it helps derive or review execution tasks before opening or updating Issues.
 
 ### Archive and experimental flags
 
@@ -210,4 +229,4 @@ See `docs/architecture/overview.md` for system design.
 
 ---
 
-*Last updated: 2026-02-18*
+*Last updated: 2026-03-11*
