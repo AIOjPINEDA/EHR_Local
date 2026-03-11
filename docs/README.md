@@ -7,6 +7,7 @@ Este índice centraliza la documentación vigente para evitar información dispe
 - `README.md`: quickstart del proyecto y estado general.
 - `docs/USER_GUIDE.md`: guía de uso funcional para médicos.
 - `docs/release/DEPLOYMENT_GUIDE.md`: pasos de despliegue.
+- `docs/release/hapi-baseline-deployment-walkthrough.md`: guía pedagógica para arrancar, cargar y verificar la baseline local HAPI FHIR.
 
 ## Técnica
 
