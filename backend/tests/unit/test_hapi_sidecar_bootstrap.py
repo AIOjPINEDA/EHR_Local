@@ -181,5 +181,9 @@ def test_capability_statement_customizer_advertises_current_subset_and_interacti
     assert "Public surface is CapabilityStatement, read, and search on the agreed six-resource subset" in customizer
     assert "ConsultaMed local surface: metadata plus read/search on the agreed six-resource subset." in customizer
     assert "ConsultaMed sidecar exposes public read and search-type interactions only." in customizer
+    assert "setVersioning(CapabilityStatement.ResourceVersionPolicy.NOVERSION);" in customizer
+    assert "setConditionalCreateElement(null);" in customizer
+    assert "setConditionalUpdateElement(null);" in customizer
+    assert "setConditionalDeleteElement(null);" in customizer
     assert "Wave 1A" not in customizer
     assert "bootstrap sidecar exposes read and search only" not in customizer

@@ -52,6 +52,14 @@ public class CapabilityStatementCustomizer {
         );
         resource.getOperation().clear();
         resource.getInteraction().removeIf(this::isNotReadOrSearch);
+        resource.setVersioning(CapabilityStatement.ResourceVersionPolicy.NOVERSION);
+        resource.setReadHistory(false);
+        resource.setUpdateCreate(false);
+        resource.setConditionalCreateElement(null);
+        resource.setConditionalReadElement(null);
+        resource.setConditionalUpdateElement(null);
+        resource.setConditionalPatchElement(null);
+        resource.setConditionalDeleteElement(null);
     }
 
     private boolean isNotReadOrSearch(

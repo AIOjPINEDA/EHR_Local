@@ -111,7 +111,7 @@ Estas son las piezas más importantes y qué hace cada una:
 | `backend/app/fhir/base_mapping.py` | Mapping determinista de `Patient` y `Practitioner` |
 | `backend/app/fhir/clinical_mapping.py` | Mapping clínico, referencias e inclusión SOAP transicional |
 | `ReadOnlyModeInterceptor.java` | Bloquea escrituras públicas; solo deja pasar la ETL con clave interna |
-| `CapabilityStatementCustomizer.java` | Reduce la superficie publicada al subset e interacciones aprobadas |
+| `CapabilityStatementCustomizer.java` | Reduce la superficie publicada al subset e interacciones aprobadas y elimina claims públicos de versionado/escritura |
 | `AuditTrailInterceptor.java` | Emite auditoría sanitaria mínima y sanitizada |
 
 ## 6. Subset FHIR entregado y cómo se mapea
@@ -156,6 +156,7 @@ La superficie local aprobada queda limitada, por interacción/operación HAPI, a
 - recuperación de páginas `Bundle` derivadas de búsqueda (`_getpages`)
 
 No se publica una API FHIR general completa ni otros GET/operations del starter. Ejemplos explícitamente no expuestos al público: `_history`, `vread`, `$meta`, `$get-resource-counts` y cualquier operación fuera del subset aprobado.
+Además, el `CapabilityStatement` publicado ya no anuncia versionado de recursos, `read history`, `updateCreate` ni capacidades condicionales/de escritura hacia clientes públicos.
 
 ### 7.2 Qué escrituras están bloqueadas
 
@@ -192,7 +193,7 @@ Deliberadamente **no** registra URLs completas, query strings, payloads ni mater
 
 ### 8.2 Lo que ahora existe y antes no
 
-- Un `CapabilityStatement` FHIR R5 local y controlado.
+- Un `CapabilityStatement` FHIR R5 local, controlado y sin claims públicos de versionado/escritura fuera del baseline aprobado.
 - Lectura individual (`read`) del subset aprobado.
 - Búsquedas (`search`) con respuesta `Bundle`.
 - Un camino reproducible para cargar datos clínicos a un repositorio FHIR local.
@@ -443,7 +444,7 @@ Usa esto solo cuando quieras borrar por completo el repositorio FHIR local. **No
 | ETL no encuentra Python válido | error sobre FastAPI/SQLAlchemy/greenlet | crea `backend/.venv` e instala `requirements.txt` |
 | Cambiaste `CONSULTAMED_ETL_API_KEY` solo en un lado | la ETL no puede escribir | exporta el mismo valor antes de arrancar sidecar y ETL |
 | Timeout al arrancar HAPI | `Timed out waiting for HAPI health endpoint` | revisa logs Docker y aumenta `HAPI_START_TIMEOUT_SECONDS` si hace falta |
-| Metadata no refleja el subset esperado | `CapabilityStatement` demasiado amplio o raro | verifica que el sidecar se está construyendo con el overlay actual y no con una imagen antigua |
+| Metadata no refleja el subset esperado | `CapabilityStatement` demasiado amplio, raro o con claims de versionado/escritura | verifica que el sidecar se está construyendo con el overlay actual y no con una imagen antigua |
 | Intentas usar HAPI como API principal | faltan endpoints o escrituras | recuerda que HAPI es baseline local de lectura/búsqueda, no backend principal |
 | Usas la DB equivocada para HAPI | datos inconsistentes o mezcla de responsabilidades | nunca reutilices `consultamed-db` para el sidecar |
 

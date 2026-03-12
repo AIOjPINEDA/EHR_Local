@@ -106,3 +106,19 @@ def test_capability_statement_and_runtime_policy_stay_aligned() -> None:
     ]
     assert "rest.getOperation().clear();" in customizer
     assert "resource.getOperation().clear();" in customizer
+
+
+def test_capability_statement_customizer_clears_write_and_versioning_claims() -> None:
+    """Public metadata must not advertise write or version-aware capabilities."""
+    customizer = _overlay_source("CapabilityStatementCustomizer.java")
+
+    assert "setVersioning(CapabilityStatement.ResourceVersionPolicy.NOVERSION);" in customizer
+    assert "setReadHistory(false);" in customizer
+    assert "setUpdateCreate(false);" in customizer
+    assert "setConditionalCreateElement(null);" in customizer
+    assert "setConditionalReadElement(null);" in customizer
+    assert "setConditionalUpdateElement(null);" in customizer
+    assert "setConditionalPatchElement(null);" in customizer
+    assert "setConditionalDeleteElement(null);" in customizer
+    assert "ResourceVersionPolicy.VERSIONED" not in customizer
+    assert "ResourceVersionPolicy.VERSIONEDUPDATE" not in customizer

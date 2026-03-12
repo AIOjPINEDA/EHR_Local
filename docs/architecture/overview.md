@@ -119,6 +119,7 @@ flowchart LR
   - `http://localhost:8090/actuator/health`
 - Startup waits for `/actuator/health`, `/fhir/metadata`, and Docker health=`healthy`; the container healthcheck is backed by the runtime readiness signal at `/actuator/health/readiness`.
 - The current baseline keeps the sidecar localhost-bound and restricts the public surface at interaction/operation level to `CapabilityStatement`, `read`, `search`, and search `Bundle` page retrieval for the approved subset.
+- The published `CapabilityStatement` does not advertise resource versioning, `read history`, conditional interactions, or public write support.
 - Non-approved GET endpoints/operations such as `_history`, `vread`, `$meta`, and `$get-resource-counts` are not publicly exposed; public write operations remain closed and internal ETL writes require the `X-Consultamed-ETL-Key` header.
 - The sidecar emits a minimal audit trail for top-level FHIR requests using request ID + method + interaction + resource type/id + outcome, without logging request URLs, query strings, payload bodies, or authorization material.
 - HAPI now persists on a dedicated local PostgreSQL container (`consultamed-hapi-db`, default host port `54330`).

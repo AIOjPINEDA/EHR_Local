@@ -54,7 +54,7 @@
 | Autenticación | ✅ Funcional | bcrypt + JWT |
 | Pacientes / Consultas / Templates | ✅ Funcional | Flujo clínico MVP |
 | Recetas PDF | ✅ Funcional | WeasyPrint |
-| HAPI FHIR sidecar | ✅ Baseline local | Starter oficial + PostgreSQL dedicada; FastAPI sigue como source of truth y HAPI expone solo `CapabilityStatement` (`/fhir/metadata`), `read`, `search` y páginas `Bundle` del subset aprobado; `_history`, `$meta` y operaciones equivalentes no quedan públicas |
+| HAPI FHIR sidecar | ✅ Baseline local | Starter oficial + PostgreSQL dedicada; FastAPI sigue como source of truth y HAPI expone solo `CapabilityStatement` (`/fhir/metadata`), `read`, `search` y páginas `Bundle` del subset aprobado; el metadata público no anuncia versionado, `read history` ni escrituras/condicionales, y `_history`, `$meta` y operaciones equivalentes no quedan públicas |
 | Gate local + CI | ⚠️ Activo con riesgo residual | checks ejecutándose, con rojo heredado de `mypy` pendiente de follow-up técnico fuera del alcance de la documentación |
 | Tipos API | ✅ Automáticos | OpenAPI → TypeScript |
 
@@ -179,7 +179,7 @@ docker ps --filter name=consultamed-hapi-db
 - `consultamed-hapi-db` (`localhost:54330`) queda reservada para HAPI FHIR.
 - El starter oficial de HAPI crea/actualiza su esquema al arrancar sobre la base dedicada.
 - La carga/reconciliación del subset clínico se ejecuta con `./scripts/load-hapi-clinical-subset.sh`; en recargas normales converge sin `--reset` y elimina recursos stale del subset aprobado.
-- La superficie publicada sigue limitada a `CapabilityStatement` (`/fhir/metadata`), `read`, `search` y respuestas `Bundle`; operaciones GET no aprobadas como `_history`, `$meta` o `$get-resource-counts` no quedan expuestas públicamente.
+- La superficie publicada sigue limitada a `CapabilityStatement` (`/fhir/metadata`), `read`, `search` y respuestas `Bundle`; además, el metadata público ya no anuncia versionado de recursos, `read history` ni capacidades condicionales/de escritura, y operaciones GET no aprobadas como `_history`, `$meta` o `$get-resource-counts` no quedan expuestas públicamente.
 - FastAPI mantiene writes, auth y lógica clínica; HAPI sigue como sidecar local sin dual-write ni escrituras públicas generales, y las escrituras internas quedan reservadas al ETL mediante `X-Consultamed-ETL-Key`.
 - Para resetear **solo** la persistencia HAPI local: `docker compose -f sidecars/hapi-fhir/docker-compose.yml down -v --remove-orphans`
 
@@ -312,7 +312,7 @@ flowchart LR
 ```
 
 - FastAPI sigue siendo la API principal y la fuente de verdad operacional.
-- El sidecar HAPI es una baseline local de interoperabilidad: publica `CapabilityStatement`, `read`, `search` y respuestas `Bundle` para el subset aprobado.
+- El sidecar HAPI es una baseline local de interoperabilidad: publica `CapabilityStatement`, `read`, `search` y respuestas `Bundle` para el subset aprobado, sin claims públicos de versionado ni escritura.
 - La persistencia HAPI vive en PostgreSQL dedicada y no reutiliza la DB operacional ni las migraciones de `supabase/`.
 
 ## 🗂️ Estructura del repositorio
