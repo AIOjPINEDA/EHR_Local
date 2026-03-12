@@ -49,7 +49,8 @@ El `Dockerfile` parte de `hapiproject/hapi:v8.8.0-1` y añade un overlay propio.
 
 - evitar un bootstrap artesanal difícil de mantener;
 - apoyarse en el ciclo de vida estándar de HAPI JPA;
-- dejar el build reproducible y más cercano a la plataforma soportada.
+- dejar el build reproducible y más cercano a la plataforma soportada;
+- compilar el overlay con Java 21 LTS y mantener alineado el runtime validado del sidecar.
 
 ### 3.4 Por qué la base de datos es dedicada
 
@@ -240,7 +241,7 @@ No debes asumir que HAPI sustituye a ConsultaMed ni que ya existe una API FHIR g
 
 ### 10.2 Qué no necesitas instalar en host para el sidecar
 
-No necesitas un JDK local para el uso normal de esta baseline. El `Dockerfile` compila el overlay con Maven dentro del build y ejecuta HAPI desde la imagen `hapiproject/hapi:v8.8.0-1`.
+No necesitas un JDK local para el uso normal de esta baseline. El `Dockerfile` compila el overlay con Maven dentro del build sobre Temurin 21 y ejecuta HAPI desde la imagen `hapiproject/hapi:v8.8.0-1`, validada actualmente sobre runtime Java 21.
 
 ### 10.3 Variables y puertos importantes
 
