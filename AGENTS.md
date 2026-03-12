@@ -31,6 +31,12 @@
 - PostgreSQL 17 (local Docker) / Supabase-managed (cloud)
 - Security model aligned to RLS-required production target
 
+#### Interoperability sidecar (local baseline)
+- HAPI FHIR R5 sidecar under `sidecars/hapi-fhir/` based on the official starter
+- FastAPI remains the operational source of truth for writes, auth, and business logic
+- Published/local FHIR surface is intentionally limited to `CapabilityStatement`, `read`, `search`, and search `Bundle` for the approved subset
+- HAPI persists on dedicated local PostgreSQL and receives data through the controlled internal ETL path
+
 ### Planned / Not yet adopted
 - Supabase Auth as primary runtime auth provider (current runtime auth is JWT in FastAPI).
 - Full end-to-end RLS enforcement in all production deployment paths.
@@ -67,6 +73,12 @@ npm run dev                         # Dev server (port 3000)
 ```bash
 ./scripts/test_gate.sh              # Backend + Frontend gate before PR/commit
 ```
+
+## Current Delivery Caveat
+
+- `./scripts/test_gate.sh` remains the target local gate before commit.
+- As of 2026-03-11, the repository still carries inherited `mypy` debt that can keep the global gate red even when unrelated work is otherwise correct.
+- Documentation/governance work must report that red state as residual risk, not as resolved work.
 
 ## Security Constraints
 
@@ -146,7 +158,7 @@ Data models follow FHIR nomenclature:
 
 ## Definition of Done
 
-- `./scripts/test_gate.sh` passes locally (includes schema hash check).
+- Run `./scripts/test_gate.sh` locally before commit and report exact results; a repo-wide inherited `mypy` debt can still keep the full gate red, so do not present that residual risk as resolved unless you verified it.
 - `cd backend && .venv/bin/pytest tests/unit/test_architecture_dead_code_guards.py -v` passes.
 - New infrastructural abstractions (routing wrappers, validators, service helpers) have at least one runtime consumer and one automated test.
 - Architecture and agent contract documentation reflect implemented state (not aspirational state).

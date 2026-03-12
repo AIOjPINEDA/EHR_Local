@@ -2,12 +2,18 @@
 ConsultaMed Backend - Practitioner Model (FHIR Practitioner)
 """
 from datetime import datetime
+from typing import Any
 from uuid import uuid4
 from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.database import Base
+from app.fhir.base_mapping import (
+    practitioner_fhir_identifiers,
+    practitioner_to_fhir_reference,
+    practitioner_to_fhir_resource,
+)
 
 
 class Practitioner(Base):
@@ -81,6 +87,29 @@ class Practitioner(Base):
     def full_name(self) -> str:
         """Full name with title."""
         return f"Dr/Dra. {self.name_given} {self.name_family}"
+
+    @property
+    def fhir_resource_type(self) -> str:
+        """FHIR resource type for deterministic mapping."""
+        return "Practitioner"
+
+    @property
+    def fhir_id(self) -> str:
+        """Stable FHIR id reusing the source UUID for idempotent ETL."""
+        return self.id
+
+    @property
+    def fhir_identifiers(self) -> list[dict[str, str]]:
+        """Business and source-traceable identifiers for FHIR export."""
+        return practitioner_fhir_identifiers(self)
+
+    def to_fhir_reference(self) -> dict[str, Any]:
+        """Build a deterministic, source-traceable FHIR reference."""
+        return practitioner_to_fhir_reference(self)
+
+    def to_fhir_resource(self) -> dict[str, Any]:
+        """Serialize the practitioner into the agreed minimal FHIR R5 shape."""
+        return practitioner_to_fhir_resource(self)
     
     def __repr__(self) -> str:
         return f"<Practitioner {self.identifier_value}: {self.name_family}>"

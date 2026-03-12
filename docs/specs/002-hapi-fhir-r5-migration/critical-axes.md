@@ -1,49 +1,49 @@
-# Ejes Criticos: Base HAPI FHIR Para ConsultaMed
+# Ejes críticos: baseline HAPI FHIR para ConsultaMed
 
-## Proposito
+## Propósito
 
-Dejar explicitados los ejes que pueden romper la coherencia de la iniciativa si no se respetan durante la futura implementacion.
+Dejar explícitos los ejes que explican la baseline HAPI ya implementada y que deben seguir preservándose si se opera o se extiende esta capacidad.
 
-## 1. Topologia Y Aislamiento Operativo
+## 1. Topología y aislamiento operativo
 
-**Decision**
+**Decisión retenida**
 
-- FastAPI mantiene la logica operativa del producto
-- HAPI se introduce como capacidad interoperable separada
-- el fallo de HAPI no debe bloquear la operacion diaria del MVP
+- FastAPI mantiene la lógica operativa del producto.
+- HAPI funciona como capacidad interoperable separada.
+- Un fallo del sidecar no debe bloquear la operación diaria del MVP.
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-HAPI debe tener despliegue, configuracion, health checks y troubleshooting propios.
+HAPI conserva despliegue, configuración, health checks y troubleshooting propios.
 
-## 2. Frontera De Base De Datos Y Ownership
+## 2. Frontera de base de datos y ownership
 
-**Decision**
+**Decisión retenida**
 
 - la DB actual soporta el producto
 - la DB HAPI soporta el repositorio FHIR
 - no se mezclan modelos internos
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-Se acepta duplicacion controlada de datos a corto plazo a cambio de claridad y rollback simple.
+Se acepta duplicación controlada de datos a cambio de claridad, rollback simple y separación de responsabilidades.
 
-## 3. Estrategia De Transferencia De Datos
+## 3. Estrategia de transferencia de datos
 
-**Decision**
+**Decisión retenida**
 
 - ETL one-way
 - cargas repetibles
 - comportamiento idempotente
 - capacidad de reset y recarga
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-Hay que cerrar orden de carga, claves estables y reconciliacion basica antes del loader.
+El orden de carga, las claves estables y la reconciliación básica siguen siendo parte del contrato implícito de la baseline.
 
-## 4. Control Del Alcance De Recursos
+## 4. Control del alcance de recursos
 
-**Decision**
+**Decisión retenida**
 
 Subset inicial limitado a:
 
@@ -54,99 +54,99 @@ Subset inicial limitado a:
 - `MedicationRequest`
 - `AllergyIntolerance`
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-Todo recurso fuera de ese subset queda fuera de la primera ola salvo nueva decision explicita.
+Todo recurso fuera de ese subset sigue fuera de la baseline salvo nueva decisión explícita.
 
-## 5. Control Del Alcance De Interacciones
+## 5. Control del alcance de interacciones
 
-**Decision**
+**Decisión retenida**
 
 - `read`
 - `search`
 - respuestas en `Bundle`
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-No se abre escritura FHIR generalizada en la primera iteracion.
+No se abre escritura FHIR generalizada en la baseline publicada.
 
-## 6. Fidelidad De La Representacion Clinica
+## 6. Fidelidad de la representación clínica
 
-**Decision**
+**Decisión retenida**
 
 - `Encounter` es el recurso ancla de la consulta
-- el contenido clinico se mapea con trazabilidad al origen actual
-- el SOAP puede usar representacion transitoria documentada si no existe encaje limpio inmediato
+- el contenido clínico mantiene trazabilidad al origen actual
+- el SOAP puede apoyarse en representación transitoria documentada
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-Se prioriza consistencia y trazabilidad sobre una modelizacion excesivamente ambiciosa en la primera ola.
+Se prioriza consistencia y trazabilidad sobre una modelización clínica más ambiciosa.
 
-## 7. Estrategia De IDs Y Estabilidad Referencial
+## 7. Estrategia de IDs y estabilidad referencial
 
-**Decision**
+**Decisión retenida**
 
 - claves de origen estables
 - correspondencia reproducible entre origen y recursos FHIR
 - referencias deterministas entre recursos
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-La estrategia de IDs debe quedar cerrada antes del ETL.
+La baseline depende de esa estabilidad para ETL, reconciliación y navegación de referencias.
 
-## 8. Linea Base De Seguridad
+## 8. Línea base de seguridad
 
-**Decision**
+**Decisión retenida**
 
 - acceso restringido
 - `AuthorizationInterceptor`
-- exposicion controlada, preferiblemente interna
+- exposición controlada, preferiblemente interna/local
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-No se admite un endpoint FHIR abierto aunque el alcance sea limitado.
+No se admite un endpoint FHIR abierto aunque el alcance funcional sea limitado.
 
-## 9. Trazabilidad De Auditoria Y Cumplimiento
+## 9. Trazabilidad de auditoría y cumplimiento
 
-**Decision**
+**Decisión retenida**
 
-- linea base de auditoria desde el inicio
+- línea base de auditoría desde el inicio
 - BALP o equivalente para accesos y operaciones relevantes
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-La ausencia de auditoria no se considera una simplificacion valida.
+La ausencia de auditoría no se considera una simplificación válida para este dominio sanitario.
 
-## 10. Validacion Y Terminologia
+## 10. Validación y terminología
 
-**Decision**
+**Decisión retenida**
 
 - `RepositoryValidatingInterceptor`
-- validacion estructural y de perfiles basicos
-- terminologia minima para el subset inicial
+- validación estructural y de perfiles básicos
+- terminología mínima para el subset inicial
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-La primera iteracion no necesita el stack terminologico final, pero si validacion suficiente para no degradar calidad clinica.
+La baseline no necesita el stack terminológico final, pero sí validación suficiente para no degradar calidad clínica.
 
-## 11. Disciplina De Actualizacion Y Migracion
+## 11. Disciplina de actualización y migración
 
-**Decision**
+**Decisión retenida**
 
-- versionado explicito
-- politica de upgrade documentada
+- versionado explícito
+- política de upgrade documentada
 - migraciones HAPI tratadas como parte normal de la plataforma
 
-**Consecuencia para la implementacion**
+**Guardrail operativo**
 
-No debe desplegarse la base HAPI sin dejar claro como se verificaran upgrades futuros.
+No debe ampliarse esta capacidad sin dejar claro cómo se verifican upgrades y cambios de plataforma.
 
-## 12. Verificacion De La Primera Iteracion
+## 12. Verificación retenida de la baseline
 
-La primera iteracion sera correcta si logra, sin ampliar el alcance:
+La baseline queda coherente mientras mantenga, sin ampliar alcance:
 
 1. HAPI estable sobre PostgreSQL.
 2. `/fhir/metadata` coherente con el subset acordado.
-3. ETL inicial repetible.
+3. ETL repetible.
 4. recursos legibles y buscables con referencias consistentes.
-5. linea base de seguridad, auditoria y validacion.
+5. línea base de seguridad, auditoría y validación.

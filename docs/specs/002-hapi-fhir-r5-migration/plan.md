@@ -1,127 +1,95 @@
-# Plan v2: Base HAPI FHIR R5
+# Baseline HAPI FHIR R5: secuencia histórica de implementación
 
 **Branch**: `002-hapi-fhir-r5-migration`
 **Date**: 2026-03-11
 **Spec**: `docs/specs/002-hapi-fhir-r5-migration/spec.md`
-**Status**: Draft v2
+**Status**: Historical implementation sequence
 
-## Proposito
+## Propósito
 
-Ordenar la futura ejecucion de la iniciativa sin convertir este documento en backlog operativo.
+Este documento resume el orden lógico de trabajo que llevó a la baseline HAPI ya implementada.
 
-## Orden De Ejecucion
+No es un plan activo, no es backlog operativo y no debe usarse como tablero de estado.
 
-1. levantar servicio sidecar HAPI moderno y observable
-2. preparar PostgreSQL dedicada y ciclo de persistencia HAPI
-3. definir mapping e IDs del subset inicial
-4. ejecutar ETL repetible
-5. habilitar lectura y busqueda FHIR
-6. cerrar linea base de seguridad, auditoria y validacion
+## Secuencia retenida
 
-## Fase 0 - Decisiones Ya Cerradas
+1. bootstrap del sidecar HAPI y operación mínima
+2. PostgreSQL dedicada y ciclo de persistencia HAPI
+3. estrategia determinista de IDs y mapping base
+4. ETL repetible del subset clínico inicial
+5. superficie FHIR mínima de lectura y búsqueda
+6. línea base de seguridad, auditoría y validación
 
-- servicio sidecar HAPI JPA Server
-- starter oficial
-- JDK 17+
-- PostgreSQL dedicada para HAPI
-- FastAPI como fuente de verdad inicial
-- ETL one-way e idempotente
-- alcance inicial limitado a `read` y `search`
+## Etapas materializadas
 
-## Fase 1 - Linea Base De Ejecucion
+### 1. Bootstrap del sidecar y operación mínima
 
-Objetivo: disponer de un HAPI levantable y aislado.
+Resultado retenido:
 
-Incluye:
+- sidecar HAPI arrancable desde el starter oficial
+- configuración declarativa versionada
+- `/fhir/metadata` y health checks operativos
+- arranque reproducible sin romper la operación FastAPI
 
-- starter oficial
-- configuracion declarativa
-- PostgreSQL dedicada
-- `/fhir/metadata`
-- health checks
+### 2. PostgreSQL dedicada para HAPI
 
-Salida esperada:
+Resultado retenido:
 
-- servicio sidecar operativo
-- frontera clara entre el entorno de ejecucion actual y el entorno de ejecucion HAPI
-- arranque reproducible
+- frontera explícita entre DB operacional y DB FHIR
+- persistencia HAPI aislada en PostgreSQL dedicada
+- ciclo de arranque del sidecar separado del lifecycle de migraciones del producto
 
-## Fase 2 - Mapeo Y ETL Inicial
+### 3. IDs y mapping base
 
-Objetivo: trasladar el dominio actual al subset FHIR acordado sin tocar la operativa del MVP.
+Resultado retenido:
 
-Incluye:
+- trazabilidad reproducible desde el origen a `Patient` y `Practitioner`
+- referencias deterministas para sostener el ETL posterior
+- base común para reconciliación y validación de carga
 
-- mapping de recursos
-- politica de IDs y referencias
-- representacion transitoria del SOAP en `Encounter`
-- ETL repetible con validacion post-load
+### 4. ETL del subset clínico inicial
 
-Salida esperada:
+Resultado retenido:
 
-- carga inicial de extremo a extremo
-- rollback simple por reset de base HAPI y recarga
+- ETL one-way e idempotente para el subset aprobado
+- orden de carga y consistencia referencial preservados
+- reset/recarga sencilla sobre la persistencia HAPI
 
-## Fase 3 - Superficie De Lectura
+### 5. Superficie FHIR mínima
 
-Objetivo: exponer una superficie FHIR util y acotada.
+Resultado retenido:
 
-Incluye:
+- `CapabilityStatement` coherente con el subset
+- `read` y `search` activos para los recursos aprobados
+- respuestas `Bundle` coherentes sobre la carga realizada
+- FastAPI preservado como API principal del producto
 
-- `CapabilityStatement`
-- `read`
-- `search`
-- `Bundle`
+### 6. Seguridad, auditoría y validación
 
-Salida esperada:
+Resultado retenido:
 
-- recursos legibles y buscables de forma coherente
-- FastAPI sigue intacto como API principal
+- acceso restringido sobre la superficie FHIR
+- validación estructural mínima integrada
+- auditoría/logging sanitizados para contexto sanitario
+- baseline de operación suficientemente controlada para uso interno local
 
-## Fase 4 - Seguridad, Auditoria Y Validacion
+## Verificación mínima retenida
 
-Objetivo: evitar que la base FHIR nazca sin controles minimos.
-
-Incluye:
-
-- `AuthorizationInterceptor`
-- linea base de auditoria con BALP
-- `RepositoryValidatingInterceptor`
-- terminologia minima del subset
-
-Salida esperada:
-
-- accesos restringidos
-- validacion estructural definida
-- auditoria documentada y operativa
-
-## Fase 5 - Endurecimiento Diferido
-
-Objetivo: dejar explicitado lo que sigue despues sin bloquear la primera iteracion.
-
-Incluye:
-
-- observabilidad mas avanzada
-- politica de upgrades HAPI
-- refinamientos posteriores de DB, perfiles y sincronizacion
-
-## Verificacion Minima
-
-- arranque del servidor
+- arranque del sidecar
 - `CapabilityStatement`
 - lectura individual de recursos
-- busquedas FHIR basicas
+- búsquedas FHIR básicas
 - integridad de referencias
 - contraste de conteos y muestras con la base actual
 
-## Elementos Diferidos
+## Qué no representa este archivo
 
-- sincronizacion incremental o CDC
-- convergencia futura de la fuente de verdad
-- perfiles nacionales o EHDS mas estrictos
-- particionado o multi-tenant
-- observabilidad avanzada
+- no sustituye la arquitectura implementada
+- no sustituye el contrato operativo del repo
+- no sustituye GitHub Issues como backlog/status
 
-## Regla De Traspaso
+## Notas residuales
 
-La descomposicion a futuras issues se mantiene en `issue-seeding.md`. Este documento solo define orden y salidas esperadas por fase.
+- Si hace falta trabajo adicional, debe abrirse o actualizarse en GitHub Issues; no reactivar este archivo como backlog.
+- El rojo global del gate por deuda heredada de `mypy` sigue siendo un riesgo residual externo al propósito histórico de este bundle.
+- El cierre administrativo o la actualización de estado de las issues relacionadas también vive en GitHub, no aquí.

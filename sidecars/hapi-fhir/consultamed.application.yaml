@@ -1,0 +1,64 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health"
+  endpoint:
+    health:
+      enabled: true
+      probes:
+        enabled: true
+
+spring:
+  ai:
+    mcp:
+      server:
+        enabled: false
+  datasource:
+    url: jdbc:postgresql://${HAPI_DB_HOST:hapi-postgres}:5432/${HAPI_DB_NAME:hapi_fhir}
+    username: ${HAPI_DB_USER:hapi}
+    password: ${HAPI_DB_PASSWORD:hapi}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+        format_sql: false
+        show_sql: false
+
+hapi:
+  fhir:
+    openapi_enabled: false
+    fhir_version: R5
+    ig_runtime_upload_enabled: false
+    supported_resource_types:
+      - Patient
+      - Practitioner
+      - Encounter
+      - Condition
+      - MedicationRequest
+      - AllergyIntolerance
+    cr:
+      enabled: false
+    cdshooks:
+      enabled: false
+    mdm_enabled: false
+    narrative_enabled: false
+    custom-interceptor-classes: es.consultamed.hapi.ReadOnlyModeInterceptor,es.consultamed.hapi.CapabilityStatementCustomizer,es.consultamed.hapi.AuditTrailInterceptor
+    logger:
+      error_format: "ERROR - ${requestVerb} ${operationType}"
+      format: "Operation[${operationType} ${operationName}] Status[${responseStatusCode}]"
+      log_exceptions: true
+      name: consultamed.hapi.access
+    tester:
+      home:
+        name: ConsultaMed Local HAPI Sidecar
+        server_address: "http://localhost:${LOCAL_HAPI_PORT:8090}/fhir"
+        refuse_to_fetch_third_party_urls: true
+        fhir_version: R5
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN

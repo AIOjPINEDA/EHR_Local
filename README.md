@@ -43,7 +43,6 @@
   - [🔒 Seguridad MVP](#-seguridad-mvp)
   - [🧪 Testing y calidad](#-testing-y-calidad)
   - [📖 Documentación adicional](#-documentación-adicional)
-  - [🛣️ Roadmap](#️-roadmap)
   - [📄 Licencia](#-licencia)
 
 ## 📌 Estado actual
@@ -55,14 +54,15 @@
 | Autenticación | ✅ Funcional | bcrypt + JWT |
 | Pacientes / Consultas / Templates | ✅ Funcional | Flujo clínico MVP |
 | Recetas PDF | ✅ Funcional | WeasyPrint |
-| CI | ✅ Activo | checks de backend y frontend |
+| HAPI FHIR sidecar | ✅ Baseline local | Starter oficial + PostgreSQL dedicada; FastAPI sigue como source of truth y HAPI expone solo `CapabilityStatement` (`/fhir/metadata`), `read`, `search` y páginas `Bundle` del subset aprobado; el metadata público no anuncia versionado, `read history` ni escrituras/condicionales, y `_history`, `$meta` y operaciones equivalentes no quedan públicas |
+| Gate local + CI | ⚠️ Activo con riesgo residual | checks ejecutándose, con rojo heredado de `mypy` pendiente de follow-up técnico fuera del alcance de la documentación |
 | Tipos API | ✅ Automáticos | OpenAPI → TypeScript |
 
 ## ⚡ Acceso rápido (uso diario)
 
 Necesitas **backend + frontend** activos.
 
-Los comandos `./scripts/...` asumen que estás en la **raíz del repo** (`EHR_Guadalix/`).
+Los comandos `./scripts/...` asumen que estás en la **raíz del repo**.
 
 <details>
 <summary><strong> Pasos rápidos de uso diario</strong></summary>
@@ -99,13 +99,25 @@ cd frontend
 npm run dev
 ```
 
-4) URLs de trabajo:
+4) Sidecar HAPI local (otra terminal, cuando necesites la baseline FHIR):
+
+```bash
+./scripts/start-hapi-sidecar.sh
+```
+
+> El sidecar levanta su propia PostgreSQL dedicada (`consultamed-hapi-db`, host `localhost:54330`) y se mantiene separado de `consultamed-db`.
+> HAPI inicializa su esquema sobre esa base dedicada al arrancar; no reutilices la DB operacional ni apliques `supabase/migrations` sobre la base FHIR.
+> El arranque espera `http://localhost:8090/actuator/health`, `http://localhost:8090/fhir/metadata` y el estado Docker `healthy`; ese healthcheck usa la señal real de runtime `actuator/health/readiness` dentro del contenedor.
+
+5) URLs de trabajo:
 
 - Frontend: [http://localhost:3000](http://localhost:3000)
 - API: [http://localhost:8000](http://localhost:8000)
 - Docs API: [http://localhost:8000/docs](http://localhost:8000/docs)
+- HAPI metadata: [http://localhost:8090/fhir/metadata](http://localhost:8090/fhir/metadata)
+- HAPI health: [http://localhost:8090/actuator/health](http://localhost:8090/actuator/health)
 
-5) Credenciales piloto:
+6) Credenciales piloto:
 
 | Campo | Valor |
 |---|---|
@@ -155,6 +167,21 @@ En `backend/.env` usa el perfil local:
 ```env
 DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:54329/consultamed
 ```
+
+Persistencia local del sidecar HAPI (independiente de la DB operacional):
+
+```bash
+./scripts/start-hapi-sidecar.sh
+docker ps --filter name=consultamed-hapi-db
+```
+
+- `consultamed-db` (`localhost:54329`) sigue siendo la DB operacional de FastAPI.
+- `consultamed-hapi-db` (`localhost:54330`) queda reservada para HAPI FHIR.
+- El starter oficial de HAPI crea/actualiza su esquema al arrancar sobre la base dedicada.
+- La carga/reconciliación del subset clínico se ejecuta con `./scripts/load-hapi-clinical-subset.sh`; en recargas normales converge sin `--reset` y elimina recursos stale del subset aprobado.
+- La superficie publicada sigue limitada a `CapabilityStatement` (`/fhir/metadata`), `read`, `search` y respuestas `Bundle`; además, el metadata público ya no anuncia versionado de recursos, `read history` ni capacidades condicionales/de escritura, y operaciones GET no aprobadas como `_history`, `$meta` o `$get-resource-counts` no quedan expuestas públicamente.
+- FastAPI mantiene writes, auth y lógica clínica; HAPI sigue como sidecar local sin dual-write ni escrituras públicas generales, y las escrituras internas quedan reservadas al ETL mediante `X-Consultamed-ETL-Key`.
+- Para resetear **solo** la persistencia HAPI local: `docker compose -f sidecars/hapi-fhir/docker-compose.yml down -v --remove-orphans`
 
 </details>
 
@@ -271,21 +298,27 @@ Smoke test passed:
 ```mermaid
 flowchart LR
     FE["Frontend\nNext.js 14 + TypeScript"]
-    API["Backend\nFastAPI + SQLAlchemy"]
-    DB["PostgreSQL 17\nlocal primary"]
-    SB["Supabase PostgreSQL\ncloud fallback"]
+    API["Backend\nFastAPI REST + source of truth"]
+    DB["PostgreSQL\noperacional local o Supabase"]
+    HAPI["HAPI FHIR R5 sidecar\nbaseline local implementada"]
+    HDB["PostgreSQL 17\ndedicada para HAPI"]
     PDF["WeasyPrint\nRecetas PDF"]
 
     FE <--> API
     API <--> DB
-    API -. fallback .-> SB
     API --> PDF
+    API -. ETL interna controlada .-> HAPI
+    HAPI --> HDB
 ```
+
+- FastAPI sigue siendo la API principal y la fuente de verdad operacional.
+- El sidecar HAPI es una baseline local de interoperabilidad: publica `CapabilityStatement`, `read`, `search` y respuestas `Bundle` para el subset aprobado, sin claims públicos de versionado ni escritura.
+- La persistencia HAPI vive en PostgreSQL dedicada y no reutiliza la DB operacional ni las migraciones de `supabase/`.
 
 ## 🗂️ Estructura del repositorio
 
 ```text
-EHR_Guadalix/
+consultamed/
 ├── frontend/
 │   ├── src/app/
 │   ├── src/components/
@@ -295,6 +328,7 @@ EHR_Guadalix/
 │   ├── app/api/
 │   ├── app/models/
 │   └── tests/
+├── sidecars/hapi-fhir/
 ├── supabase/migrations/
 ├── scripts/
 ├── docs/
@@ -320,6 +354,7 @@ EHR_Guadalix/
 
 > Política de entorno Python local: el entorno canónico para backend es `backend/.venv`.
 > Evita usar un `.venv` en raíz para flujos de backend para prevenir desalineación de dependencias.
+> `./scripts/test_gate.sh` sigue siendo el gate recomendado antes de commit, pero el repo conserva una deuda heredada de `mypy` que puede mantener el rojo global; documéntala como riesgo residual y no como trabajo resuelto.
 
 <details>
 <summary><strong>Backend</strong></summary>
@@ -365,16 +400,6 @@ npm run generate:types
 - [docs/playbooks/agentic-repo-bootstrap.md](./docs/playbooks/agentic-repo-bootstrap.md): guía base agent-first reutilizable
 - [docs/release/DEPLOYMENT_GUIDE.md](./docs/release/DEPLOYMENT_GUIDE.md): despliegue
 
-## 🛣️ Roadmap
-
-- [x] Sprint 0: Setup inicial
-- [x] Sprint 1: Auth + búsqueda
-- [x] Sprint 2: Pacientes + consultas
-- [x] Sprint 3: Templates + PDF
-- [x] V1 Pilot: hardening + CI
-- [ ] Sprint 4: producción
-- [ ] V2: audit logging + RLS
-
 ## 📄 Licencia
 
-Proyecto privado · Consultorio Médico Guadalix
+Proyecto privado · ConsultaMed

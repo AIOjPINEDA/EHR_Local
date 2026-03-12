@@ -9,6 +9,7 @@ This folder is the canonical location for new active specs in this repository.
 - Do not move legacy specs unless there is a specific migration task.
 - Treat specs as the source of truth for proposed change scope and decisions, not for current implemented architecture.
 - Use GitHub Issues as the canonical execution backlog.
+- If a retained bundle documents an already-implemented change, rewrite or archive it so it reads as historical/decision context rather than pending execution.
 
 ## Naming
 
@@ -44,3 +45,4 @@ When conflicts appear, follow this precedence:
 ## Notes
 
 - If a spec becomes obsolete, archive or remove it through an explicit maintenance task instead of letting it drift indefinitely.
+- If issue state and retained spec wording diverge, GitHub Issues win for execution status while architecture docs win for implemented-state description.

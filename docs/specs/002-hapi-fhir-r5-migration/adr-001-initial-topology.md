@@ -1,14 +1,14 @@
 # ADR-001: Initial HAPI FHIR Topology
 
-**Status**: Proposed
+**Status**: Accepted and reflected in the implemented baseline
 **Date**: 2026-03-11
 **Related spec**: `docs/specs/002-hapi-fhir-r5-migration/spec.md`
 
 ## Contexto
 
-ConsultaMed ya es FHIR-ready en nomenclatura, pero sigue siendo application-first en persistencia, API y operacion.
+ConsultaMed ya era FHIR-ready en nomenclatura, pero seguía siendo application-first en persistencia, API y operación.
 
-La primera decision estructural de la iniciativa es definir como introducir HAPI sin poner en riesgo el MVP actual.
+Esta ADR conserva la decisión estructural que dio forma a la baseline implementada: introducir HAPI sin poner en riesgo el MVP operativo.
 
 Alternativas consideradas:
 
@@ -47,7 +47,7 @@ Esta ADR no decide:
 
 - hace viable una primera iteracion incremental
 - evita reescritura total del backend
-- permite abrir trabajo futuro por fases
+- permitió abrir el trabajo por capas sin cambiar el ownership clínico
 
 ### Negative
 
@@ -56,7 +56,7 @@ Esta ADR no decide:
 
 ## Condiciones De Revision
 
-Esta ADR debe revisarse si:
+Esta ADR debe revisarse solo si cambia de forma material la dirección del producto, por ejemplo si:
 
 - el coste operativo de FastAPI + HAPI resulta excesivo
 - la primera fase exige escrituras FHIR antes de tiempo
@@ -64,7 +64,7 @@ Esta ADR debe revisarse si:
 
 ## Nota De Alineacion
 
-Para esta ronda, la spec v2 ya fija como derivadas de esta ADR:
+En la baseline hoy implementada, esta ADR ya se refleja en:
 
 - PostgreSQL separada para HAPI
 - primer alcance funcional centrado en `read` y `search`

@@ -2,9 +2,9 @@
 
 ## Proposito
 
-Resumir, por eje, de donde se parte, que muestra el legado y que decision queda adoptada.
+Resumir, por eje, de dónde se partió, qué aportaba el legado y qué decisión terminó materializada en la baseline implementada.
 
-La unica columna normativa de este documento es la decision adoptada.
+La única columna normativa de este documento es la decisión adoptada.
 
 ## Resumen De Decisiones
 
@@ -28,17 +28,17 @@ La unica columna normativa de este documento es la decision adoptada.
 | Migraciones | SQL y migraciones propias | Compose y setup ad hoc | Ciclo de migraciones HAPI como restriccion de plataforma |
 | Terminologia | No FHIR terminology server | No era una linea base limpia | Linea base minima, avanzada diferida |
 
-## Decisiones Cerradas Para La Ejecucion
+## Decisiones materializadas en la baseline
 
-1. HAPI ira como servicio sidecar separado.
-2. Se parte del starter oficial, no del compose legado.
-3. Se usa PostgreSQL dedicada para HAPI.
+1. HAPI queda como servicio sidecar separado.
+2. La baseline parte del starter oficial, no del compose legado.
+3. La baseline usa PostgreSQL dedicada para HAPI.
 4. FastAPI sigue siendo fuente de verdad.
-5. El flujo de datos inicial es ETL one-way e idempotente.
-6. No hay dual-write ni switch de ownership clinico en la primera iteracion.
-7. Validacion, integridad, auditoria y autorizacion nacen en la linea base.
+5. El flujo de datos inicial queda como ETL one-way e idempotente.
+6. No hay dual-write ni switch de ownership clínico en la baseline.
+7. Validación, integridad, auditoría y autorización nacen en la línea base.
 
-## Decisiones Diferidas
+## Temas aún diferidos o fuera de baseline
 
 1. sincronizacion futura incremental, CDC o event-driven
 2. posible fuente de verdad parcial en HAPI para algunos recursos
