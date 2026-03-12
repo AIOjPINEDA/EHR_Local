@@ -16,18 +16,23 @@ def _repo_root() -> Path:
     raise AssertionError("Unable to locate repository root from test path.")
 
 
-def test_hapi_sidecar_uses_official_starter_image_and_jdk17_builder() -> None:
-    """The sidecar image must keep the official starter runtime and JDK 17 build chain."""
+def test_hapi_sidecar_uses_official_starter_image_and_java21_builder() -> None:
+    """The sidecar image must keep the official starter runtime and Java 21 build chain."""
     dockerfile = (_repo_root() / "sidecars" / "hapi-fhir" / "Dockerfile").read_text(encoding="utf-8")
     pom_xml = (_repo_root() / "sidecars" / "hapi-fhir" / "overlay" / "pom.xml").read_text(
         encoding="utf-8"
     )
     version_match = re.search(r"<hapi\.fhir\.version>([^<]+)</hapi\.fhir\.version>", pom_xml)
+    release_match = re.search(r"<maven\.compiler\.release>([^<]+)</maven\.compiler\.release>", pom_xml)
 
     assert version_match is not None
+    assert release_match is not None
     hapi_version = version_match.group(1)
+    java_release = release_match.group(1)
 
-    assert "FROM maven:3.9.9-eclipse-temurin-17 AS overlay-build" in dockerfile
+    assert java_release == "21"
+    assert "FROM maven:3.9.9-eclipse-temurin-21 AS overlay-build" in dockerfile
+    assert "<release>${maven.compiler.release}</release>" in pom_xml
     runtime_tag_match = re.search(r"^FROM hapiproject/hapi:(\S+)$", dockerfile, re.MULTILINE)
 
     assert runtime_tag_match is not None

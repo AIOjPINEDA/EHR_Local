@@ -118,6 +118,7 @@ flowchart LR
   - `http://localhost:8090/fhir/metadata`
   - `http://localhost:8090/actuator/health`
 - Startup waits for `/actuator/health`, `/fhir/metadata`, and Docker health=`healthy`; the container healthcheck is backed by the runtime readiness signal at `/actuator/health/readiness`.
+- The overlay build chain now targets Java 21 LTS, and the final sidecar container has been validated on Java 21 runtime.
 - The current baseline keeps the sidecar localhost-bound and restricts the public surface at interaction/operation level to `CapabilityStatement`, `read`, `search`, and search `Bundle` page retrieval for the approved subset.
 - The published `CapabilityStatement` does not advertise resource versioning, `read history`, conditional interactions, or public write support.
 - Non-approved GET endpoints/operations such as `_history`, `vread`, `$meta`, and `$get-resource-counts` are not publicly exposed; public write operations remain closed and internal ETL writes require the `X-Consultamed-ETL-Key` header.
