@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
+    SQLALCHEMY_ECHO: bool = False
 
     @staticmethod
     def _ensure_asyncpg(url: str) -> str:
@@ -40,6 +41,8 @@ class Settings(BaseSettings):
         self.DATABASE_URL = self._ensure_asyncpg(self.DATABASE_URL)
         if not self.DATABASE_URL:
             raise ValueError("DATABASE_URL must be set and non-empty.")
+        if self.ENVIRONMENT.lower() == "production" and self.SQLALCHEMY_ECHO:
+            raise ValueError("SQLALCHEMY_ECHO cannot be enabled in production.")
         return self
 
 

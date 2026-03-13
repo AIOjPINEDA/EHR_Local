@@ -35,11 +35,19 @@ def test_backend_config_uses_single_database_url() -> None:
     """Backend settings must use DATABASE_URL without mode branching."""
     config = (_repo_root() / "backend" / "app" / "config.py").read_text(encoding="utf-8")
     assert "DATABASE_URL: str = " in config
+    assert "SQLALCHEMY_ECHO: bool = False" in config
     assert "def resolve_database_url(self) -> \"Settings\":" in config
     assert "DATABASE_MODE" not in config
     assert "LOCAL_DATABASE_URL" not in config
     assert "SUPABASE_DATABASE_URL" not in config
     assert "RENDER_DATABASE_URL" not in config
+
+
+def test_database_engine_uses_sqlalchemy_echo_setting() -> None:
+    """Database engine must read SQL echo from dedicated setting, not DEBUG."""
+    database = (_repo_root() / "backend" / "app" / "database.py").read_text(encoding="utf-8")
+    assert "echo=settings.SQLALCHEMY_ECHO" in database
+    assert "echo=settings." + "DEBUG" not in database
 
 
 def test_asyncpg_pin_matches_pg17_spike_compatibility() -> None:
