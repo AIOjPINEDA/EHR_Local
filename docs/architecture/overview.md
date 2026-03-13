@@ -29,15 +29,13 @@ flowchart TB
 
     subgraph Data ["Data"]
         PG17["PostgreSQL 17 (Local)"]
-        SupabasePG["Supabase Postgres (Cloud)"]
         HAPIPG["PostgreSQL 17 dedicated<br/>HAPI sidecar local only"]
     end
 
     Browser --> NextJS
     NextJS <-->|JSON over HTTP| FastAPI
     FastAPI --> PDF
-    FastAPI <-->|Primary| PG17
-    FastAPI <-->|Fallback| SupabasePG
+    FastAPI <-->|Primary operational path| PG17
     HAPI --> HAPIPG
 ```
 
@@ -73,7 +71,6 @@ flowchart LR
 
     subgraph Data["Data"]
         LocalPG["PostgreSQL 17\nlocal Docker profile"]
-        SupabasePG["Supabase Postgres\ncloud profile"]
         HapiPG["PostgreSQL 17 dedicated\nlocal HAPI sidecar only"]
     end
 
@@ -99,7 +96,6 @@ flowchart LR
     Services --> Models
     Services --> PdfService
     Models --> LocalPG
-    Models --> SupabasePG
     Starter --> Overlay
     Starter --> Ops
     Starter --> HapiPG
@@ -131,9 +127,9 @@ flowchart LR
 
 - Backend uses a single runtime selector: `DATABASE_URL`.
 - Local profile example: `backend/.env.local.example`.
-- Supabase profile example: `backend/.env.supabase.example`.
-- Operator switch: edit `DATABASE_URL` in `backend/.env`.
-- Infrastructure provisioning (Docker + migrations) remains in `./scripts/setup-local-db.sh` and is independent from runtime selector logic.
+- `backend/.env.supabase.example` remains only as a transitional/historical reference and is not an actively supported runtime profile.
+- Operator path for the current MVP is: set `DATABASE_URL` in `backend/.env` to the local PostgreSQL instance.
+- Infrastructure provisioning (Docker + migrations) remains in `./scripts/setup-local-db.sh`; that bootstrap still reads from `supabase/migrations/` transitively until issue `#28`.
 - Script path: run from repo root (`./scripts/setup-local-db.sh`) or from `backend/` as `../scripts/setup-local-db.sh`.
 
 ## Authentication Model (Current)
@@ -335,7 +331,7 @@ consultamed/
 │   │   └── types/            # TypeScript types
 │   └── scripts/
 ├── supabase/
-│   └── migrations/
+│   └── migrations/         # Transitional SQL source for local bootstrap until #28
 ├── sidecars/
 │   └── hapi-fhir/            # Implemented local HAPI starter baseline
 ├── scripts/
@@ -352,4 +348,4 @@ consultamed/
 └── (local-only archive, not versioned in git)
 ```
 
-*Last updated: 2026-03-11*
+*Last updated: 2026-03-13*
