@@ -58,7 +58,7 @@
 ./scripts/setup-local-db.sh
 ```
 
-Levanta PostgreSQL 17 en `localhost:54329`, aplica migraciones de forma idempotente.
+Levanta PostgreSQL 17 en `localhost:54329` y aplica de forma idempotente el SQL neutral de `database/migrations/`.
 
 ### 2. Backend
 
@@ -110,7 +110,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 <summary>Detalles del sidecar</summary>
 
 - Levanta su propia PostgreSQL dedicada (`consultamed-hapi-db`, `localhost:54330`), separada de la DB operacional.
-- HAPI crea/actualiza su esquema al arrancar; **no apliques** `supabase/migrations` sobre esta base.
+- HAPI crea/actualiza su esquema al arrancar; **no apliques** `database/migrations` sobre esta base.
 - Superficie publicada: solo `CapabilityStatement`, `read`, `search` y `Bundle` del subset aprobado — sin versionado, `_history`, escrituras públicas ni operaciones `$meta`.
 - FastAPI mantiene writes, auth y lógica clínica. HAPI es read-only; las escrituras internas van por ETL con `X-Consultamed-ETL-Key`.
 - Carga del subset clínico: `./scripts/load-hapi-clinical-subset.sh`
@@ -176,7 +176,9 @@ flowchart LR
 │   ├── src/lib/       # API client, hooks, utils
 │   └── src/types/     # Tipos auto-generados + manuales
 ├── sidecars/hapi-fhir/ # Dockerfile, overlay, config HAPI
-├── supabase/migrations/ # Fuente SQL transitoria usada por setup-local-db hasta #28
+├── database/
+│   └── migrations/     # SQL neutral usado por setup-local-db
+├── supabase/           # Configuración histórica/transitoria fuera del runtime activo
 ├── scripts/           # setup-local-db, test_gate, start/stop-hapi, smoke tests
 ├── docs/              # Arquitectura, specs, playbooks, compliance, release
 └── .github/workflows/ # CI (backend + frontend)

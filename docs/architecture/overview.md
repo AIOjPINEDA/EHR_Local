@@ -129,7 +129,7 @@ flowchart LR
 - Local profile example: `backend/.env.local.example`.
 - `backend/.env.supabase.example` remains only as a transitional/historical reference and is not an actively supported runtime profile.
 - Operator path for the current MVP is: set `DATABASE_URL` in `backend/.env` to the local PostgreSQL instance.
-- Infrastructure provisioning (Docker + migrations) remains in `./scripts/setup-local-db.sh`; that bootstrap still reads from `supabase/migrations/` transitively until issue `#28`.
+- Infrastructure provisioning (Docker + migrations) remains in `./scripts/setup-local-db.sh`; that bootstrap reads SQL from `database/migrations/`.
 - Script path: run from repo root (`./scripts/setup-local-db.sh`) or from `backend/` as `../scripts/setup-local-db.sh`.
 
 ## Authentication Model (Current)
@@ -330,8 +330,10 @@ consultamed/
 │   │   ├── components/ui/    # UI primitives
 │   │   └── types/            # TypeScript types
 │   └── scripts/
+├── database/
+│   └── migrations/         # Neutral SQL source for local bootstrap
 ├── supabase/
-│   └── migrations/         # Transitional SQL source for local bootstrap until #28
+│   └── config.toml         # Historical Supabase tooling config kept outside active runtime path
 ├── sidecars/
 │   └── hapi-fhir/            # Implemented local HAPI starter baseline
 ├── scripts/

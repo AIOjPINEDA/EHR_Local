@@ -32,12 +32,12 @@ Recomendado (contenedor + migraciones automáticas):
 
 Alternativa manual (si ya tienes PostgreSQL local operativo):
 ```bash
-psql -d consultamed -f supabase/migrations/20260208_add_password_hash.sql
-psql -d consultamed -f supabase/migrations/20260208_add_encounter_soap_fields.sql
+psql -d consultamed -f database/migrations/20260208090000_add_password_hash.sql
+psql -d consultamed -f database/migrations/20260208090100_add_encounter_soap_fields.sql
 ```
 
-> Nota transitoria: el bootstrap local todavía toma su SQL desde `supabase/migrations/`.
-> Esa ruta se mantiene solo para no romper el setup actual y se desacoplará en la issue `#28`.
+> El bootstrap local toma su SQL desde la ruta neutral `database/migrations/`.
+> `supabase/` se conserva aparte como artefacto histórico/transitorio, pero ya no es el camino operativo del runtime local.
 
 **Verifica la migración:**
 ```sql
@@ -63,7 +63,7 @@ DEBUG=false
 ```
 
 Usa `backend/.env.local.example` como referencia activa y mantén `backend/.env` apuntando al PostgreSQL local.
-`backend/.env.supabase.example` queda solo como referencia histórica/transitoria mientras se completa la limpieza asociada a `#28`.
+`backend/.env.supabase.example` queda solo como referencia histórica/transitoria y ya no describe un camino operativo soportado.
 
 > ⚠️ **Importante:** Cambia `JWT_SECRET_KEY` a un valor único para producción.
 > Si despliegas PostgreSQL local con Docker, fija imagen explícita de la serie 17: `LOCAL_POSTGRES_IMAGE=postgres:17.7`.

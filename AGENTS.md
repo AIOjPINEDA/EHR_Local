@@ -29,7 +29,7 @@
 
 #### Database (local-first runtime)
 - PostgreSQL 17 via local Docker is the recommended operational runtime for the current MVP cycle
-- `supabase/migrations/` remains a transitional bootstrap dependency until issue `#28` decouples that path
+- `database/migrations/` is the neutral SQL source used by the local bootstrap path
 - Production security expectations remain aligned to an RLS-required target
 
 #### Interoperability sidecar (local baseline)
