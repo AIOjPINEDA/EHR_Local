@@ -146,7 +146,7 @@ Authentication is implemented using JWT tokens with bcrypt password hashing:
 
 **2. Token Issuance**
 
-- Backend generates JWT token using `jose.jwt.encode()` with HS256 algorithm.
+- Backend generates JWT token using `PyJWT` with HS256 algorithm.
 - Token payload: `{"sub": practitioner_id, "exp": utc_timestamp + 8h}`.
 
 **3. Session Start**

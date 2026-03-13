@@ -3,18 +3,20 @@ ConsultaMed Backend - Authentication Endpoints
 
 MVP simple: JWT local sin Supabase Auth para desarrollo rápido.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, cast
+
+import bcrypt
+import jwt
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from jose import JWTError, jwt
 
 from app.config import settings
-from app.database import get_db
 from app.api.exceptions import raise_unauthorized
+from app.database import get_db
 from app.models.practitioner import Practitioner
 
 router = APIRouter()
@@ -47,7 +49,9 @@ class TokenResponse(BaseModel):
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create JWT access token."""
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
     to_encode.update({"exp": expire})
     return cast(str, jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM))
 
@@ -62,7 +66,7 @@ async def get_current_practitioner(
         practitioner_id: str = payload.get("sub")
         if practitioner_id is None:
             raise_unauthorized("Credenciales inválidas")
-    except JWTError:
+    except jwt.InvalidTokenError:
         raise_unauthorized("Credenciales inválidas")
 
     stmt = select(Practitioner).where(Practitioner.id == practitioner_id)
@@ -93,13 +97,10 @@ async def login(
     if not practitioner:
         raise_unauthorized("Email o contraseña incorrectos")
 
-    # Verify password using bcrypt
-    import bcrypt
-
     if not practitioner.password_hash:
         raise_unauthorized("Email o contraseña incorrectos")
 
-    if not bcrypt.checkpw(form_data.password.encode('utf-8'), practitioner.password_hash.encode('utf-8')):
+    if not bcrypt.checkpw(form_data.password.encode("utf-8"), practitioner.password_hash.encode("utf-8")):
         raise_unauthorized("Email o contraseña incorrectos")
     
     # Crear token
