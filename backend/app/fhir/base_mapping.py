@@ -1,8 +1,15 @@
 """Deterministic base mapping helpers for Patient and Practitioner exports."""
+
+from __future__ import annotations
+
 from datetime import date
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, TypeAlias
 
 from app.validators.dni import format_dni
+
+if TYPE_CHECKING:
+    from app.models.patient import Patient
+    from app.models.practitioner import Practitioner
 
 
 PATIENT_SOURCE_IDENTIFIER_SYSTEM = "urn:consultamed:source:patient:id"
@@ -37,6 +44,14 @@ class PractitionerMappingSource(Protocol):
     active: bool
 
 
+if TYPE_CHECKING:
+    PatientMappingInput: TypeAlias = PatientMappingSource | Patient
+    PractitionerMappingInput: TypeAlias = PractitionerMappingSource | Practitioner
+else:
+    PatientMappingInput: TypeAlias = PatientMappingSource
+    PractitionerMappingInput: TypeAlias = PractitionerMappingSource
+
+
 def _build_reference(
     resource_type: str,
     source_id: str,
@@ -53,7 +68,7 @@ def _build_reference(
     }
 
 
-def patient_fhir_identifiers(patient: PatientMappingSource) -> list[dict[str, str]]:
+def patient_fhir_identifiers(patient: PatientMappingInput) -> list[dict[str, str]]:
     """Return the reproducible business and source identifiers for a patient."""
     return [
         {
@@ -67,7 +82,9 @@ def patient_fhir_identifiers(patient: PatientMappingSource) -> list[dict[str, st
     ]
 
 
-def practitioner_fhir_identifiers(practitioner: PractitionerMappingSource) -> list[dict[str, str]]:
+def practitioner_fhir_identifiers(
+    practitioner: PractitionerMappingInput,
+) -> list[dict[str, str]]:
     """Return the reproducible business and source identifiers for a practitioner."""
     return [
         {
@@ -81,12 +98,12 @@ def practitioner_fhir_identifiers(practitioner: PractitionerMappingSource) -> li
     ]
 
 
-def patient_to_fhir_reference(patient: PatientMappingSource) -> dict[str, Any]:
+def patient_to_fhir_reference(patient: PatientMappingInput) -> dict[str, Any]:
     """Build a deterministic patient reference for future clinical resources."""
     return _build_reference("Patient", patient.id, PATIENT_SOURCE_IDENTIFIER_SYSTEM)
 
 
-def practitioner_to_fhir_reference(practitioner: PractitionerMappingSource) -> dict[str, Any]:
+def practitioner_to_fhir_reference(practitioner: PractitionerMappingInput) -> dict[str, Any]:
     """Build a deterministic practitioner reference for future clinical resources."""
     return _build_reference(
         "Practitioner",
@@ -95,7 +112,7 @@ def practitioner_to_fhir_reference(practitioner: PractitionerMappingSource) -> d
     )
 
 
-def patient_to_fhir_resource(patient: PatientMappingSource) -> dict[str, Any]:
+def patient_to_fhir_resource(patient: PatientMappingInput) -> dict[str, Any]:
     """Serialize a patient into the agreed minimal FHIR R5 shape."""
     resource: dict[str, Any] = {
         "resourceType": "Patient",
@@ -128,7 +145,7 @@ def patient_to_fhir_resource(patient: PatientMappingSource) -> dict[str, Any]:
     return resource
 
 
-def practitioner_to_fhir_resource(practitioner: PractitionerMappingSource) -> dict[str, Any]:
+def practitioner_to_fhir_resource(practitioner: PractitionerMappingInput) -> dict[str, Any]:
     """Serialize a practitioner into the agreed minimal FHIR R5 shape."""
     resource: dict[str, Any] = {
         "resourceType": "Practitioner",
