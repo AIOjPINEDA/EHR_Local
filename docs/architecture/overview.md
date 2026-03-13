@@ -29,7 +29,7 @@ flowchart TB
 
     subgraph Data ["Data"]
         PG17["PostgreSQL 17 (Local)"]
-        PG15["PostgreSQL 15 (Supabase Cloud)"]
+        SupabasePG["Supabase Postgres (Cloud)"]
         HAPIPG["PostgreSQL 17 dedicated<br/>HAPI sidecar local only"]
     end
 
@@ -37,7 +37,7 @@ flowchart TB
     NextJS <-->|JSON over HTTP| FastAPI
     FastAPI --> PDF
     FastAPI <-->|Primary| PG17
-    FastAPI <-->|Fallback| PG15
+    FastAPI <-->|Fallback| SupabasePG
     HAPI --> HAPIPG
 ```
 
