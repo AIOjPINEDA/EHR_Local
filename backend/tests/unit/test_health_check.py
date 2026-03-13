@@ -1,5 +1,4 @@
 """Unit tests for the unauthenticated health check endpoint."""
-from collections.abc import AsyncGenerator
 
 import pytest
 from fastapi import HTTPException
