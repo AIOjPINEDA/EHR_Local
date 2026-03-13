@@ -29,15 +29,13 @@ flowchart TB
 
     subgraph Data ["Data"]
         PG17["PostgreSQL 17 (Local)"]
-        SupabasePG["Supabase Postgres (Cloud)"]
         HAPIPG["PostgreSQL 17 dedicated<br/>HAPI sidecar local only"]
     end
 
     Browser --> NextJS
     NextJS <-->|JSON over HTTP| FastAPI
     FastAPI --> PDF
-    FastAPI <-->|Primary| PG17
-    FastAPI <-->|Fallback| SupabasePG
+    FastAPI <-->|Primary operational path| PG17
     HAPI --> HAPIPG
 ```
 
@@ -73,7 +71,6 @@ flowchart LR
 
     subgraph Data["Data"]
         LocalPG["PostgreSQL 17\nlocal Docker profile"]
-        SupabasePG["Supabase Postgres\ncloud profile"]
         HapiPG["PostgreSQL 17 dedicated\nlocal HAPI sidecar only"]
     end
 
@@ -99,7 +96,6 @@ flowchart LR
     Services --> Models
     Services --> PdfService
     Models --> LocalPG
-    Models --> SupabasePG
     Starter --> Overlay
     Starter --> Ops
     Starter --> HapiPG
@@ -131,9 +127,9 @@ flowchart LR
 
 - Backend uses a single runtime selector: `DATABASE_URL`.
 - Local profile example: `backend/.env.local.example`.
-- Supabase profile example: `backend/.env.supabase.example`.
-- Operator switch: edit `DATABASE_URL` in `backend/.env`.
-- Infrastructure provisioning (Docker + migrations) remains in `./scripts/setup-local-db.sh` and is independent from runtime selector logic.
+- `backend/.env.supabase.example` remains only as a transitional/historical reference and is not an actively supported runtime profile.
+- Operator path for the current MVP is: set `DATABASE_URL` in `backend/.env` to the local PostgreSQL instance.
+- Infrastructure provisioning (Docker + migrations) remains in `./scripts/setup-local-db.sh`; that bootstrap reads SQL from `database/migrations/`.
 - Script path: run from repo root (`./scripts/setup-local-db.sh`) or from `backend/` as `../scripts/setup-local-db.sh`.
 
 ## Authentication Model (Current)
@@ -150,7 +146,7 @@ Authentication is implemented using JWT tokens with bcrypt password hashing:
 
 **2. Token Issuance**
 
-- Backend generates JWT token using `jose.jwt.encode()` with HS256 algorithm.
+- Backend generates JWT token using `PyJWT` with HS256 algorithm.
 - Token payload: `{"sub": practitioner_id, "exp": utc_timestamp + 8h}`.
 
 **3. Session Start**
@@ -334,8 +330,10 @@ consultamed/
 │   │   ├── components/ui/    # UI primitives
 │   │   └── types/            # TypeScript types
 │   └── scripts/
+├── database/
+│   └── migrations/         # Neutral SQL source for local bootstrap
 ├── supabase/
-│   └── migrations/
+│   └── config.toml         # Historical Supabase tooling config kept outside active runtime path
 ├── sidecars/
 │   └── hapi-fhir/            # Implemented local HAPI starter baseline
 ├── scripts/
@@ -352,4 +350,4 @@ consultamed/
 └── (local-only archive, not versioned in git)
 ```
 
-*Last updated: 2026-03-11*
+*Last updated: 2026-03-13*

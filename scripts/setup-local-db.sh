@@ -3,7 +3,7 @@ set -euo pipefail
 trap 'echo "Error on line ${LINENO}: ${BASH_COMMAND}" >&2' ERR
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MIGRATIONS_DIR="$ROOT_DIR/supabase/migrations"
+MIGRATIONS_DIR="$ROOT_DIR/database/migrations"
 COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
 CONTAINER_NAME="consultamed-db"
 DB_USER="postgres"

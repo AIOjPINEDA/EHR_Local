@@ -2,7 +2,7 @@
 
 **Feature Branch**: `005-local-runtime-simplification`
 **Created**: 2026-03-13
-**Status**: Proposed active direction
+**Status**: Active direction applied
 **Last Updated**: 2026-03-13
 
 ## Propósito
@@ -20,8 +20,7 @@ Mientras el despliegue local sea la ruta operativa prioritaria:
 3. toda referencia a Supabase debe pasar de "camino soportado" a una de estas categorías:
    - eliminar,
    - desactivar,
-   - marcar como histórica,
-   - o conservar solo si sostiene el bootstrap local de forma transitoria.
+   - marcar como histórica.
 
 ## Principios de ejecución
 
@@ -50,11 +49,12 @@ Mientras el despliegue local sea la ruta operativa prioritaria:
 
 ## Estado actual relevante
 
-Se verificó que hoy existe una dependencia transitoria importante:
+Tras `#28`, el bootstrap local ya quedó desacoplado de Supabase:
 
-- `scripts/setup-local-db.sh` usa `supabase/migrations` como fuente de esquema SQL para levantar la base local.
+- `scripts/setup-local-db.sh` usa `database/migrations` como fuente SQL neutral del runtime local;
+- `supabase/` ya no sostiene el bootstrap operativo y queda solo como artefacto histórico fuera del camino activo.
 
-Esto significa que eliminar `supabase/` inmediatamente rompería el bootstrap local. Por tanto, la retirada de Supabase debe hacerse por fases.
+La limpieza posterior debe centrarse en retirar referencias que todavía puedan sugerir un camino soportado alternativo.
 
 ## Objetivo técnico
 
@@ -80,11 +80,11 @@ Al final de esta iniciativa, el repositorio debe reflejar con claridad que:
 
 ### Fase 2: Desacoplo técnico de Supabase
 
-- mover `supabase/migrations` a una ubicación neutral del proyecto, por ejemplo bajo una carpeta propia de base de datos del runtime local;
-- actualizar `scripts/setup-local-db.sh` para usar la nueva ruta;
+- mover `supabase/migrations` a una ubicación neutral del proyecto;
+- actualizar `scripts/setup-local-db.sh` para usar `database/migrations`;
 - dejar de tratar el SQL del proyecto como si dependiera de Supabase CLI.
 
-Issue asociada: `#28`.
+Estado: implementado en esta workspace el 2026-03-13 mediante `#28`.
 
 ### Fase 3: Limpieza documental y de artefactos
 
@@ -105,7 +105,7 @@ Issue asociada: `#28`.
 ### Riesgos
 
 - mover las migraciones sin cuidado puede romper el setup local
-- parte de la documentación release/compliance quedará temporalmente desactualizada durante la transición
+- parte de la documentación release/compliance puede conservar referencias históricas que deban revalidarse tras el desacoplo
 - algunas issues de seguridad centradas en Supabase dejarán de ser aplicables y habrá que cerrarlas con trazabilidad
 
 ## Issues que deben revalidarse bajo esta dirección
@@ -119,7 +119,7 @@ Estado aplicado el 2026-03-13:
 - `#15` cerrada por quedar fuera de dirección (`RLS Supabase`)
 - `#17` cerrada por quedar fuera de dirección (`rotación de credenciales Supabase`)
 - `#27` abierta como issue paraguas `local-first`
-- `#28` abierta para desacoplar el bootstrap local de `supabase/migrations`
+- `#28` implementada en esta workspace para desacoplar el bootstrap local de `supabase/migrations`
 - `#29` abierta para mapear la sustitución de `python-jose`
 - `#30` abierta para mapear el riesgo de PHI en logs SQL
 
@@ -136,14 +136,14 @@ Estado aplicado el 2026-03-13:
 1. Ejecutar `#27` como marco de simplificación y triage de documentación/backlog.
 2. Resolver `#16` health check real, porque mejora la operativa local inmediatamente.
 3. Revaluar y, si sigue bloqueando el trabajo diario, ejecutar `#24` para limpiar el gate.
-4. Ejecutar `#28` para desacoplar el bootstrap local de `supabase/migrations`.
-5. Limpiar `.env`, README y deployment docs de referencias Supabase una vez `#28` esté cerrada.
+4. Tomar `#28` como base ya implementada para el desacoplo de `supabase/migrations`.
+5. Limpiar `.env`, docs activas y deployment docs de referencias Supabase que ya no aporten valor operativo.
 6. Mantener `#29` y `#30` mapeadas; ejecutarlas cuando toque hardening del runtime local sin perder foco operativo.
 
 ## Referencias verificadas en repo
 
 - `scripts/setup-local-db.sh`
-- `supabase/migrations/`
+- `database/migrations/`
 - `supabase/config.toml`
 - `README.md`
 - `docs/release/DEPLOYMENT_GUIDE.md`
