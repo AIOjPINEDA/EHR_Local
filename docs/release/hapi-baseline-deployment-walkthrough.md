@@ -59,7 +59,7 @@ HAPI no comparte la base operacional de ConsultaMed.
 - DB operacional FastAPI: `consultamed-db` en `localhost:54329` por defecto.
 - DB del sidecar HAPI: `consultamed-hapi-db` en `localhost:54330` por defecto.
 
-Esto simplifica rollback, troubleshooting y límites de responsabilidad. También evita aplicar por error `supabase/migrations` sobre la persistencia FHIR.
+Esto simplifica rollback, troubleshooting y límites de responsabilidad. También evita aplicar por error `database/migrations` sobre la persistencia FHIR.
 
 ### 3.5 Por qué la transferencia es ETL one-way
 
@@ -297,7 +297,7 @@ Este script:
 
 - levanta `consultamed-db`;
 - espera a que PostgreSQL esté lista;
-- aplica `supabase/migrations/*.sql` de forma idempotente;
+- aplica `database/migrations/*.sql` de forma idempotente;
 - deja la base operacional preparada para que backend y ETL lean de ella.
 
 ### Paso 3. Arranca el sidecar HAPI

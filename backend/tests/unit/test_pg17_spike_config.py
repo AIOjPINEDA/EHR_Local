@@ -54,3 +54,12 @@ def test_setup_local_db_reuses_existing_named_container() -> None:
     assert 'docker ps -aq -f name=^/${CONTAINER_NAME}$' in setup_script
     assert 'docker start "$CONTAINER_NAME"' in setup_script
     assert 'LOCAL_POSTGRES_PORT="${LOCAL_POSTGRES_PORT:-54329}"' in setup_script
+
+
+def test_setup_local_db_uses_neutral_sql_bootstrap_path() -> None:
+    """Local DB bootstrap must read SQL from a neutral repo path, not Supabase migrations."""
+    repo_root = _repo_root()
+    setup_script = (repo_root / "scripts" / "setup-local-db.sh").read_text(encoding="utf-8")
+
+    assert 'MIGRATIONS_DIR="$ROOT_DIR/database/migrations"' in setup_script
+    assert (repo_root / "database" / "migrations").is_dir()
