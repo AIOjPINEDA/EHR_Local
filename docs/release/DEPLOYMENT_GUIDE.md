@@ -1,6 +1,6 @@
 # ConsultaMed - Guía de Despliegue
 
-> **Última revisión:** 2026-03-11
+> **Última revisión:** 2026-03-13
 
 ---
 
@@ -23,17 +23,9 @@ Antes de desplegar, ejecuta en local:
 
 ### Paso 1: Preparar Base de Datos
 
-#### Opción A: Supabase
+Ruta operativa soportada para el ciclo MVP actual: PostgreSQL local.
 
-1. Abre el [Dashboard de Supabase](https://supabase.com/dashboard)
-2. Ve a **SQL Editor**
-3. Ejecuta el contenido de:
-   - `supabase/migrations/20260208_add_password_hash.sql`
-   - `supabase/migrations/20260208_add_encounter_soap_fields.sql`
-
-#### Opción B: PostgreSQL Local
-
-Recomendado (contenedor + migraciones):
+Recomendado (contenedor + migraciones automáticas):
 ```bash
 ./scripts/setup-local-db.sh
 ```
@@ -43,6 +35,9 @@ Alternativa manual (si ya tienes PostgreSQL local operativo):
 psql -d consultamed -f supabase/migrations/20260208_add_password_hash.sql
 psql -d consultamed -f supabase/migrations/20260208_add_encounter_soap_fields.sql
 ```
+
+> Nota transitoria: el bootstrap local todavía toma su SQL desde `supabase/migrations/`.
+> Esa ruta se mantiene solo para no romper el setup actual y se desacoplará en la issue `#28`.
 
 **Verifica la migración:**
 ```sql
@@ -67,11 +62,8 @@ ENVIRONMENT=production
 DEBUG=false
 ```
 
-Ejemplo Supabase:
-`DATABASE_URL=postgresql+asyncpg://postgres:<password>@db.<project>.supabase.co:5432/postgres`
-
-Los perfiles `backend/.env.local.example` y `backend/.env.supabase.example` son referencia de una sola variable.
-Mantén tu `backend/.env` y cambia solo la línea `DATABASE_URL`.
+Usa `backend/.env.local.example` como referencia activa y mantén `backend/.env` apuntando al PostgreSQL local.
+`backend/.env.supabase.example` queda solo como referencia histórica/transitoria mientras se completa la limpieza asociada a `#28`.
 
 > ⚠️ **Importante:** Cambia `JWT_SECRET_KEY` a un valor único para producción.
 > Si despliegas PostgreSQL local con Docker, fija imagen explícita de la serie 17: `LOCAL_POSTGRES_IMAGE=postgres:17.7`.

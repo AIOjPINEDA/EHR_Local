@@ -83,8 +83,8 @@ ENVIRONMENT=development
 DEBUG=true
 ```
 
-> Para Supabase: cambia solo `DATABASE_URL` a `postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres`.
-> Plantillas de referencia: `backend/.env.local.example`, `backend/.env.supabase.example`.
+> Ruta recomendada: PostgreSQL local en `localhost:54329`.
+> `backend/.env.supabase.example` se conserva solo como referencia histórica/transitoria y ya no describe un camino operativo recomendado.
 
 ### 3. Frontend
 
@@ -176,7 +176,7 @@ flowchart LR
 │   ├── src/lib/       # API client, hooks, utils
 │   └── src/types/     # Tipos auto-generados + manuales
 ├── sidecars/hapi-fhir/ # Dockerfile, overlay, config HAPI
-├── supabase/migrations/ # DDL + seed SQL
+├── supabase/migrations/ # Fuente SQL transitoria usada por setup-local-db hasta #28
 ├── scripts/           # setup-local-db, test_gate, start/stop-hapi, smoke tests
 ├── docs/              # Arquitectura, specs, playbooks, compliance, release
 └── .github/workflows/ # CI (backend + frontend)
