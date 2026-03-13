@@ -3,10 +3,13 @@ ConsultaMed Backend - Database Configuration
 """
 from collections.abc import AsyncGenerator
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
+
+DATABASE_UNAVAILABLE_DETAIL = "Database unavailable"
 
 
 # Create async engine
@@ -31,8 +34,14 @@ class Base(DeclarativeBase):
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency to get database session."""
-    async with async_session_maker() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+    try:
+        async with async_session_maker() as session:
+            try:
+                yield session
+            finally:
+                await session.close()
+    except ConnectionRefusedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=DATABASE_UNAVAILABLE_DETAIL,
+        ) from exc
