@@ -89,16 +89,6 @@ class Practitioner(Base):
         return f"Dr/Dra. {self.name_given} {self.name_family}"
 
     @property
-    def fhir_resource_type(self) -> str:
-        """FHIR resource type for deterministic mapping."""
-        return "Practitioner"
-
-    @property
-    def fhir_id(self) -> str:
-        """Stable FHIR id reusing the source UUID for idempotent ETL."""
-        return self.id
-
-    @property
     def fhir_identifiers(self) -> list[dict[str, str]]:
         """Business and source-traceable identifiers for FHIR export."""
         return practitioner_fhir_identifiers(self)

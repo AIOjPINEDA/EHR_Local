@@ -8,6 +8,7 @@ from typing import Any, Protocol
 from app.fhir.base_mapping import (
     PATIENT_SOURCE_IDENTIFIER_SYSTEM,
     PRACTITIONER_SOURCE_IDENTIFIER_SYSTEM,
+    _build_reference,
 )
 
 
@@ -123,15 +124,6 @@ def _normalize_encounter_status(status: str) -> str:
         raise ValueError(
             f"Unsupported Encounter.status '{status}' for FHIR ETL. Allowed values: {allowed_statuses}."
         ) from exc
-
-
-def _build_reference(resource_type: str, source_id: str, identifier_system: str) -> dict[str, Any]:
-    """Build a deterministic FHIR reference with source-traceable identifier data."""
-    return {
-        "reference": f"{resource_type}/{source_id}",
-        "type": resource_type,
-        "identifier": {"system": identifier_system, "value": source_id},
-    }
 
 
 def _build_source_identifier(identifier_system: str, source_id: str) -> dict[str, str]:

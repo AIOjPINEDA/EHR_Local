@@ -99,16 +99,6 @@ class Patient(Base):
         return any(a.clinical_status == "active" for a in self.allergies)
 
     @property
-    def fhir_resource_type(self) -> str:
-        """FHIR resource type for deterministic mapping."""
-        return "Patient"
-
-    @property
-    def fhir_id(self) -> str:
-        """Stable FHIR id reusing the source UUID for idempotent ETL."""
-        return self.id
-
-    @property
     def fhir_identifiers(self) -> list[dict[str, str]]:
         """Business and source-traceable identifiers for FHIR export."""
         return patient_fhir_identifiers(self)
