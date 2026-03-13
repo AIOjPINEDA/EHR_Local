@@ -183,8 +183,6 @@ export function parseRadarMarkdown(): RadarData | null {
     "EHDS_COMPLIANCE_RADAR.md"
   );
 
-  if (!fs.existsSync(radarPath)) return null;
-
   try {
     const text = fs.readFileSync(radarPath, "utf-8");
 
@@ -203,7 +201,10 @@ export function parseRadarMarkdown(): RadarData | null {
     }
 
     return data;
-  } catch (error) {
+  } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && (error as NodeJS.ErrnoException).code === "ENOENT") {
+      return null;
+    }
     console.error("[compliance] Failed to parse radar markdown:", error);
     return null;
   }
