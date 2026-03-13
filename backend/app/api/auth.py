@@ -85,9 +85,9 @@ async def login(
 ) -> TokenResponse:
     """
     Login endpoint.
-    
-    Para MVP: busca practitioner por email, password es "demo" para cualquier usuario.
-    En producción: integrar con Supabase Auth.
+
+    Autentica al practitioner por email y contraseña verificando el `password_hash`
+    almacenado con bcrypt y devuelve un token JWT de acceso.
     """
     # Buscar practitioner por email
     stmt = select(Practitioner).where(Practitioner.telecom_email == form_data.username)

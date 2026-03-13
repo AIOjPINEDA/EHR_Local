@@ -17,8 +17,8 @@ export interface paths {
          * Login
          * @description Login endpoint.
          *
-         *     Para MVP: busca practitioner por email, password es "demo" para cualquier usuario.
-         *     En producción: integrar con Supabase Auth.
+         *     Autentica al practitioner por email y contraseña verificando el `password_hash`
+         *     almacenado con bcrypt y devuelve un token JWT de acceso.
          */
         post: operations["login_api_v1_auth_login_post"];
         delete?: never;
@@ -1709,9 +1709,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
+                    "application/json": unknown;
+                };
+            };
+            /** @description Database unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "status": "unhealthy",
+                     *       "detail": "Database unavailable"
+                     *     }
+                     */
+                    "application/json": unknown;
                 };
             };
         };
