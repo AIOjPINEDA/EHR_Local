@@ -22,7 +22,7 @@ ConsultaMed demonstrates **early-stage partial compliance** with EHDS Regulation
 **Top 3 strengths:**
 1. FHIR R5-aligned data models across all clinical resources (Patient, Encounter, Condition, MedicationRequest, AllergyIntolerance).
 2. Spanish DNI/NIE validation with official algorithm and OID (`urn:oid:1.3.6.1.4.1.19126.3`).
-3. EU-only data storage (Supabase EU region or local PostgreSQL).
+3. EU-only data storage via local PostgreSQL on practitioner-controlled infrastructure in Spain.
 
 **Top 3 critical gaps:**
 1. **No patient-facing portal** — violates Articles 3, 4, 5, 6, 7 (patient rights to access, insert, correct, export data).
@@ -268,7 +268,7 @@ ConsultaMed demonstrates **early-stage partial compliance** with EHDS Regulation
 - **Requirement:** Personal electronic health data processed for primary use shall be stored in databases located within the Union.
 - **Evidence:**
   - Local deployment: PostgreSQL 17 via Docker on practitioner's machine (Spain). Setup: `scripts/setup-local-db.sh`.
-  - Cloud deployment: Supabase EU region (Frankfurt/Ireland). Configuration: `backend/app/config.py` `DATABASE_URL` selector.
+  - Historical Supabase artifacts may remain in the repository, but they are not part of the supported runtime path.
   - No non-EU hosting options configured.
 - **Gaps:** None. All storage is within EU boundaries.
 
