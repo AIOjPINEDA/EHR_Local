@@ -51,7 +51,22 @@ async def root() -> dict[str, str]:
     }
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    responses={
+        503: {
+            "description": "Database unavailable",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "unhealthy",
+                        "detail": DATABASE_UNAVAILABLE_DETAIL,
+                    }
+                }
+            },
+        }
+    },
+)
 async def health_check() -> JSONResponse:
     """Health check for deployment monitoring."""
     try:
