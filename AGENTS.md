@@ -28,21 +28,20 @@
 - JWT + bcrypt authentication
 
 #### Database (local-first runtime)
-- PostgreSQL 17 via local Docker is the recommended operational runtime for the current MVP cycle
-- `database/migrations/` is the neutral SQL source used by the local bootstrap path
-- Production security expectations remain aligned to an RLS-required target
+- PostgreSQL 17 via local Docker (recommended MVP runtime)
+- `database/migrations/`: neutral SQL source for local bootstrap
+- Production target: RLS-required
 
 #### Interoperability sidecar (local baseline)
-- HAPI FHIR R5 sidecar under `sidecars/hapi-fhir/` based on the official starter
-- FastAPI remains the operational source of truth for writes, auth, and business logic
-- Published/local FHIR surface is intentionally limited to `CapabilityStatement`, `read`, `search`, and search `Bundle` for the approved subset
-- HAPI persists on dedicated local PostgreSQL and receives data through the controlled internal ETL path
+- HAPI FHIR R5 under `sidecars/hapi-fhir/` — read-only surface (`CapabilityStatement`, `read`, `search`, `Bundle`)
+- FastAPI remains the source of truth for writes, auth, and business logic
+- HAPI uses dedicated local PostgreSQL; data arrives via internal ETL
 
 ### Planned / Not yet adopted
-- Supabase Auth as primary runtime auth provider (current runtime auth is JWT in FastAPI).
-- Full end-to-end RLS enforcement in all production deployment paths.
-- TanStack Query and Zustand as default frontend state/data layer.
-- React Hook Form + Zod as unified frontend form/validation standard.
+- Supabase Auth (replace JWT in FastAPI)
+- Full end-to-end RLS enforcement
+- TanStack Query + Zustand (frontend state/data)
+- React Hook Form + Zod (frontend forms)
 
 ## Executable Commands
 
@@ -75,12 +74,6 @@ npm run dev                         # Dev server (port 3000)
 ./scripts/test_gate.sh              # Backend + Frontend gate before PR/commit
 ```
 
-## Current Delivery Caveat
-
-- `./scripts/test_gate.sh` remains the target local gate before commit.
-- As of 2026-03-11, the repository still carries inherited `mypy` debt that can keep the global gate red even when unrelated work is otherwise correct.
-- Documentation/governance work must report that red state as residual risk, not as resolved work.
-
 ## Security Constraints
 
 > ⚠️ CRITICAL: This is a healthcare application handling sensitive patient data.
@@ -95,16 +88,7 @@ npm run dev                         # Dev server (port 3000)
 
 ## FHIR R5 Alignment
 
-Data models follow FHIR nomenclature:
-
-| Local Model | FHIR Resource |
-|-------------|---------------|
-| Patient | Patient |
-| Practitioner | Practitioner |
-| Encounter | Encounter |
-| Condition | Condition |
-| MedicationRequest | MedicationRequest |
-| AllergyIntolerance | AllergyIntolerance |
+Data models follow FHIR nomenclature: `Patient`, `Practitioner`, `Encounter`, `Condition`, `MedicationRequest`, `AllergyIntolerance`.
 
 ## Code Style Rules
 
@@ -126,18 +110,11 @@ Data models follow FHIR nomenclature:
 ## Boundaries
 
 ### Always
-- Run tests before committing:
-  ```bash
-  ./scripts/test_gate.sh
-  ```
-- Use `backend/.venv` as the canonical local Python environment (do not rely on root `.venv` for backend workflows)
-- Validate all inputs in backend (frontend validation is only for UX)
-- Use type hints (Python) and strict mode (TypeScript)
+- Run `./scripts/test_gate.sh` before committing
+- Use `backend/.venv` as the canonical Python environment
 - Follow FHIR R5 naming for data models
-- Comply with GDPR/LOPD-GDD for patient data
-- Use RLS for tables with patient data
-- Keep Next.js route groups free of dead wrappers: no route-group `layout.tsx` without at least one route consumer.
-- Keep backend validators free of dead APIs: no unreferenced clinical validators in `backend/app/validators/`.
+- Keep Next.js route groups free of dead wrappers (no `layout.tsx` without a route consumer)
+- Keep backend validators free of dead APIs (no unreferenced validators in `backend/app/validators/`)
 
 ### Ask First
 - Adding new dependencies to `requirements.txt` or `package.json`
@@ -159,10 +136,10 @@ Data models follow FHIR nomenclature:
 
 ## Definition of Done
 
-- Run `./scripts/test_gate.sh` locally before commit and report exact results; a repo-wide inherited `mypy` debt can still keep the full gate red, so do not present that residual risk as resolved unless you verified it.
+- Run `./scripts/test_gate.sh` locally and report exact results. **Caveat**: inherited `mypy` debt can keep the gate red — report as residual risk, do not present as resolved.
 - `cd backend && .venv/bin/pytest tests/unit/test_architecture_dead_code_guards.py -v` passes.
-- New infrastructural abstractions (routing wrappers, validators, service helpers) have at least one runtime consumer and one automated test.
-- Architecture and agent contract documentation reflect implemented state (not aspirational state).
+- New abstractions have at least one runtime consumer and one automated test.
+- Documentation reflects implemented state, not aspirational state.
 
 ## Agentic Workflow Mode
 
@@ -181,23 +158,16 @@ Data models follow FHIR nomenclature:
 
 ### Repository-specific agents
 
-- `consultamed-governance-auditor`: audit governance, architecture/spec separation, obsolete docs, shim alignment, and backlog drift specifically in this repository.
-- `consultamed-governance-remediator`: apply approved governance cleanup in this repository after an audit or explicit user approval.
-
-Use these agents when the task is primarily documentation-governance work inside ConsultaMed rather than general implementation work.
+- `consultamed-governance-auditor`: governance and documentation-drift audits
+- `consultamed-governance-remediator`: apply approved governance cleanup after audit
 
 ### Task delegation protocol
 
-All tasks are delegated via **GitHub Issues** in this repo. Before implementing anything:
+All tasks are delegated via **GitHub Issues**. Before implementing:
 
-- Check open issues for context and spec
-- Issues carry: Objetivo, Contexto, Criterios de aceptación, Restricciones
-- Commit convention: `Fixes #N` in the commit message closes the issue automatically
-
-GitHub Issues are the only active execution backlog. Do not treat files under
-legacy planning folders or backlog documents as a second source of truth for task status or priority.
-
-Active label taxonomy: `type:security/infra/architecture/bug`, `priority:critical/high/medium/low`
+- Check open issues for context and spec (Objetivo, Contexto, Criterios de aceptación, Restricciones)
+- Commit convention: `Fixes #N` closes the issue automatically
+- Label taxonomy: `type:security/infra/architecture/bug`, `priority:critical/high/medium/low`
 
 ### Execution cycle (SDD — Spec-Driven Development)
 
@@ -210,6 +180,11 @@ Once you have an issue, the expected execution cycle is:
 - **Tasks**: decompose into independently testable units.
 - **Implement**: run `./scripts/test_gate.sh` locally before each commit.
 - **Analyze**: verify that docs/architecture reflect the implemented state.
+- **Close the loop** (post-merge checkpoint):
+  - Update the spec: mark completed phases, advance `Status` field.
+  - Verify `Fixes #N` closed the issue; remove stale `status:` labels.
+  - If all spec phases are done, set status to `Implemented` or `Historical reference`.
+  - If new work emerged, open issues — do not leave it only in spec text.
 
 If implementation reveals the spec was incomplete, update the spec before continuing — not after.
 
@@ -236,10 +211,6 @@ Use the lightest artifact that fits the change:
 - `.specify/`: optional/experimental, not required for the delivery gate
 - Documentation drift: warning mode during MVP (signal without blocking)
 
-## Architecture
-
-See `docs/architecture/overview.md` for system design.
-
 ## Related Files
 
 - `.github/copilot-instructions.md` - Copilot-specific instructions (references this file)
@@ -249,4 +220,4 @@ See `docs/architecture/overview.md` for system design.
 
 ---
 
-*Last updated: 2026-03-13*
+*Last updated: 2026-03-17*

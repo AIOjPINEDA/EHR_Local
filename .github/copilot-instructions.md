@@ -3,7 +3,7 @@
 > Canonical source of truth: `AGENTS.md` at repo root.
 > Keep this file as a short operational summary for GitHub Copilot.
 
-Last updated: 2026-03-11
+Last updated: 2026-03-17
 
 ## Project Context
 
@@ -83,9 +83,10 @@ Tasks are delegated via **GitHub Issues**. When you receive an issue assignment:
 Do not use legacy planning notes or ad-hoc backlog documents as a second execution source.
 
 ### Execution cycle (SDD)
-**Clarify → Plan → Tasks → Implement → Analyze**
+**Clarify → Plan → Tasks → Implement → Analyze → Close the loop**
 - Run `./scripts/test_gate.sh` before each commit.
 - If the spec is incomplete, surface it before implementing.
+- Post-merge: update spec status, verify issue closure, open issues for emergent work.
 
 This repo follows a spec-anchored brownfield SDD model: specs document proposed change, not current runtime truth.
 

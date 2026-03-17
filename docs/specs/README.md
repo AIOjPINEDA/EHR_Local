@@ -42,6 +42,31 @@ When conflicts appear, follow this precedence:
 3. `docs/playbooks/agentic-repo-bootstrap.md`
 4. `docs/specs/*`
 
+## Spec lifecycle states
+
+Use the `Status` field in each spec header consistently:
+
+| Status | Meaning |
+|--------|---------|
+| `Proposed` | Documented intent, no issues or active work yet |
+| `Active direction` | Approved, issues open, work in progress |
+| `Phases 0–N implemented; phase M pending` | Partial execution — makes clear what remains |
+| `Implemented` | All scope covered; spec is now decision context |
+| `Historical reference` | No longer guides future work, retained for traceability |
+| `Superseded by XXX` | Replaced by another spec or direction |
+
+## Issue traceability
+
+Each spec with derived issues should include a traceability table:
+
+```markdown
+| Finding | Issue | Status |
+|---------|-------|--------|
+| F1.1 · Description | #N | ✅ Resolved (PR #M) / Open |
+```
+
+This keeps the spec↔issue link explicit without turning the spec into a backlog.
+
 ## Notes
 
 - If a spec becomes obsolete, archive or remove it through an explicit maintenance task instead of letting it drift indefinitely.
