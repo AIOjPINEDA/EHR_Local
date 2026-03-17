@@ -2,6 +2,7 @@
 
 **Estado:** Referencia de hallazgos; no usar como backlog operativo directo
 **Fecha de análisis:** 2026-03-13
+**Última actualización:** 2026-03-17
 **Scope:** Backend Python (FastAPI), Frontend TypeScript (Next.js), FHIR ETL + Sidecar Java
 **Metodología:** Análisis estático completo vía subagentes especializados sobre los últimos 2 PRs + codebase actual
 
@@ -20,11 +21,30 @@ Actualización 2026-03-13:
 
 Extracciones ya realizadas a GitHub Issues:
 
-- `#30` captura el hallazgo `SQLALCHEMY_ECHO` / PHI en logs.
-- `#29` captura el riesgo de `python-jose` en auth JWT local.
-- `#27` y `#28` capturan la simplificación `local-first` y el desacoplo de `supabase/migrations`.
+- `#30` — `SQLALCHEMY_ECHO` / PHI en logs → **resuelto en PR #31**.
+- `#29` — sustitución de `python-jose` por `PyJWT` → **resuelto en PR #31**.
+- `#16` — health check real con probe de DB → **resuelto en PR #31**.
+- `#27` y `#28` — simplificación `local-first` y desacoplo de `supabase/migrations` → **resueltos en PR #31**.
 
 Se conserva como inventario técnico útil para triage, no como backlog activo.
+
+### Trazabilidad de issues derivadas (Milestone: MVP Hardening)
+
+| Hallazgo | Issue | Estado |
+|----------|-------|--------|
+| F1.1 · SQLALCHEMY_ECHO / PHI | #30 | ✅ Resuelto (PR #31) |
+| F1.2 · Health check real | #16 | ✅ Resuelto (PR #31) |
+| F1.3 · CORS hardcoded | #32 | Abierta |
+| F1.4 · ETL default API key warning | #33 | Abierta |
+| F2.1+F2.2 · Constantes y helpers FHIR | #34 | Abierta |
+| F2.7 · Constantes Java HAPI | #35 | Abierta |
+| F2.9+F2.10+F2.11 · Frontend duplicación | #36 | Abierta |
+| F2.12 · AbortSignal en cliente HTTP | #37 | Abierta |
+| F2.14 · Tests FHIR edge cases | #38 | Abierta |
+| python-jose → PyJWT | #29 | ✅ Resuelto (PR #31) |
+| local-first + desacoplo Supabase | #27, #28 | ✅ Resueltos (PR #31) |
+
+Hallazgos F2.3–F2.6, F2.8, F2.13 no se han extraído a issues por ser de menor prioridad. Se pueden abrir cuando corresponda.
 
 ### Principios de ejecución
 
@@ -42,7 +62,7 @@ Estas tareas deben ejecutarse antes que cualquier otra. Impactan HIPAA, disponib
 
 ---
 
-### F1.1 · PHI en logs SQL (`SQLALCHEMY_ECHO`)
+### F1.1 · PHI en logs SQL (`SQLALCHEMY_ECHO`) — ✅ IMPLEMENTADO (PR #31, issue #30)
 
 **Archivo:** [backend/app/database.py](backend/app/database.py)
 **Problema:** `echo=settings.DEBUG` imprime todas las queries SQL en stdout cuando DEBUG=True, exponiendo PHI (nombre, DNI, datos clínicos).
@@ -59,7 +79,7 @@ Estas tareas deben ejecutarse antes que cualquier otra. Impactan HIPAA, disponib
 
 ---
 
-### F1.2 · Health check sin verificación real de DB
+### F1.2 · Health check sin verificación real de DB — ✅ IMPLEMENTADO (PR #31, issue #16)
 
 **Archivos:** [backend/app/main.py](backend/app/main.py), [backend/app/database.py](backend/app/database.py)
 **Problema:** `/health` retorna `{"status": "healthy"}` estático sin tocar la base de datos. Un fallo de conexión a PG no es detectado por el health check.

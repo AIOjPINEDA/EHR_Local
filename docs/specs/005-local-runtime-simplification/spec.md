@@ -2,8 +2,8 @@
 
 **Feature Branch**: `005-local-runtime-simplification`
 **Created**: 2026-03-13
-**Status**: Active direction applied
-**Last Updated**: 2026-03-13
+**Status**: Implemented — retained as historical decision context
+**Last Updated**: 2026-03-17
 
 ## Propósito
 
@@ -67,16 +67,20 @@ Al final de esta iniciativa, el repositorio debe reflejar con claridad que:
 
 ## Fases propuestas
 
-### Fase 0: Alineación de backlog y planning
+### Fase 0: Alineación de backlog y planning — ✅ Completada
 
 - cerrar o reencuadrar issues centradas en Supabase que ya no aplican;
 - dejar una issue nueva de simplificación local-first como paraguas de dirección (`#27`);
 - actualizar specs para que no funcionen como backlog paralelo ni contradigan la dirección actual.
 
-### Fase 1: Base operativa local
+Estado: completada. Issues #15 y #17 cerradas; #27 abierta como paraguas.
+
+### Fase 1: Base operativa local — ✅ Completada
 
 - completar hardening operativo mínimo que sí afecta al runtime local;
 - prioridad inmediata: health check real de DB y estabilidad del gate donde bloquee trabajo diario.
+
+Estado: completada. Health check real (#16), `SQLALCHEMY_ECHO` desacoplado (#30), `python-jose` → `PyJWT` (#29) — todo resuelto en PR #31.
 
 ### Fase 2: Desacoplo técnico de Supabase
 
@@ -119,9 +123,9 @@ Estado aplicado el 2026-03-13:
 - `#15` cerrada por quedar fuera de dirección (`RLS Supabase`)
 - `#17` cerrada por quedar fuera de dirección (`rotación de credenciales Supabase`)
 - `#27` abierta como issue paraguas `local-first`
-- `#28` implementada en esta workspace para desacoplar el bootstrap local de `supabase/migrations`
-- `#29` abierta para mapear la sustitución de `python-jose`
-- `#30` abierta para mapear el riesgo de PHI en logs SQL
+- `#28` implementada y mergeada — desacoplo de bootstrap local de `supabase/migrations` (PR #31)
+- `#29` implementada y mergeada — sustitución de `python-jose` por `PyJWT` (PR #31)
+- `#30` implementada y mergeada — riesgo de PHI en logs SQL resuelto (PR #31)
 
 ## Criterios de aceptación sugeridos
 
@@ -133,12 +137,12 @@ Estado aplicado el 2026-03-13:
 
 ## Plan de ejecución propuesto
 
-1. Ejecutar `#27` como marco de simplificación y triage de documentación/backlog.
-2. Resolver `#16` health check real, porque mejora la operativa local inmediatamente.
+1. ~~Ejecutar `#27` como marco de simplificación y triage de documentación/backlog.~~ ✅ Completado.
+2. ~~Resolver `#16` health check real, porque mejora la operativa local inmediatamente.~~ ✅ Completado (PR #31).
 3. Revaluar y, si sigue bloqueando el trabajo diario, ejecutar `#24` para limpiar el gate.
-4. Tomar `#28` como base ya implementada para el desacoplo de `supabase/migrations`.
-5. Limpiar `.env`, docs activas y deployment docs de referencias Supabase que ya no aporten valor operativo.
-6. Mantener `#29` y `#30` mapeadas; ejecutarlas cuando toque hardening del runtime local sin perder foco operativo.
+4. ~~Tomar `#28` como base ya implementada para el desacoplo de `supabase/migrations`.~~ ✅ Completado (PR #31).
+5. ~~Limpiar `.env`, docs activas y deployment docs de referencias Supabase que ya no aporten valor operativo.~~ ✅ Completado (PR #31).
+6. ~~Mantener `#29` y `#30` mapeadas; ejecutarlas cuando toque hardening del runtime local sin perder foco operativo.~~ ✅ Completados (PR #31).
 
 ## Referencias verificadas en repo
 
@@ -150,3 +154,4 @@ Estado aplicado el 2026-03-13:
 - `docs/architecture/overview.md`
 - `docs/specs/003-refactor-plan/spec.md`
 - `docs/specs/004-infrastructure-version-modernization/spec.md`
+- `.github/prompts/local-first-issue-executor.prompt.md`

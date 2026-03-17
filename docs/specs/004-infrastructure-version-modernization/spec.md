@@ -3,7 +3,7 @@
 **Feature Branch**: `004-infrastructure-version-modernization`
 **Created**: 2026-03-13
 **Status**: Context reference; reprioritized after local-first simplification
-**Last Updated**: 2026-03-13
+**Last Updated**: 2026-03-17
 
 ## Proposito
 
@@ -54,7 +54,7 @@ La siguiente tabla resume las versiones verificadas directamente en el repositor
 | Backend data | SQLAlchemy | `2.0.25` | `backend/requirements.txt` |
 | Backend driver | asyncpg | `0.30.0` | `backend/requirements.txt` |
 | Backend schemas | Pydantic | `2.6.1` | `backend/requirements.txt` |
-| Backend auth | python-jose | `3.3.0` | `backend/requirements.txt` |
+| Backend auth | PyJWT | `2.10.1` (sustituyó a `python-jose` en PR #31) | `backend/requirements.txt` |
 | Backend auth | passlib+bcrypt | `1.7.4` + bcrypt runtime usage | `backend/requirements.txt`, `backend/app/api/auth.py` |
 | Backend quality | pytest | `8.0.0` | `backend/requirements.txt` |
 | Backend quality | ruff | `0.15.1` | `backend/requirements.txt` |
