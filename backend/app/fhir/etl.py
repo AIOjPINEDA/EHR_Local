@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 from urllib import error, parse, request
 
 from sqlalchemy import select
@@ -111,7 +111,10 @@ def _json_request(
 
     if not body:
         return {}
-    return json.loads(body)
+    response_payload = json.loads(body)
+    if not isinstance(response_payload, dict):
+        raise RuntimeError(f"HAPI returned a non-object JSON payload for {method} {url}")
+    return cast(dict[str, Any], response_payload)
 
 
 def build_load_plan(snapshot: ClinicalSubsetSnapshot) -> list[LoadBatch]:
@@ -257,7 +260,7 @@ def _fetch_resource(
 
 def _fetch_resource_ids(base_url: str, resource_type: str, api_key: str) -> list[str]:
     """List current HAPI ids for one resource type, following Bundle pagination if needed."""
-    next_url = (
+    next_url: str | None = (
         f"{base_url}/{resource_type}?"
         f"{parse.urlencode({'_elements': 'id', '_count': SEARCH_PAGE_SIZE})}"
     )

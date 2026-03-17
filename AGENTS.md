@@ -27,9 +27,10 @@
 - WeasyPrint 60+
 - JWT + bcrypt authentication
 
-#### Database (Supabase)
-- PostgreSQL 17 (local Docker) / Supabase-managed (cloud)
-- Security model aligned to RLS-required production target
+#### Database (local-first runtime)
+- PostgreSQL 17 via local Docker is the recommended operational runtime for the current MVP cycle
+- `database/migrations/` is the neutral SQL source used by the local bootstrap path
+- Production security expectations remain aligned to an RLS-required target
 
 #### Interoperability sidecar (local baseline)
 - HAPI FHIR R5 sidecar under `sidecars/hapi-fhir/` based on the official starter
@@ -248,4 +249,4 @@ See `docs/architecture/overview.md` for system design.
 
 ---
 
-*Last updated: 2026-03-11*
+*Last updated: 2026-03-13*

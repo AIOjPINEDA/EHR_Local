@@ -1,6 +1,7 @@
 """Unit tests for single-source DATABASE_URL settings contract."""
 
 import pytest
+from pydantic import ValidationError
 
 from app.config import Settings
 
@@ -27,3 +28,26 @@ def test_settings_only_exposes_single_database_selector() -> None:
     assert "LOCAL_DATABASE_URL" not in field_names
     assert "SUPABASE_DATABASE_URL" not in field_names
     assert "RENDER_DATABASE_URL" not in field_names
+
+
+def test_sqlalchemy_echo_is_independent_from_debug() -> None:
+    """DEBUG should not enable SQL echo implicitly."""
+    settings = Settings(
+        _env_file=None,
+        DATABASE_URL="postgresql://user:pass@localhost:5432/demo",
+        DEBUG=True,
+    )
+
+    assert settings.DEBUG is True
+    assert settings.SQLALCHEMY_ECHO is False
+
+
+def test_sqlalchemy_echo_is_rejected_in_production() -> None:
+    """Production runtime must reject SQL echo to avoid PHI leakage in logs."""
+    with pytest.raises(ValidationError, match="SQLALCHEMY_ECHO cannot be enabled in production"):
+        Settings(
+            _env_file=None,
+            DATABASE_URL="postgresql://user:pass@localhost:5432/demo",
+            ENVIRONMENT="production",
+            SQLALCHEMY_ECHO=True,
+        )

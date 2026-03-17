@@ -12,7 +12,7 @@ If this file conflicts with `AGENTS.md`, follow `AGENTS.md`.
 
 - **Project**: Electronic Health Record (EHR) for private medical practices in Spain
 - **Phase**: MVP Complete, pending production deployment
-- **Stack**: FastAPI (Python 3.11+) + Next.js 14 (TypeScript) + PostgreSQL/Supabase + local HAPI FHIR R5 sidecar baseline
+- **Stack**: FastAPI (Python 3.11+) + Next.js 14 (TypeScript) + PostgreSQL 17 (local-first runtime) + local HAPI FHIR R5 sidecar baseline
 - **Domain**: Healthcare with FHIR R5 alignment
 - **Source of truth**: FastAPI remains the operational source of truth; the HAPI sidecar is an implemented local interoperability layer with dedicated PostgreSQL
 - **FHIR surface**: `CapabilityStatement`, `read`, `search`, and search `Bundle` for the approved subset

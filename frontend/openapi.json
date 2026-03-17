@@ -12,7 +12,7 @@
           "Authentication"
         ],
         "summary": "Login",
-        "description": "Login endpoint.\n\nPara MVP: busca practitioner por email, password es \"demo\" para cualquier usuario.\nEn producción: integrar con Supabase Auth.",
+        "description": "Login endpoint.\n\nAutentica al practitioner por email y contraseña verificando el `password_hash`\nalmacenado con bcrypt y devuelve un token JWT de acceso.",
         "operationId": "login_api_v1_auth_login_post",
         "requestBody": {
           "content": {
@@ -1152,12 +1152,17 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object",
-                  "title": "Response Health Check Health Get"
+                "schema": {}
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "unhealthy",
+                  "detail": "Database unavailable"
                 }
               }
             }

@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, TypeAlias
 
 from app.fhir.base_mapping import (
     PATIENT_SOURCE_IDENTIFIER_SYSTEM,
     PRACTITIONER_SOURCE_IDENTIFIER_SYSTEM,
     _build_reference,
 )
+
+if TYPE_CHECKING:
+    from app.models import AllergyIntolerance, Condition, Encounter, MedicationRequest
 
 
 ENCOUNTER_SOURCE_IDENTIFIER_SYSTEM = "urn:consultamed:source:encounter:id"
@@ -99,6 +102,18 @@ class AllergyIntoleranceMappingSource(Protocol):
     recorded_date: datetime
 
 
+if TYPE_CHECKING:
+    EncounterMappingInput: TypeAlias = EncounterMappingSource | Encounter
+    ConditionMappingInput: TypeAlias = ConditionMappingSource | Condition
+    MedicationRequestMappingInput: TypeAlias = MedicationRequestMappingSource | MedicationRequest
+    AllergyIntoleranceMappingInput: TypeAlias = AllergyIntoleranceMappingSource | AllergyIntolerance
+else:
+    EncounterMappingInput: TypeAlias = EncounterMappingSource
+    ConditionMappingInput: TypeAlias = ConditionMappingSource
+    MedicationRequestMappingInput: TypeAlias = MedicationRequestMappingSource
+    AllergyIntoleranceMappingInput: TypeAlias = AllergyIntoleranceMappingSource
+
+
 def _clean_text(value: str | None) -> str | None:
     """Trim optional text fields while keeping empty values out of the payload."""
     if value is None:
@@ -131,12 +146,12 @@ def _build_source_identifier(identifier_system: str, source_id: str) -> dict[str
     return {"system": identifier_system, "value": source_id}
 
 
-def encounter_to_fhir_reference(encounter: EncounterMappingSource) -> dict[str, Any]:
+def encounter_to_fhir_reference(encounter: EncounterMappingInput) -> dict[str, Any]:
     """Build a deterministic encounter reference for related clinical resources."""
     return _build_reference("Encounter", encounter.id, ENCOUNTER_SOURCE_IDENTIFIER_SYSTEM)
 
 
-def build_encounter_soap_extension(encounter: EncounterMappingSource) -> dict[str, Any] | None:
+def build_encounter_soap_extension(encounter: EncounterMappingInput) -> dict[str, Any] | None:
     """Serialize the transitional SOAP representation agreed for the initial ETL."""
     sections = [
         ("subjective", _clean_text(encounter.subjective_text)),
@@ -152,7 +167,7 @@ def build_encounter_soap_extension(encounter: EncounterMappingSource) -> dict[st
     return {"url": SOAP_EXTENSION_URL, "extension": values}
 
 
-def encounter_to_fhir_resource(encounter: EncounterMappingSource) -> dict[str, Any]:
+def encounter_to_fhir_resource(encounter: EncounterMappingInput) -> dict[str, Any]:
     """Serialize an Encounter into the agreed minimal FHIR R5 shape."""
     resource: dict[str, Any] = {
         "resourceType": "Encounter",
@@ -192,7 +207,7 @@ def encounter_to_fhir_resource(encounter: EncounterMappingSource) -> dict[str, A
     return resource
 
 
-def condition_to_fhir_resource(condition: ConditionMappingSource) -> dict[str, Any]:
+def condition_to_fhir_resource(condition: ConditionMappingInput) -> dict[str, Any]:
     """Serialize a Condition into the agreed minimal FHIR R5 shape."""
     code: dict[str, Any] = {"text": condition.code_text}
     if condition.code_coding_code:
@@ -230,7 +245,7 @@ def condition_to_fhir_resource(condition: ConditionMappingSource) -> dict[str, A
 
 
 def medication_request_to_fhir_resource(
-    medication_request: MedicationRequestMappingSource,
+    medication_request: MedicationRequestMappingInput,
 ) -> dict[str, Any]:
     """Serialize a MedicationRequest into the agreed minimal FHIR R5 shape."""
     concept: dict[str, Any] = {"text": medication_request.medication_text}
@@ -293,7 +308,7 @@ def medication_request_to_fhir_resource(
 
 
 def allergy_intolerance_to_fhir_resource(
-    allergy: AllergyIntoleranceMappingSource,
+    allergy: AllergyIntoleranceMappingInput,
 ) -> dict[str, Any]:
     """Serialize an AllergyIntolerance into the agreed minimal FHIR R5 shape."""
     code: dict[str, Any] = {"text": allergy.code_text}

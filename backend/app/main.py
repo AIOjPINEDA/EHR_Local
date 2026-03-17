@@ -3,10 +3,14 @@ ConsultaMed Backend - FastAPI Application Entry Point
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.__version__ import __version__
 from app.config import settings
 from app.api.router import api_router
+from app.database import DATABASE_UNAVAILABLE_DETAIL, async_session_maker
 
 app = FastAPI(
     title="ConsultaMed API",
@@ -47,7 +51,31 @@ async def root() -> dict[str, str]:
     }
 
 
-@app.get("/health")
-async def health_check() -> dict[str, str]:
+@app.get(
+    "/health",
+    responses={
+        503: {
+            "description": "Database unavailable",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "unhealthy",
+                        "detail": DATABASE_UNAVAILABLE_DETAIL,
+                    }
+                }
+            },
+        }
+    },
+)
+async def health_check() -> JSONResponse:
     """Health check for deployment monitoring."""
-    return {"status": "healthy"}
+    try:
+        async with async_session_maker() as session:
+            await session.execute(text("SELECT 1"))
+    except (ConnectionRefusedError, SQLAlchemyError):
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unhealthy", "detail": DATABASE_UNAVAILABLE_DETAIL},
+        )
+
+    return JSONResponse(status_code=200, content={"status": "healthy"})
