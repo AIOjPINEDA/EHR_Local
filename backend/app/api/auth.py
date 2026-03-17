@@ -1,7 +1,7 @@
 """
 ConsultaMed Backend - Authentication Endpoints
 
-MVP simple: JWT local sin Supabase Auth para desarrollo rápido.
+Autenticación local con JWT (PyJWT) y bcrypt.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Optional, cast
