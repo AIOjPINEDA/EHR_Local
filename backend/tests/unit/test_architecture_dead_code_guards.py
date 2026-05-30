@@ -115,6 +115,23 @@ def test_agents_stack_distinguishes_active_vs_planned() -> None:
     assert "Planned / Not yet adopted" in content
 
 
+def test_no_legacy_speckit_tooling() -> None:
+    """Legacy Speckit scaffolding must not compete with repo-native SDD workflow."""
+    repo_root = _repo_root()
+    candidate_paths = [
+        repo_root / ".specify",
+        *repo_root.glob(".github/agents/speckit.*.agent.md"),
+        *repo_root.glob(".github/prompts/speckit.*.prompt.md"),
+    ]
+    legacy_paths = [path for path in candidate_paths if path.exists()]
+
+    assert not legacy_paths, (
+        "Legacy Speckit tooling found; ConsultaMed uses AGENTS.md + docs/specs/ "
+        "and GitHub Issues as the active workflow: "
+        + ", ".join(str(path.relative_to(repo_root)) for path in legacy_paths)
+    )
+
+
 def test_documentation_alignment_warning_only() -> None:
     """Emit warnings when core setup docs drift; warning-only during MVP."""
     repo_root = _repo_root()
@@ -126,14 +143,8 @@ def test_documentation_alignment_warning_only() -> None:
     if "New active specs: `docs/specs/`" not in agents:
         issues.append("AGENTS.md should declare docs/specs as new active specs location.")
 
-    if ".specify/" not in agents or "optional/experimental" not in agents:
-        issues.append("AGENTS.md should explicitly mark .specify as optional/experimental.")
-
     if "docs/specs/" not in copilot:
         issues.append(".github/copilot-instructions.md should reference docs/specs/ for active specs.")
-
-    if ".specify/" not in copilot or "optional" not in copilot:
-        issues.append(".github/copilot-instructions.md should mark .specify as optional.")
 
     if "docs/" not in architecture or "specs/" not in architecture:
         issues.append("docs/architecture/overview.md should reflect docs/specs in repository layout.")

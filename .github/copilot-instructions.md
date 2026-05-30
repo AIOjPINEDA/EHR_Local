@@ -93,7 +93,6 @@ This repo follows a spec-anchored brownfield SDD model: specs document proposed 
 ### Spec and archive
 - New feature specs: `docs/specs/` (see `docs/specs/README.md` for naming conventions)
 - Historical archive: `.archive/` (local-only, not in git)
-- `.specify/`: optional/experimental, not required for the delivery gate
 - Documentation drift: warning mode during MVP (signal without blocking)
 
 Use the lightest artifact that fits the change:

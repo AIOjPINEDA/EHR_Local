@@ -205,10 +205,9 @@ Use the lightest artifact that fits the change:
 - Large, multi-phase, compliance-sensitive, or cross-stack changes: use a bundle with `spec.md` and `plan.md`.
 - `tasks.md` is optional and temporary; create it only when it helps derive or review execution tasks before opening or updating Issues.
 
-### Archive and experimental flags
+### Archive and documentation drift
 
 - Historical archive: `.archive/` (local-only, not in git)
-- `.specify/`: optional/experimental, not required for the delivery gate
 - Documentation drift: warning mode during MVP (signal without blocking)
 
 ## Related Files
