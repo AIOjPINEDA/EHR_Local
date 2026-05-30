@@ -63,6 +63,13 @@ def test_repo_tool_reuses_existing_named_container() -> None:
     assert 'readIntegerEnv("LOCAL_POSTGRES_PORT", 54329)' in repo_tool
 
 
+def test_repo_tool_uses_neutral_migrations_path() -> None:
+    """repo-tool.mjs must use database/migrations, not legacy supabase/migrations."""
+    repo_tool = (_repo_root() / "scripts" / "repo-tool.mjs").read_text(encoding="utf-8")
+    assert '"database", "migrations"' in repo_tool
+    assert '"supabase", "migrations"' not in repo_tool
+
+
 def test_windows_start_script_uses_native_repo_tool_bootstrap() -> None:
     """Windows one-click start should use native wrappers instead of bash scripts."""
     start_script = (_repo_root() / "scripts" / "windows" / "start-consultamed.bat").read_text(
@@ -72,5 +79,5 @@ def test_windows_start_script_uses_native_repo_tool_bootstrap() -> None:
     assert 'Docker Desktop.exe' in start_script
     assert 'start "" "%DOCKER_DESKTOP_EXE%"' in start_script
     assert 'repo-tool.ps1" setup-local-db' in start_script
-    assert r'backend\.venv\Scripts\python.exe -m uvicorn' in start_script
+    assert r'.venv\Scripts\python.exe -m uvicorn' in start_script
     assert "npm.cmd run dev" in start_script

@@ -52,7 +52,7 @@ if %errorlevel% neq 0 (
 )
 
 REM Iniciar backend y frontend en ventanas separadas
-start "Backend" cmd /k "cd /d ""%ROOT_DIR%"" && backend\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000"
+start "Backend" cmd /k "cd /d ""%ROOT_DIR%\backend"" && .venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000"
 timeout /t 3 /nobreak >nul
 start "Frontend" cmd /k "cd /d ""%ROOT_DIR%\frontend"" && npm.cmd run dev"
 

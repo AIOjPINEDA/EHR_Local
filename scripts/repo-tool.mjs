@@ -25,11 +25,20 @@ function fail(message, exitCode = 1) {
 }
 
 function execute(commandName, args, options = {}) {
+  // When input is provided but output is inherited, stdin must be an explicit
+  // pipe so the child process sees EOF once the input is consumed.  On Windows
+  // the shorthand "inherit" keeps all three streams attached to the console and
+  // the stdin pipe never closes, which hangs commands like `docker exec -i psql`.
+  let stdio = options.captureOutput ? "pipe" : "inherit";
+  if (!options.captureOutput && options.input !== undefined) {
+    stdio = ["pipe", "inherit", "inherit"];
+  }
+
   const result = spawnSync(commandName, args, {
     cwd: options.cwd ?? REPO_ROOT,
     env: { ...process.env, ...(options.env ?? {}) },
     shell: options.shell ?? false,
-    stdio: options.captureOutput ? "pipe" : "inherit",
+    stdio,
     encoding: options.captureOutput ? "utf8" : undefined,
     input: options.input,
   });
@@ -264,7 +273,7 @@ function escapeSqlLiteral(value) {
 }
 
 function setupLocalDb() {
-  const migrationsDir = path.join(REPO_ROOT, "supabase", "migrations");
+  const migrationsDir = path.join(REPO_ROOT, "database", "migrations");
   const composeFile = path.join(REPO_ROOT, "docker-compose.yml");
   const containerName = "consultamed-db";
   const dbUser = "postgres";
