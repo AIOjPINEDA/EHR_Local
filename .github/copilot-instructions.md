@@ -1,142 +1,17 @@
 # ConsultaMed Copilot Instructions
 
-> Canonical source of truth: `AGENTS.md` at repo root.
-> Keep this file as a short operational summary for GitHub Copilot.
+> This shim intentionally defers to `AGENTS.md`. If anything here conflicts with `AGENTS.md`, follow `AGENTS.md`.
 
-Last updated: 2026-03-17
+## Read First
 
-## Project Context
+1. `AGENTS.md`
+2. `docs/architecture/overview.md`
+3. `docs/playbooks/agentic-repo-bootstrap.md`
 
-- Product: ConsultaMed (EHR for private medical practices in Spain)
-- Phase: `mvp-complete` (pre-production hardening)
-- Stack (active in codebase):
-  - Frontend: Next.js 14 + TypeScript strict + Tailwind/shadcn
-  - Backend: FastAPI + SQLAlchemy async + Pydantic v2 + JWT/bcrypt auth
-  - Database: PostgreSQL 17 via local Docker (local-first runtime); production security target remains RLS-required
-- Planned / not yet adopted as primary runtime:
-  - Supabase Auth
-  - Full end-to-end RLS enforcement in all production paths
-  - TanStack Query + Zustand default data/state layer
-  - React Hook Form + Zod as unified frontend form standard
+## Copilot-Specific Notes
 
-## Run Commands
+- Reusable prompt files are installed in `.github/prompts/`: `/init-c-tower` for bootstrap and `/sync-c-tower` for brownfield methodology sync.
+- Keep this file short. Repository rules, commands, boundaries, and workflow live in `AGENTS.md`.
+- If the methodology drifts again, rerun `/sync-c-tower`; it is the intended update path for this repo.
 
-### Backend
-
-```bash
-cd backend
-source .venv/bin/activate
-pytest tests/ -v --tb=short
-ruff check .
-black .
-isort .
-mypy app --ignore-missing-imports
-uvicorn app.main:app --reload
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm run lint
-npm run type-check
-npm test
-npm run dev
-```
-
-## Test Strategy (MVP-Flexible, Scalable)
-
-Backend tests are organized by intent:
-
-- `backend/tests/unit/`: pure logic and schema behavior
-- `backend/tests/contracts/`: backend-frontend API contracts
-- `backend/tests/integration/`: cross-component flows (only when needed)
-
-Rules:
-
-- Use one marker per file: `unit`, `contract`, or `integration`
-- Keep tests deterministic and small
-- Add at least one unit test for each new backend behavior
-- Add/update contract tests whenever response payload/schema changes
-
-Recommended local gate:
-
-```bash
-./scripts/test_gate.sh
-```
-
-## Workflow Alignment
-
-Working model:
-
-- `AGENTS.md`: operational rules and repository-wide constraints.
-- `docs/architecture/overview.md`: implemented architecture only.
-- `docs/specs/`: proposed changes, decisions, and phased plans.
-- GitHub Issues: only active execution backlog.
-
-### Task delegation
-Tasks are delegated via **GitHub Issues**. When you receive an issue assignment:
-- The issue spec (Objetivo, Contexto, Criterios de aceptación, Restricciones) is the source of truth.
-- Use `Fixes #N` in your commit message to close the issue automatically.
-- Label taxonomy: `type:security/infra/architecture/bug`, `priority:critical/high/medium/low`
-
-Do not use legacy planning notes or ad-hoc backlog documents as a second execution source.
-
-### Execution cycle (SDD)
-**Clarify → Plan → Tasks → Implement → Analyze → Close the loop**
-- Run `./scripts/test_gate.sh` before each commit.
-- If the spec is incomplete, surface it before implementing.
-- Post-merge: update spec status, verify issue closure, open issues for emergent work.
-
-This repo follows a spec-anchored brownfield SDD model: specs document proposed change, not current runtime truth.
-
-### Spec and archive
-- New feature specs: `docs/specs/` (see `docs/specs/README.md` for naming conventions)
-- Historical archive: `.archive/` (local-only, not in git)
-- Documentation drift: warning mode during MVP (signal without blocking)
-
-Use the lightest artifact that fits the change:
-
-- Small or low-risk changes: work directly from the issue if scope is already clear.
-- Medium-risk changes: add `spec.md`.
-- Large, multi-phase, compliance-sensitive, or cross-stack changes: use a bundle with `spec.md` and `plan.md`.
-- `tasks.md` is optional and temporary; do not keep it as a long-lived backlog after work moves to GitHub Issues.
-
-## Coding Requirements
-
-- Python:
-  - Type hints required on all functions
-  - Domain docstrings in Spanish
-  - Names in English
-  - PEP8 + Black (line length 100)
-- TypeScript:
-  - Strict mode
-  - No `any`
-  - Interfaces for API responses
-  - Hooks prefixed with `use`
-
-## Boundaries
-
-Always:
-
-- Validate all inputs in backend
-- Use `backend/.venv` as the canonical local Python environment (avoid root `.venv` for backend workflows)
-- Keep FHIR-style naming (`Patient`, `Encounter`, `Condition`, etc.)
-- Run tests before merge
-- Keep Next.js route groups free of dead wrappers (`layout.tsx` must have at least one UI route consumer)
-- Keep backend validators free of dead APIs (no unreferenced clinical validators)
-
-Ask first before:
-
-- Adding new dependencies
-- Changing DB schema or RLS policies
-- Creating new API endpoints
-- Changing auth flow
-- Modifying PDF templates
-
-Never:
-
-- Bypass authentication in endpoints
-- Modify DNI/NIE validators without explicit approval
-- Log PII (name, DNI, clinical details)
-- Remove tests
+Last updated: 2026-05-30
