@@ -14,28 +14,10 @@
 
 ### Active in codebase
 
-#### Frontend (Vercel)
-- Next.js 14 (App Router)
-- TypeScript 5.x (strict mode)
-- Tailwind CSS 3.x + shadcn/ui
-
-#### Backend (Railway)
-- FastAPI 0.109+
-- Python 3.11+
-- SQLAlchemy 2.x (async)
-- Pydantic 2.x
-- WeasyPrint 60+
-- JWT + bcrypt authentication
-
-#### Database (local-first runtime)
-- PostgreSQL 17 via local Docker (recommended MVP runtime)
-- `database/migrations/`: neutral SQL source for local bootstrap
-- Production target: RLS-required
-
-#### Interoperability sidecar (local baseline)
-- HAPI FHIR R5 under `sidecars/hapi-fhir/` — read-only surface (`CapabilityStatement`, `read`, `search`, `Bundle`)
-- FastAPI remains the source of truth for writes, auth, and business logic
-- HAPI uses dedicated local PostgreSQL; data arrives via internal ETL
+- **Frontend (Vercel)**: Next.js 14 (App Router), TypeScript 5.x (strict), Tailwind 3.x + shadcn/ui
+- **Backend (Railway)**: FastAPI 0.109+, Python 3.11+, SQLAlchemy 2.x (async), Pydantic 2.x, WeasyPrint 60+, JWT + bcrypt auth
+- **Database (local-first)**: PostgreSQL 17 via local Docker; `database/migrations/` neutral SQL for bootstrap; production target RLS-required
+- **Interoperability sidecar (local baseline)**: HAPI FHIR R5 under `sidecars/hapi-fhir/` — read-only surface (`CapabilityStatement`, `read`, `search`, `Bundle`); FastAPI stays source of truth for writes/auth/logic; HAPI uses dedicated local PostgreSQL fed by internal ETL
 
 ### Planned / Not yet adopted
 - Supabase Auth (replace JWT in FastAPI)
@@ -157,13 +139,11 @@ Data models follow FHIR nomenclature: `Patient`, `Practitioner`, `Encounter`, `C
 ### Reading order at session start
 
 1. `AGENTS.md` (this file) — canonical contract
-2. `docs/architecture/overview.md` — system design
+2. `docs/architecture/overview.md` — implemented architecture only
 3. `docs/playbooks/agentic-repo-bootstrap.md` — repo bootstrap reference
 
 ### Working model
 
-- `AGENTS.md`: operational rules and repository-wide constraints.
-- `docs/architecture/overview.md`: implemented architecture only.
 - `docs/specs/`: proposed change scope, decisions, and phased plans.
 - GitHub Issues: only active execution backlog.
 
@@ -182,39 +162,21 @@ All tasks are delegated via **GitHub Issues**. Before implementing:
 
 ### Execution cycle (SDD — Spec-Driven Development)
 
-Once you have an issue, the expected execution cycle is:
+Cycle: **Clarify → Plan → Tasks → Implement → Analyze → Close the loop**. Run `./scripts/test_gate.sh` locally before each commit. Canonical definition (key questions per phase) lives in `docs/playbooks/agentic-repo-bootstrap.md`.
 
-**Clarify → Plan → Tasks → Implement → Analyze**
+- **Close the loop** (post-merge): advance spec `Status`, verify `Fixes #N` closed the issue and remove stale `status:` labels, set spec to `Implemented`/`Historical reference` when all phases are done, and open issues for emergent work (do not leave it only in spec text).
+- If implementation reveals the spec was incomplete, update the spec before continuing — not after.
 
-- **Clarify**: validate ambiguities before planning. Ask the human if unclear.
-- **Plan**: propose the approach before touching code.
-- **Tasks**: decompose into independently testable units.
-- **Implement**: run `./scripts/test_gate.sh` locally before each commit.
-- **Analyze**: verify that docs/architecture reflect the implemented state.
-- **Close the loop** (post-merge checkpoint):
-  - Update the spec: mark completed phases, advance `Status` field.
-  - Verify `Fixes #N` closed the issue; remove stale `status:` labels.
-  - If all spec phases are done, set status to `Implemented` or `Historical reference`.
-  - If new work emerged, open issues — do not leave it only in spec text.
-
-If implementation reveals the spec was incomplete, update the spec before continuing — not after.
-
-This repository follows a **spec-anchored brownfield SDD** model.
-
-Do not use specs as a replacement for implemented architecture documentation.
-Do not keep long-lived task lists in spec bundles once work has moved to Issues.
+This repository follows a **spec-anchored brownfield SDD** model: specs are not a replacement for implemented architecture docs, and do not keep long-lived task lists in spec bundles once work moved to Issues.
 
 ### Spec usage
 
-New feature specs live in `docs/specs/`. See `docs/specs/README.md` for naming and bundle conventions.
-New active specs: `docs/specs/`
+New feature specs live in `docs/specs/` (see `docs/specs/README.md` for naming and bundle conventions). Use the lightest artifact that fits:
 
-Use the lightest artifact that fits the change:
-
-- Small or low-risk changes: work directly from the issue if scope is already clear.
-- Medium-risk changes: add `spec.md`.
-- Large, multi-phase, compliance-sensitive, or cross-stack changes: use a bundle with `spec.md` and `plan.md`.
-- `tasks.md` is optional and temporary; create it only when it helps derive or review execution tasks before opening or updating Issues.
+- Small / low-risk: work directly from the issue if scope is clear.
+- Medium-risk: add `spec.md`.
+- Large, multi-phase, compliance-sensitive, or cross-stack: bundle with `spec.md` + `plan.md`.
+- `tasks.md` is optional and temporary — only to derive/review tasks before opening Issues.
 
 ### Archive and documentation drift
 
@@ -223,11 +185,8 @@ Use the lightest artifact that fits the change:
 
 ## Related Files
 
-- `.github/copilot-instructions.md` - Copilot-specific instructions (references this file)
-- `CLAUDE.md` - Claude Code shim (references this file)
-- `GEMINI.md` - Gemini context shim (references this file)
-- `.gemini/settings.json` - Gemini CLI config to use AGENTS.md
+Agent shims pointing back to this file: `.github/copilot-instructions.md` (Copilot), `CLAUDE.md` (Claude Code), `GEMINI.md` + `.gemini/settings.json` (Gemini).
 
 ---
 
-*Last updated: 2026-03-17*
+*Last updated: 2026-05-30*
