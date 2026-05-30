@@ -224,6 +224,7 @@ npm test && npm run lint && npm run type-check
 | Guía de uso clínico | [docs/USER_GUIDE.md](./docs/USER_GUIDE.md) |
 | Arquitectura implementada | [docs/architecture/overview.md](./docs/architecture/overview.md) |
 | Specs activas | [docs/specs/README.md](./docs/specs/README.md) |
+| Ejecución manual en Windows | [docs/playbooks/windows-local-manual-run.md](./docs/playbooks/windows-local-manual-run.md) |
 | Despliegue | [docs/release/DEPLOYMENT_GUIDE.md](./docs/release/DEPLOYMENT_GUIDE.md) |
 | DeepWiki (setup dev) | [deepwiki.com/AIOjPINEDA/EHR_Local](https://deepwiki.com/AIOjPINEDA/EHR_Local/2.1-development-setup) |
 
