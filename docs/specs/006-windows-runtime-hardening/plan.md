@@ -9,7 +9,8 @@ Dejar ConsultaMed operable y fiable en el PC Windows del centro vía arranque na
 - **Spec**: [docs/specs/006-windows-runtime-hardening/spec.md](./spec.md)
 - **Rama**: `006-windows-runtime-hardening` (ya creada; el spec ya está commiteado en `a68a219`).
 - **Runtime objetivo**: nativo one-click ([scripts/windows/start-consultamed.bat](../../../scripts/windows/start-consultamed.bat)); Docker solo para PostgreSQL. Un único PC Windows compartido.
-- **Orquestador**: [scripts/repo-tool.mjs](../../../scripts/repo-tool.mjs) — registro de comandos en el objeto `COMMANDS` (~línea 429); patrón: una función `commandXxx()` por comando, registrada en `COMMANDS`, despachada en `main()`. Helpers existentes reutilizables: `resolvePython()`, `run()`, `capture()`, `probe()`, `fail()`, `readIntegerEnv()`, `resolveComposeArgs()`, `IS_WINDOWS`, `REPO_ROOT`, `BACKEND_DIR`, `FRONTEND_DIR`.
+- **Orquestador**: [scripts/repo-tool.mjs](../../../scripts/repo-tool.mjs) (533 líneas). **Patrón real** (verificado): funciones sueltas a nivel de módulo (p. ej. `setupLocalDb()`, `generateTypes()`, `backendChecks()`, `testGate()`) despachadas por un `switch (command)` en la línea ~507 con cláusulas `case "setup-local-db":`, `case "test-gate":`, etc. **No existe** un objeto `COMMANDS`. Para añadir un comando: escribir la función a nivel de módulo y añadir su `case` al `switch`. Helpers reutilizables existentes: `resolvePython(imports[])`, `run(cmd,args,opts)`, `capture(cmd,args,opts)`, `probe(cmd,args,cwd)`, `fail(msg)`, `readIntegerEnv(name,fallback)`, `resolveComposeCommand()`, `pythonHasModule(py,mod)`, `runPython(py,args,opts)`, `runNpm(args,opts)`, `sleepMs(ms)`, `parseFlag(flag)`, y constantes `IS_WINDOWS`, `REPO_ROOT`, `BACKEND_DIR`, `FRONTEND_DIR`.
+- **Naming**: seguir el estilo existente (camelCase sin prefijo `command`): los comandos nuevos serán `startBackend()`, `bootstrap()`, `backupDb()`, `restoreDb()`, `smokeCheck()`, `resolveGtkBin()`.
 - **PDF**: [backend/app/services/pdf_service.py](../../../backend/app/services/pdf_service.py) usa `weasyprint.HTML().write_pdf()`. El endpoint es `GET /api/v1/prescriptions/{encounter_id}/pdf`.
 - **Tests**: backend con pytest (`tests/unit`, `tests/contracts`); patrón async con `httpx.AsyncClient` + `ASGITransport` (ver `backend/tests/unit/test_health_check.py`). Frontend: `npm run lint`/`type-check`/`test`.
 - **`.archive/`** ya está en `.gitignore` (línea 57). Archivar = `git mv` lógico: copiar a `.archive/` + `git rm`.
@@ -78,22 +79,22 @@ Reduce superficie antes de tocar runtime. Todo lo archivado es recuperable vía 
 
 ### Step 2.1: Helper de detección de GTK en repo-tool
 
-**What:** Añadir a [scripts/repo-tool.mjs](../../../scripts/repo-tool.mjs) una función `resolveGtkBin()` que devuelva el directorio bin de GTK3 a anteponer al PATH, o `null`:
-1. `process.env.CONSULTAMED_GTK_BIN` si está definido y existe.
-2. En Windows: `C:\Program Files\GTK3-Runtime Win64\bin` si existe.
+**What:** Añadir a [scripts/repo-tool.mjs](../../../scripts/repo-tool.mjs) una función a nivel de módulo `resolveGtkBin()` que devuelva el directorio bin de GTK3 a anteponer al PATH, o `null`:
+1. `process.env.CONSULTAMED_GTK_BIN` si está definido y `fs.existsSync()`.
+2. En Windows (`IS_WINDOWS`): `C:\Program Files\GTK3-Runtime Win64\bin` si `fs.existsSync()`.
 3. `null` en macOS/Linux (WeasyPrint resuelve libs por sistema/brew) o si no se encuentra.
 
-**Where:** `scripts/repo-tool.mjs`, junto a los demás helpers (antes de `COMMANDS`).
+**Where:** `scripts/repo-tool.mjs`, junto a los demás helpers (antes del `switch (command)`).
 
-**Verify:** `node -e "import('./scripts/repo-tool.mjs')"` no es viable (ejecuta main); en su lugar añadir verificación en el siguiente step vía el comando.
+**Verify:** Se verifica vía el comando `start-backend` del siguiente step (Step 2.2), que la usa.
 
 ### Step 2.2: Comando `start-backend` con inyección de PATH y guard
 
-**What:** Añadir `commandStartBackend()` y registrarlo en `COMMANDS` como `"start-backend"`. Debe:
+**What:** Añadir la función `startBackend()` y una cláusula `case "start-backend":` al `switch`. Debe:
 1. Resolver Python con `resolvePython([])`.
-2. Calcular el PATH del proceso hijo: si `resolveGtkBin()` devuelve ruta, anteponerla a `process.env.PATH` (separador `;` en Windows, `:` en otros).
-3. **Guard fail-fast**: ejecutar `python -c "import weasyprint; weasyprint.HTML(string='<p>ok</p>').write_pdf()"` con ese PATH. Si falla, `fail()` con mensaje claro en español: que falta el runtime GTK3 y cómo instalarlo (`CONSULTAMED_GTK_BIN` o instalar GTK3-Runtime Win64).
-4. Lanzar `python -m uvicorn app.main:app --port 8000` (sin `--reload` en producción local; aceptar flag `--reload` si se pasa) con ese PATH y `cwd: BACKEND_DIR`.
+2. Calcular el PATH del proceso hijo: si `resolveGtkBin()` devuelve ruta, anteponerla a `process.env.PATH` (separador `path.delimiter`: `;` Windows, `:` otros). Construir `childEnv = { ...process.env, PATH: nuevoPath }`.
+3. **Guard fail-fast**: `const guard = capture(python.command, [...python.args, "-c", "import weasyprint; weasyprint.HTML(string='<p>ok</p>').write_pdf()"], { cwd: BACKEND_DIR, env: childEnv, allowFailure: true })`. Si `guard.status !== 0`, `fail()` con mensaje en español: falta el runtime GTK3, cómo instalarlo (definir `CONSULTAMED_GTK_BIN` o instalar GTK3-Runtime Win64). (Nota: `execute()` ya hace merge de `options.env` sobre `process.env`, y `capture()` reenvía `env`/`allowFailure`.)
+4. Lanzar `runPython(python, ["-m", "uvicorn", "app.main:app", "--port", "8000", ...(parseFlag("--reload") ? ["--reload"] : [])], { cwd: BACKEND_DIR, env: childEnv })`.
 
 **Where:** `scripts/repo-tool.mjs`.
 
@@ -119,7 +120,7 @@ start "Backend" cmd /k "cd /d ""%ROOT_DIR%"" && node scripts\repo-tool.mjs start
 
 ### Step 3.1: Comando `bootstrap` idempotente en repo-tool
 
-**What:** Añadir `commandBootstrap()` registrado como `"bootstrap"`. Idempotente:
+**What:** Añadir la función `bootstrap()` y `case "bootstrap":` al `switch`. Idempotente:
 1. Verificar Python 3.11 (`resolvePython`), Node, Docker (`probe("docker", ["--version"])`); si falta alguno, `fail()` con instrucción.
 2. Si no existe `backend/.venv`, crearlo (`python -m venv .venv`) y `pip install -r requirements.txt`.
 3. Si no existe `frontend/node_modules`, `npm install` en `FRONTEND_DIR`.
@@ -146,7 +147,7 @@ start "Backend" cmd /k "cd /d ""%ROOT_DIR%"" && node scripts\repo-tool.mjs start
 
 ### Step 4.1: Comandos `backup` y `restore`
 
-**What:** Añadir `commandBackup()` y `commandRestore()`:
+**What:** Añadir las funciones `backupDb()` y `restoreDb()` con sus `case "backup":` / `case "restore":` en el `switch`:
 - `backup`: resolver `consultamed-db` vía compose; `docker exec -T consultamed-db pg_dump -U postgres consultamed` → escribir a `${CONSULTAMED_BACKUP_DIR:-<default>}/consultamed-YYYYMMDD-HHMMSS.sql.gz` (comprimir con gzip). Default Windows: `%USERPROFILE%\ConsultaMed-Backups`; macOS/Linux: `~/ConsultaMed-Backups`. Crear el dir si falta. Rotación: conservar `${CONSULTAMED_BACKUP_KEEP:-14}` más recientes, borrar el resto.
 - `restore <fichero>`: descomprimir y `docker exec -i consultamed-db psql -U postgres consultamed`. Pedir confirmación o exigir flag `--yes` (sobrescribe datos).
 
@@ -159,7 +160,7 @@ start "Backend" cmd /k "cd /d ""%ROOT_DIR%"" && node scripts\repo-tool.mjs start
 
 ### Step 4.2: Comando `smoke` post-arranque
 
-**What:** Añadir `commandSmoke()` registrado como `"smoke"`:
+**What:** Añadir la función `smokeCheck()` y `case "smoke":` al `switch`:
 1. `GET http://127.0.0.1:8000/health` (reintentos hasta ~30s); esperar 200 `{"status":"healthy"}`. ✅/❌.
 2. Render PDF real: `python -c "import weasyprint; weasyprint.HTML(string='<h1>smoke</h1>').write_pdf()"` con PATH GTK (reutilizar `resolveGtkBin`); verificar bytes > 0. ✅/❌.
 3. Salida final legible (verde/rojo) y exit code acorde (0 si ambos ✅).
