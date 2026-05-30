@@ -107,6 +107,17 @@ Data models follow FHIR nomenclature: `Patient`, `Practitioner`, `Encounter`, `C
 - Components in PascalCase
 - Custom hooks prefixed with `use`
 
+## Code Economy
+
+> When to create, reuse, and delete. Counters the agent-specific failure mode: reproducing the full "shape" seen in training instead of the scope the spec asked for. These rules are non-inferable from the repo, so they live here.
+
+- **The spec defines scope, not the familiar pattern.** Implement only what the spec asks. If a "typical" auth endpoint usually ships 2FA + password reset + soft delete + rate limiting and the spec does not mention it, do not add it. When in doubt, ask before adding.
+- **Create with evidence, not anticipation.** No layer, helper, abstraction, or config option until there are multiple call sites with real divergence. Three similar lines beat a speculative abstraction with one caller.
+- **Replace, do not accumulate.** When an iteration replaces existing code, delete the legacy in the same PR — or file an issue with an explicit deadline. Coexistence is a transition state, not a destination. (Exception: documented compliance requirements with a deadline.)
+- **If it only saves keystrokes, it no longer pays off.** Internal helpers/builders/DSLs justified only by less typing are net debt when the agent writes the code. Keep abstractions that guarantee *correctness* (types, contracts, invariants), not *convenience*.
+
+> **Phase adaptation** (`mvp-complete`, regulated healthcare): require 3+ call sites with real divergence before abstracting; legacy cleanup tracked as an issue with deadline (no silent coexistence). This aligns with the dead-code guards in `tests/unit/test_architecture_dead_code_guards.py`.
+
 ## Boundaries
 
 ### Always
