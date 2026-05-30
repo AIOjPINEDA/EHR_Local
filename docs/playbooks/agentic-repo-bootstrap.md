@@ -10,7 +10,7 @@ Aplica a trading, salud/FHIR, data y otros dominios.
 
 - `AGENTS.md`: contrato operativo y reglas globales.
 - `docs/architecture/overview.md`: arquitectura implementada.
-- `docs/specs/`: cambio propuesto y decisiones.
+- `docs/specs/` o `specs/`: cambio propuesto y decisiones. Si un repo prefiere `specs/` en raiz, declararlo en `AGENTS.md`.
 - GitHub Issues: unico backlog activo. Sin carpeta `plans/` paralela.
 - Archivos agent-specific (`copilot-instructions.md`, `CLAUDE.md`, `GEMINI.md`): shims breves alineados con `AGENTS.md`, sin inventar gobernanza propia.
 
@@ -63,92 +63,65 @@ repo/
     └── <smoke-test>
 ```
 
-Cada archivo tiene su proposito inline en los comentarios `#` del arbol. Los archivos opcionales (agent-specific, IDE config) solo se crean si el repo los necesita.
+| Archivo | Proposito |
+|---------|-----------|
+| `AGENTS.md` | Contrato operativo canonico: principios, rol, commands, boundaries, security |
+| `docs/architecture/overview.md` | Estado real del sistema, nunca aspiracional |
+| `docs/specs/README.md` | *(opcional)* Politica de specs: naming, ciclo de vida, precedencia |
+| `docs/specs/*` o `specs/*` | Scope de iteracion y decisiones del cambio (ver formato unico vs bundle mas abajo) |
+| `<tooling-manifest>` | Config unificada de lint, format, tests y types del stack activo |
+| `.github/workflows/ci.yml` | Checks automaticos push/PR |
+| `<smoke-test>` | Red minima contra regresiones |
+| `<ide-config>/` | *(opcional)* Config compartida de IDE: settings de proyecto + extensiones |
+| `.github/copilot-instructions.md` | *(opcional)* Shim breve apuntando a `AGENTS.md` |
+| `.github/instructions/*.instructions.md` | *(opcional)* Reglas path-scoped con `applyTo` (solo cuando una regla aplica a un subset claro de archivos) |
+| `.github/agents/*.agent.md` | *(opcional)* Agentes custom con tools/instrucciones especializadas |
+| `CLAUDE.md` / `.claude/rules/` | *(opcional)* `@AGENTS.md` import + addendums Claude-especificos |
+| `GEMINI.md` / equivalentes | *(opcional)* Shim breve para otros agentes, siempre subordinado a `AGENTS.md` |
+
+> **Patron DRY (fuente unica)**: `AGENTS.md` es la fuente de verdad. `CLAUDE.md`, `copilot-instructions.md` y equivalentes deben importar/apuntar a `AGENTS.md` en vez de duplicar reglas. Solo el contenido agent-especifico va fuera de `AGENTS.md`.
 
 ---
 
 ## Ciclo de trabajo agentico (feedback-loop)
 
-Inspirado en Spec-Driven Development pero adaptado como patron ligero, sin dependencia de CLI externo.
-
-```text
-     ┌──────────────────────────────────────────────────┐
-     │                                                  │
-     ▼                                                  │
-  CLARIFY ──► PLAN ──► TASKS ──► IMPLEMENT ──► ANALYZE ──► CLOSE THE LOOP
-     │                              │              │
-     └──── feedback loop ◄──────────┘              │
-                                                   │
-     si hay deriva documental o tecnica ◄──────────┘
-```
-
-| Fase | Que hacer | Pregunta clave |
-|------|-----------|----------------|
-| **Clarify** | Validar ambiguedades antes de planificar. Preguntar lo que no esta claro | ¿Entiendo exactamente que se pide y por que? |
-| **Plan** | Separar *que/por que* (funcional) del *como* (tecnico) | ¿Puedo explicar la solucion sin mencionar tecnologias? |
-| **Tasks** | Descomponer en unidades implementables y testeables en aislamiento | ¿Cada tarea es verificable de forma independiente? |
-| **Implement** | Ejecutar incrementalmente. Test antes de codigo cuando sea posible | ¿Pasa el gate local (`<lint> + <type-check> + <tests>`)? |
-| **Analyze** | Validar consistencia cross-artifact post-implementacion | ¿La arquitectura documentada sigue reflejando la realidad? |
-| **Close the loop** | Actualizar status de spec, verificar cierre de issues, abrir issues para trabajo emergente | ¿El estado del repo refleja lo que acabo de entregar? |
-
-> **Principio**: el ciclo busca acelerar feedback-loops, no perfeccionar specs waterfall. Si la implementacion revela que la spec estaba incompleta, actualizar la spec es parte del flujo, no una excepcion.
+Este playbook usa el ciclo agentico como patron de ejecucion: `CLARIFY → PLAN → TASKS → IMPLEMENT → ANALYZE → CLOSE THE LOOP`. La definicion canonica con preguntas clave y diagrama vive en `METHODOLOGY.md` § Protocolo de ejecucion por agente. No se duplica aqui para evitar drift.
 
 ---
 
-## Contenido de AGENTS.md (7 core areas)
+## Contenido de AGENTS.md (8 core areas)
 
-Basado en analisis de [2,500+ repos](https://github.blog/ai-and-ml/github-copilot/how-to-write-a-great-agents-md-lessons-from-over-2500-repositories/) + concepto de constitution de [Spec-Kit](https://github.com/github/spec-kit):
+Basado en analisis de [2,500+ repos](https://github.blog/ai-and-ml/github-copilot/how-to-write-a-great-agents-md-lessons-from-over-2500-repositories/) + concepto de constitution de [Spec-Kit](https://github.com/github/spec-kit) + practicas agenticas 2026 ([aipatternbook](https://aipatternbook.com/yagni), [Wix Manifesto](https://medium.com/wix-engineering/the-ai-coding-agent-manifesto-c8f61629d677), [Augment 2026](https://www.augmentcode.com/guides/how-to-build-agents-md)):
 
 1. [ ] **Principios gobernantes** *(capa 0)* - non-negotiables: compliance, quality gates, constraints tecnicos
 2. [ ] **Commands** - con flags completos (`pytest -v --tb=short`, no solo `pytest`)
 3. [ ] **Testing** - que correr antes de commit, criterios de aceptacion
 4. [ ] **Project structure** - descripcion de directorios clave y su proposito
 5. [ ] **Code style** - ejemplo de codigo real (snippet), no solo descripcion
-6. [ ] **Git workflow** - branches, commit messages, proceso de PR
-7. [ ] **Boundaries** - ✅ Always / ⚠️ Ask first / 🚫 Never (incluir security de terminal)
+6. [ ] **Code economy** - cuando crear, reutilizar y borrar; reglas anti-deriva agentica
+7. [ ] **Git workflow** - branches, commit messages, proceso de PR
+8. [ ] **Boundaries** - ✅ Always / ⚠️ Ask first / 🚫 Never (incluir security de terminal)
 
 > **Tip**: Un snippet real vale mas que tres parrafos. Un boundary explicito previene mas errores que una regla generica.
 
-> **Longitud**: AGENTS.md se carga en el contexto del agente en cada sesion. Apuntar a ≤250 lineas. Si crece, buscar duplicacion entre Security/Boundaries/Definition of Done y comprimir tablas a listas inline.
+> **Longitud**: AGENTS.md se carga en el contexto del agente en cada sesion. Apuntar a ≤200 lineas (research 2026 sobre 2,500+ repos: longitud >150 lineas reduce success rate y aumenta coste de inferencia ~20%). Si crece, buscar duplicacion entre Security/Boundaries/Definition of Done y comprimir tablas a listas inline.
 
-### Ejemplo de principios gobernantes (capa 0, perfil Python)
-```markdown
-## Principios (non-negotiable)
-- Python 3.11+, tipado estricto con mypy          # adaptar al stack activo
-- Cobertura de tests >= 80% en codigo critico
-- Zero secrets en logs o stdout
-- No dependencias externas sin aprobacion explicita
-- [dominio-especifico] FHIR R4 conformance / HIPAA / GDPR segun aplique
-```
+> **Que NO incluir**: principios genericos que el agente ya conoce de su entrenamiento ("write clean code", "follow best practices", DRY/KISS/YAGNI sin contexto). El AGENTS.md aporta solo *non-inferable details* — info que el agente no puede descubrir leyendo el repo. La excepcion es la **Code economy**: alli reformulamos los principios clasicos en su modo de fallo *agentico-especifico* (familiar-shape bias), porque eso si es no-inferible.
 
-### Ejemplo de code style
-```python
-# ✅ Good - descriptive, typed, documented
-async def fetch_user_by_id(user_id: str) -> User:
-    """Fetch user from database by ID."""
-    if not user_id:
-        raise ValueError("User ID required")
-    return await db.users.get(user_id)
+### Ejemplos canonicos por core area
 
-# ❌ Bad - vague, untyped, no docs
-async def get(x):
-    return await db.get(x)
-```
+Los ejemplos completos (snippets reales por seccion) viven en `templates/agents-md-template.md`. Ese template es la fuente unica que se copia al repo destino — el playbook describe *que* incluye cada area; el template *como*. Mantener una sola fuente evita drift cuando una mejora aplica solo en uno de los dos.
 
-### Ejemplo de boundaries con security
-```markdown
-## Boundaries
-- ✅ **Always**: correr gate local antes de commit, escribir tests, usar tipos
-- ⚠️ **Ask first**: agregar dependencias, cambiar schema de BD, modificar CI
-- 🚫 **Never**: commitear secrets, ejecutar comandos destructivos sin aprobacion,
-  auto-aprobar ejecucion de scripts de terceros, hacer requests de red sin consentimiento
-
-## Terminal auto-approve policy
-- Bajo riesgo: auto-approve minimo (solo comandos read-only conocidos)
-- Medio riesgo: allowlist estrecha + denylist explicita de destructivos
-- Regulado/critico: sin auto-approve, revision humana obligatoria
-- NUNCA auto-aprobar por rutas completas de scripts (`/path/to/scripts/*`)
-```
+| Core area | Que incluye | Ver ejemplo en template |
+|-----------|-------------|-------------------------|
+| Principios gobernantes | Non-negotiables: stack, compliance, quality gates, constraints | § Principios gobernantes |
+| Commands | Comandos ejecutables con flags completos (`pytest -v --tb=short`, no `pytest`) | § Commands |
+| Testing | Que correr antes de commit; criterios de aceptacion | § Commands (gate local) |
+| Project structure | Tabla de directorios clave con proposito | § Estructura del proyecto |
+| Code style | Snippet real ✅/❌ del estilo esperado en ~10 lineas | § Code style |
+| Code economy | Cuando crear/reutilizar/borrar; reglas anti-deriva agentica | § Code economy |
+| Git workflow | Branches, commits, proceso de PR | § Git workflow |
+| Boundaries | ✅ Always / ⚠️ Ask first / 🚫 Never + terminal auto-approve | § Boundaries + § Terminal auto-approve policy |
 
 ---
 
@@ -168,14 +141,12 @@ docs/specs/
 └── 001-feature-x/
     ├── spec.md       # Que y por que (funcional, agnostico de tech)
     ├── plan.md       # Como (stack, arquitectura, componentes)
-  └── tasks.md      # Opcional y temporal; evitar usarlo como backlog permanente
+    └── tasks.md      # Opcional y temporal; evitar usarlo como backlog permanente
 ```
 
 **Cuando escalar**: exploracion multi-stack, equipos con roles separados (PM → spec, architect → plan), specs estables con arquitectura evolutiva, dominios regulados donde la trazabilidad importa.
 
 **Estrategia de mantenimiento**: elegir por repo si las specs se mantienen actualizadas (*spec-anchored*) o si solo representan el intent inicial (*spec-first*). Declarar la politica en `AGENTS.md`.
-
-**ConsultaMed**: usa `docs/specs/`, mantiene arquitectura implementada en `docs/architecture/overview.md` y usa GitHub Issues como unico backlog activo de ejecucion.
 
 ### Status recomendados para specs
 
@@ -196,8 +167,12 @@ docs/specs/
 
 ## Checklist de bootstrap (30-60 min)
 
+0. *(Opcional)* Ejecuta `/init-c-tower` para repos nuevos, o `/sync-c-tower` para repos
+   existentes que necesitan alinearse con la versión vigente de este playbook. Ambos son
+   comandos de VS Code Copilot — no confundir con el `/init` nativo de Claude Code.
+   Ninguno sustituye el checklist; son puntos de partida que lo aplican automáticamente.
 1. Definir fase actual (`foundation`, `growth`, `scale`).
-2. Crear `AGENTS.md` cubriendo las 7 core areas (incluyendo principios gobernantes).
+2. Crear `AGENTS.md` cubriendo las 8 core areas (incluyendo principios gobernantes).
 3. Documentar arquitectura real en `docs/architecture/overview.md`.
 4. Crear una spec minima de la iteracion en `docs/specs/` o en el directorio de specs definido por el repo.
 5. Configurar tooling manifest del stack con lint + format + types + tests (ver perfiles abajo).
@@ -205,6 +180,17 @@ docs/specs/
 7. Configurar `ci.yml` con gate: `<lint> && <type-check> && <tests>`.
 8. *(Opcional)* Definir 1-2 invariantes de arquitectura y validarlos con tests ligeros.
 9. *(Opcional)* Programar revision periodica de deriva (mensual/trimestral).
+
+### Variante brownfield (repo existente sin estructura agent-first)
+
+No reescribir: documentar lo que hay y abrir issues para lo que falta.
+
+1. **Auditar capas faltantes** vs el marco de 6 capas (existentes / parciales / ausentes).
+2. **`AGENTS.md` minimo** antes de tocar codigo: commands reales, boundaries, code style observado (no aspiracional).
+3. **Arquitectura tal cual esta** en `docs/architecture/overview.md`. Si hay deuda, nombrarla.
+4. **Spec inicial `001-baseline.md`**: estado actual + scope de la primera iteracion. No specs retroactivas en bulk.
+5. **Migrar issues** al template `templates/issue-agent.md` solo cuando se vayan a trabajar.
+6. **CI gate progresivo**: empezar por `<lint>`, anadir types y tests al estabilizar.
 
 ---
 
@@ -336,48 +322,11 @@ Objetivo: disenar/ajustar infraestructura base sin sobre-ingenieria.
 
 ---
 
-## Politica de actualizacion continua
+## Cadencia y fuentes externas
 
-- **Cadencia**: mensual o cuando cambie una fase.
-- **Regla**: priorizar fuentes oficiales; secundarias solo como contexto.
-- **Salida**: que sigue vigente, que quedo deprecado, ajuste propuesto, nivel de guardrails.
-- **Volatilidad de herramientas**: los frameworks agenticos (Spec-Kit, agents.md spec, etc.) iteran a alta velocidad. Si se referencia un toolkit externo: pinear la version usada, mantener overrides locales separados de templates vendored, y usar diff/merge en vez de overwrite al actualizar.
-
----
-
-## Registro de links oficiales (evergreen)
-
-### Multi-agente / repositorio
-- AGENTS.md spec: https://agents.md/
-- AGENTS.md reference repo: https://github.com/openai/agents.md
-- GitHub blog (2,500+ repos): https://github.blog/ai-and-ml/github-copilot/how-to-write-a-great-agents-md-lessons-from-over-2500-repositories/
-- GitHub Actions workflow syntax: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
-- GitHub Actions security hardening: https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions
-
-### Instrucciones AI y agentes custom
-- VS Code custom instructions: https://code.visualstudio.com/docs/copilot/customization/custom-instructions
-- VS Code custom agents: https://code.visualstudio.com/docs/copilot/customization/custom-agents
-- Copilot settings reference: https://code.visualstudio.com/docs/copilot/reference/copilot-settings
-- Copilot repo instructions (GitHub): https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions
-- Copilot custom agents (GitHub, multi-IDE): https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/create-custom-agents
-- Claude Code memory: https://docs.claude.com/en/docs/claude-code/memory
-
-### Spec-Driven Development (workflow avanzado)
-- GitHub Spec-Kit *(experimental, alta velocidad de iteracion)*: https://github.com/github/spec-kit
-- SDD methodology: https://github.com/github/spec-kit/blob/main/spec-driven.md
-
-### Tooling por stack
-
-**Python**:
-- Packaging + `pyproject.toml`: https://packaging.python.org/en/latest/tutorials/packaging-projects/
-- Ruff docs: https://docs.astral.sh/ruff/
-- Pytest docs: https://docs.pytest.org/en/stable/
-
-**Node / TypeScript**:
-- ESLint docs: https://eslint.org/docs/latest/
-- Prettier docs: https://prettier.io/docs/en/
-- Vitest docs: https://vitest.dev/guide/
-- TypeScript handbook: https://www.typescriptlang.org/docs/handbook/
+- **Revision**: mensual junto al resto de la metodologia (ver `METHODOLOGY.md` § Cadencias de revision).
+- **Volatilidad de herramientas**: los frameworks agenticos (Spec-Kit, agents.md spec, Copilot/Claude/Codex docs) iteran a alta velocidad. Al referenciar un toolkit externo: pinear la version usada, mantener overrides locales separados de templates vendored, y usar diff/merge en vez de overwrite al actualizar.
+- **Links oficiales (evergreen)**: la lista canonica vive en `REFERENCES.md` agrupada por proposito (multi-agente, instrucciones AI, SDD, tooling por stack, code economy). No se duplica aqui para evitar drift entre dos fuentes que se revisan a cadencias distintas.
 
 ---
 
@@ -393,18 +342,58 @@ Si creas un repo de historia clinica electronica:
 
 ---
 
-## Apendice B: Config VS Code / Copilot
+## Apendice B: Config por agente (settings y hooks)
 
-Settings de workspace recomendados para repos agent-first con VS Code o IDEs compatibles (Antigravity, Cursor, etc.).
+Settings y hooks recomendados por agente, segun capacidades nativas de la tabla
+en `METHODOLOGY.md` § Delegacion a agentes. Los guardrails textuales del template
+siguen siendo el unico mecanismo *portable* cross-agente; los hooks nativos de
+Claude Code son control *mecanico* complementario (no sustituto), util en repos
+trabajados primariamente con Claude.
+
+### Hooks nativos de Claude Code (`.claude/settings.json`)
+
+Hooks que convierten guardrails textuales en controles mecanicos no-saltables.
+Solo aplica si el repo usa Claude Code; Copilot/Codex/OpenCode no tienen
+equivalente nativo.
+
+```jsonc
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<gate local del repo, ej: ruff check . && pytest -q>",
+            "description": "Antes de cerrar la sesion, fuerza el gate local. Convierte 'no marcar done sin evidencia' (guardrail textual) en control mecanico."
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+> **Por que solo `Stop` y no `PostToolUse`**: el patron `PostToolUse` (correr
+> tests tras cada Edit/Write) genera ruido de output sin aportar control que el
+> humano no pueda forzar al cierre. `Stop` aplica el gate una vez, al final,
+> donde realmente importa. Mantener el numero de hooks minimo es coherente con
+> "tools simples > hiperespecializadas" (Vercel 2026, ver REFERENCES).
+
+### VS Code / Copilot settings (`.vscode/settings.json`)
+
+Settings de workspace recomendados para VS Code o IDEs compatibles (Antigravity,
+Cursor, etc.).
 
 > **Nota de portabilidad**: no todos los forks de VS Code soportan todas las keys Copilot. Usar `.vscode/` como baseline pero verificar compatibilidad en cada IDE.
 
-### settings.json minimal y seguro
+#### settings.json minimal y seguro
 ```jsonc
 {
   // --- Instrucciones AI ---
   "chat.useAgentsMdFile": true,
-  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  // .github/copilot-instructions.md se carga por defecto en VS Code.
+  // Si existe, mantenerlo como shim breve hacia AGENTS.md.
 
   // --- Seguridad de terminal ---
   // Formato: boolean (false/true) o allowlist objeto segun version de VS Code
@@ -444,8 +433,8 @@ Settings de workspace recomendados para repos agent-first con VS Code o IDEs com
 |---------|-----------|--------|-------------|
 | `chat.useAgentsMdFile` | Habilitar lectura de `AGENTS.md` | `true` | estable |
 | `chat.useNestedAgentsMdFiles` | AGENTS.md por subdirectorio | depende | ⚠️ experimental |
-| `github.copilot.chat.codeGeneration.useInstructionFiles` | Usar `.github/copilot-instructions.md` | `true` | estable |
-| `chat.promptFilesLocations` | Rutas a prompt files reutilizables | `{ ".github/prompts": true }` | ⚠️ version-dependent |
+| `github.copilot.chat.codeGeneration.useInstructionFiles` | Cargar `.github/copilot-instructions.md` cuando existe | `true` | estable; no configurar salvo opt-out explícito |
+| `chat.promptFilesLocations` | Rutas workspace para prompt files reutilizables | `{ ".github/prompts": true }` | estable; usar prompts de usuario para disponibilidad global |
 | `chat.agentFilesLocations` | Rutas a custom agents | `{ ".github/agents": true }` | ⚠️ version-dependent |
 | `chat.tools.terminal.autoApprove` | Auto-aprobar comandos de terminal | `false` | estable (formato variable) |
 
@@ -457,28 +446,9 @@ Settings de workspace recomendados para repos agent-first con VS Code o IDEs com
 
 ## Versionado
 
-- **Version**: 3.6.1
-- **Ultima revision**: 2026-03-17
+- **Version**: 3.8.2
+- **Ultima revision**: 2026-05-30
 - **Criterio**: minimalista, verificable, escalable, agnostico
-- **Cambios en v3.6.1**:
-  - Compactacion semantica: fusionado Perfil+Working model, colapsado Criterio de curacion, eliminada tabla duplicada de estructura, eliminadas reglas post-ciclo redundantes, comprimido prompt reutilizable, compactado ejemplo code style, colapsado changelog historico (~-55 lineas)
-- **Cambios en v3.6.0**:
-  - Ciclo agentico extendido con fase "Close the loop" (post-merge checkpoint)
-  - Status recomendados para specs (lifecycle states) + convencion de trazabilidad spec↔issue
-  - `docs/specs/README.md` como artefacto opcional en estructura minima
-  - Tip de tracking ligero (Milestones + labels) en working model
-  - Heuristica de longitud para AGENTS.md (≤250 lineas)
-- **Cambios en v3.5.1**:
-  - Gate estandarizado a `<lint> + <type-check> + <tests>` en todos los bloques
-  - Ejemplo de principios gobernantes etiquetado como perfil Python
-  - Settings de Copilot con columna de estabilidad (estable/experimental/version-dependent)
-  - Nota de formato variable para `autoApprove`
-- **Cambios en v3.5**:
-  - Config IDE de workspace como seccion agnostica (invariantes workspace vs user)
-  - Apendice B: VS Code/Copilot settings concretos (fuera del core)
-  - Security boundaries reforzados con terminal auto-approve policies
-  - Estructura actualizada con `.github/agents/`, `.github/instructions/`, `<ide-config>/`
-  - Links reorganizados: nueva subseccion instrucciones AI y agentes custom
-  - Revision completa de coherencia y orden del documento
-- **v3.4**: Tooling desacoplado de Python; invariantes agnosticos + perfiles por stack; placeholders de stack en estructura; CI con ambos perfiles
-- **v3.3**: 6 capas (capa 0: principios gobernantes); ciclo agentico; formato specs escalable; security boundaries terminal; compactado ~40% vs v3.0
+- **Historia de cambios**: ver `CHANGELOG.md` (fuente unica). El playbook solo
+  mantiene aqui metadata vigente para evitar duplicar la cronologia entre dos
+  ficheros con cadencias de revision distintas.
