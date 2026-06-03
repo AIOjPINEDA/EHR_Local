@@ -569,6 +569,122 @@ function startBackend({ reload = false } = {}) {
   runPython(python, uvicornArgs, { cwd: BACKEND_DIR, env: childEnv });
 }
 
+function resolveSystemPython() {
+  // Unlike resolvePython() (which targets the existing venv), this finds an
+  // interpreter able to CREATE the venv on a fresh machine.
+  const candidates = [];
+
+  if (process.env.CONSULTAMED_PYTHON) {
+    candidates.push({ command: process.env.CONSULTAMED_PYTHON, args: [] });
+  }
+
+  if (IS_WINDOWS) {
+    candidates.push({ command: "py", args: ["-3.11"] });
+    candidates.push({ command: "py", args: ["-3"] });
+  }
+
+  candidates.push(
+    { command: "python3.11", args: [] },
+    { command: "python3", args: [] },
+    { command: "python", args: [] },
+  );
+
+  for (const candidate of candidates) {
+    if (probe(candidate.command, [...candidate.args, "--version"])) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function bootstrap() {
+  console.log("== ConsultaMed bootstrap ==");
+
+  const venvPython = IS_WINDOWS
+    ? path.join(BACKEND_DIR, ".venv", "Scripts", "python.exe")
+    : path.join(BACKEND_DIR, ".venv", "bin", "python");
+
+  // 1. Backend: venv + dependencies
+  if (!fs.existsSync(venvPython)) {
+    const systemPython = resolveSystemPython();
+    if (!systemPython) {
+      fail("No se encontro Python 3.11+. Instala Python 3.11 y vuelve a ejecutar.");
+    }
+    console.log("[backend] creando entorno virtual (.venv)...");
+    run(systemPython.command, [
+      ...systemPython.args,
+      "-m",
+      "venv",
+      path.join(BACKEND_DIR, ".venv"),
+    ]);
+    console.log("[backend] instalando dependencias...");
+    run(venvPython, ["-m", "pip", "install", "--upgrade", "pip"], { cwd: BACKEND_DIR });
+    run(venvPython, ["-m", "pip", "install", "-r", "requirements.txt"], { cwd: BACKEND_DIR });
+  } else {
+    console.log("[backend] .venv ya existe; omitiendo creacion.");
+  }
+
+  // 2. Frontend: node_modules
+  if (!fs.existsSync(path.join(FRONTEND_DIR, "node_modules"))) {
+    if (!probe("node", ["--version"])) {
+      fail("No se encontro Node.js. Instala Node 20+ y vuelve a ejecutar.");
+    }
+    console.log("[frontend] instalando dependencias (npm install)...");
+    runNpm(["install"], { cwd: FRONTEND_DIR });
+  } else {
+    console.log("[frontend] node_modules ya existe; omitiendo install.");
+  }
+
+  // 3. Env files (copy from examples if missing)
+  const backendEnv = path.join(BACKEND_DIR, ".env");
+  const backendEnvExample = path.join(BACKEND_DIR, ".env.example");
+  if (!fs.existsSync(backendEnv) && fs.existsSync(backendEnvExample)) {
+    fs.copyFileSync(backendEnvExample, backendEnv);
+    console.log("[backend] .env creado desde .env.example.");
+  } else {
+    console.log("[backend] .env ya existe; sin cambios.");
+  }
+
+  const frontendEnv = path.join(FRONTEND_DIR, ".env.local");
+  if (!fs.existsSync(frontendEnv)) {
+    fs.writeFileSync(frontendEnv, "NEXT_PUBLIC_API_URL=http://127.0.0.1:8000\n", "utf-8");
+    console.log("[frontend] .env.local creado.");
+  } else {
+    console.log("[frontend] .env.local ya existe; sin cambios.");
+  }
+
+  // 4. Docker (PostgreSQL runtime)
+  if (probe("docker", ["--version"])) {
+    console.log("[docker] CLI disponible.");
+  } else {
+    console.log("[docker] AVISO: Docker no detectado. Instala Docker Desktop para la base de datos.");
+  }
+
+  // 5. WeasyPrint / GTK runtime (prescription PDFs)
+  if (IS_WINDOWS) {
+    const gtkBin = resolveGtkBin();
+    if (gtkBin) {
+      console.log(`[pdf] GTK3 detectado en: ${gtkBin}`);
+    } else {
+      console.log("[pdf] AVISO: runtime GTK3 no detectado (necesario para recetas PDF).");
+      console.log(
+        "      Instala 'GTK3-Runtime Win64' o define CONSULTAMED_GTK_BIN apuntando a su carpeta bin.",
+      );
+    }
+    console.log(
+      "[deps] Si el backend falla con 'greenlet DLL load failed', instala VC++ redist:",
+    );
+    console.log("      winget install --id abbodi1406.vcredist --exact --silent");
+  } else if (fs.existsSync(venvPython) && !probe(venvPython, ["-c", "import weasyprint"], BACKEND_DIR)) {
+    console.log("[pdf] AVISO: WeasyPrint no importable. En macOS: brew install weasyprint");
+  } else {
+    console.log("[pdf] WeasyPrint disponible.");
+  }
+
+  console.log("== bootstrap completado ==");
+}
+
 function parseFlag(flag) {
   return restArgs.includes(flag);
 }
@@ -598,8 +714,11 @@ switch (command) {
   case "start-backend":
     startBackend({ reload: parseFlag("--reload") });
     break;
+  case "bootstrap":
+    bootstrap();
+    break;
   default:
     fail(
-      "Usage: node scripts/repo-tool.mjs <generate-types|verify-schema-hash|setup-local-db|backend-checks|frontend-checks|test-gate|start-backend> [options]",
+      "Usage: node scripts/repo-tool.mjs <generate-types|verify-schema-hash|setup-local-db|backend-checks|frontend-checks|test-gate|start-backend|bootstrap> [options]",
     );
 }

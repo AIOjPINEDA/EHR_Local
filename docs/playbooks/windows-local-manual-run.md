@@ -12,49 +12,36 @@ cd "C:\Users\Asus 0001\Repos\EHR_Local"
 
 ## 1) Modo mínimo (recomendado)
 
-### 1.1 Primera vez
+### 1.1 Primera vez (un solo paso)
+
+Requisitos previos instalados: **Python 3.11**, **Node.js 20+**, **Docker Desktop**,
+**GTK3-Runtime Win64** (para recetas PDF). Si el backend se queja de `greenlet`,
+instala además **VC++ redistributable** (ver sección 5).
+
+Doble clic en `scripts\bootstrap.bat`, o desde PowerShell en la raíz del repo:
 
 ```powershell
-& "C:\Program Files\Git\bin\bash.exe" ./scripts/setup-local-db.sh
-
-cd backend
-py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item .env.example .env
-cd ..
-
-cd frontend
-$env:Path = "C:\Program Files\nodejs;" + $env:Path
-& "C:\Program Files\nodejs\npm.cmd" install
-"NEXT_PUBLIC_API_URL=http://127.0.0.1:8000" | Out-File -Encoding ascii .env.local
-cd ..
+.\scripts\bootstrap.bat
 ```
+
+Crea `backend\.venv`, instala dependencias de backend y frontend, prepara los `.env`
+y avisa si falta algún prerequisito (Docker, GTK3). Es idempotente: puedes repetirlo
+sin romper nada.
 
 ### 1.2 Cada día
 
-Terminal A (backend):
+Doble clic en `start.bat` (arranca Docker DB + backend + frontend y abre el navegador).
 
-```powershell
-cd "C:\Users\Asus 0001\Repos\EHR_Local"
-docker compose up -d db
-cd backend
-$env:Path = "C:\Program Files\GTK3-Runtime Win64\bin;" + $env:Path
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-Terminal B (frontend):
-
-```powershell
-cd "C:\Users\Asus 0001\Repos\EHR_Local\frontend"
-$env:Path = "C:\Program Files\nodejs;" + $env:Path
-& "C:\Program Files\nodejs\npm.cmd" run dev
-```
+El arranque del backend pasa por `repo-tool start-backend`, que antepone el runtime
+GTK3 al PATH para que WeasyPrint genere recetas PDF, con un guard que falla rápido y
+con mensaje claro si GTK3 no está disponible.
 
 ---
 
-## 2) Modo seguro (opcional)
+## 2) Modo manual (avanzado / diagnóstico)
 
-Úsalo si quieres evitar errores por archivos ya existentes.
+Alternativa a `bootstrap.bat` si necesitas ejecutar los pasos uno a uno.
+Úsalo para diagnóstico o para evitar errores por archivos ya existentes.
 
 ```powershell
 cd "C:\Users\Asus 0001\Repos\EHR_Local\backend"
