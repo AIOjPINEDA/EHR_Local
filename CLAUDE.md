@@ -11,11 +11,10 @@ This shim intentionally defers to `AGENTS.md`. If anything here conflicts with `
 ## Repo Snapshot
 
 - FastAPI remains the operational source of truth for writes, auth, and business logic.
-- The HAPI FHIR R5 sidecar under `sidecars/hapi-fhir/` is an implemented local baseline, not a proposed future track.
-- The published/local FHIR surface is intentionally limited to `CapabilityStatement`, `read`, `search`, and search `Bundle` for the approved subset.
-- HAPI uses a dedicated local PostgreSQL path; ConsultaMed product migrations do not run against that sidecar database.
+- Runtime is native one-click on Windows (`scripts/windows/start-consultamed.bat`), Docker only for PostgreSQL. `scripts/repo-tool.mjs` orchestrates bootstrap, start-backend, backup/restore, smoke, and the gate.
+- The HAPI FHIR R5 sidecar and `app/fhir/{clinical_mapping,etl}.py` were archived to local `.archive/fhir-interop/` by spec 006 (not used by the clinical flow). `app/fhir/base_mapping.py` stays live (imported by patient/practitioner models).
 - GitHub Issues are the only active execution backlog. Specs keep change scope, decisions, and historical context; they are not status boards.
-- `./scripts/test_gate.sh` is still the pre-commit target, but the current repo carries inherited `mypy` debt that can keep the global gate red. Report that precisely instead of claiming it fixed.
+- `./scripts/test_gate.sh` is the pre-commit target and is green as of spec 006. If it turns red, report the exact failing step instead of assuming pre-existing debt.
 
 ## Common Commands
 

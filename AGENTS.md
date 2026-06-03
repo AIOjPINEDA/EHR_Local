@@ -17,13 +17,16 @@
 - **Frontend (Vercel)**: Next.js 14 (App Router), TypeScript 5.x (strict), Tailwind 3.x + shadcn/ui
 - **Backend (Railway)**: FastAPI 0.109+, Python 3.11+, SQLAlchemy 2.x (async), Pydantic 2.x, WeasyPrint 60+, JWT + bcrypt auth
 - **Database (local-first)**: PostgreSQL 17 via local Docker; `database/migrations/` neutral SQL for bootstrap; production target RLS-required
-- **Interoperability sidecar (local baseline)**: HAPI FHIR R5 under `sidecars/hapi-fhir/` — read-only surface (`CapabilityStatement`, `read`, `search`, `Bundle`); FastAPI stays source of truth for writes/auth/logic; HAPI uses dedicated local PostgreSQL fed by internal ETL
+- **Runtime**: native one-click on Windows (`scripts/windows/start-consultamed.bat` → `repo-tool start-backend` + `npm run dev`), Docker only for PostgreSQL. `scripts/repo-tool.mjs` is the cross-platform orchestrator (bootstrap, start-backend, backup/restore, smoke, gate).
 
 ### Planned / Not yet adopted
 - Supabase Auth (replace JWT in FastAPI)
 - Full end-to-end RLS enforcement
 - TanStack Query + Zustand (frontend state/data)
 - React Hook Form + Zod (frontend forms)
+
+### Archived (not in active runtime)
+- HAPI FHIR R5 interoperability sidecar + `app/fhir/{clinical_mapping,etl}.py` — archived to local `.archive/fhir-interop/` by spec 006 (not used by the clinical flow). `app/fhir/base_mapping.py` stays live (imported by patient/practitioner models).
 
 ## Executable Commands
 
@@ -124,8 +127,7 @@ Data models follow FHIR nomenclature: `Patient`, `Practitioner`, `Encounter`, `C
 ### Never
 - Bypass authentication in any API endpoint
 - Modify security validators without explicit approval:
-  - `app/validators/dni.py`
-  - `app/validators/nie.py`
+  - `app/validators/dni.py` (DNI + NIE validation: `validate_dni_español`, `validate_nie_español`, `validate_documento`)
   - RLS policies in `database/`
 - Log PII (patient names, DNI, or health data)
 - Remove existing tests
@@ -133,7 +135,7 @@ Data models follow FHIR nomenclature: `Patient`, `Practitioner`, `Encounter`, `C
 
 ## Definition of Done
 
-- Run `./scripts/test_gate.sh` locally and report exact results. **Caveat**: inherited `mypy` debt can keep the gate red — report as residual risk, do not present as resolved.
+- Run `./scripts/test_gate.sh` locally and report exact results. As of spec 006 the gate is green (backend pytest/ruff/mypy + frontend lint/type-check/test + schema hash); if it turns red, report the exact failing step rather than assuming it is pre-existing debt.
 - `cd backend && .venv/bin/pytest tests/unit/test_architecture_dead_code_guards.py -v` passes.
 - New abstractions have at least one runtime consumer and one automated test.
 - Documentation reflects implemented state, not aspirational state.
@@ -148,7 +150,7 @@ Data models follow FHIR nomenclature: `Patient`, `Practitioner`, `Encounter`, `C
 
 ### Working model
 
-- `docs/specs/`: proposed change scope, decisions, and phased plans.
+- New active specs: `docs/specs/` — proposed change scope, decisions, and phased plans.
 - GitHub Issues: only active execution backlog.
 
 ### Repository-specific agents

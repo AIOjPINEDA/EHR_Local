@@ -12,11 +12,11 @@ If this file conflicts with `AGENTS.md`, follow `AGENTS.md`.
 
 - **Project**: Electronic Health Record (EHR) for private medical practices in Spain
 - **Phase**: MVP Complete, pending production deployment
-- **Stack**: FastAPI (Python 3.11+) + Next.js 14 (TypeScript) + PostgreSQL 17 (local-first runtime) + local HAPI FHIR R5 sidecar baseline
-- **Domain**: Healthcare with FHIR R5 alignment
-- **Source of truth**: FastAPI remains the operational source of truth; the HAPI sidecar is an implemented local interoperability layer with dedicated PostgreSQL
-- **FHIR surface**: `CapabilityStatement`, `read`, `search`, and search `Bundle` for the approved subset
-- **Gate caveat**: `./scripts/test_gate.sh` is still the target before commit, but inherited `mypy` debt can keep the global gate red; report it as residual risk
+- **Stack**: FastAPI (Python 3.11+) + Next.js 14 (TypeScript) + PostgreSQL 17 (local-first runtime); native one-click on Windows, Docker only for PostgreSQL
+- **Domain**: Healthcare with FHIR R5 naming alignment in data models
+- **Source of truth**: FastAPI is the operational source of truth for writes, auth, and business logic
+- **Archived**: HAPI FHIR R5 sidecar + `app/fhir/{clinical_mapping,etl}.py` moved to local `.archive/fhir-interop/` by spec 006 (not in active runtime)
+- **Gate**: `./scripts/test_gate.sh` is the target before commit and is green as of spec 006; if it turns red, report the exact failing step
 
 ## Workflow Summary
 

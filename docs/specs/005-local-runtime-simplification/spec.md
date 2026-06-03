@@ -3,7 +3,12 @@
 **Feature Branch**: `005-local-runtime-simplification`
 **Created**: 2026-03-13
 **Status**: Implemented — retained as historical decision context
-**Last Updated**: 2026-03-17
+**Last Updated**: 2026-05-30
+
+> **Nota (spec 006, 2026-05-30)**: el punto sobre el sidecar HAPI como runtime soportado
+> queda superado. El spec `006-windows-runtime-hardening` archivó el sidecar HAPI FHIR a
+> `.archive/fhir-interop/` por no participar en el flujo clínico. El runtime soportado pasa
+> a ser nativo one-click (backend + frontend nativos, Docker solo para PostgreSQL).
 
 ## Propósito
 

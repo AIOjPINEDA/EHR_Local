@@ -2,7 +2,7 @@
 
 **Feature Branch**: `006-windows-runtime-hardening`
 **Created**: 2026-05-30
-**Status**: Active direction
+**Status**: Implemented (all 6 phases) — macOS-verified; Windows GTK/PDF one-click pending operator checklist
 **Last Updated**: 2026-05-30
 
 ## Propósito

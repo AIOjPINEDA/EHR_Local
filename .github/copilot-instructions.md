@@ -11,6 +11,7 @@
 ## Copilot-Specific Notes
 
 - Reusable prompt files are installed in `.github/prompts/`: `/init-c-tower` for bootstrap and `/sync-c-tower` for brownfield methodology sync.
+- Active specs live in `docs/specs/`; GitHub Issues are the execution backlog.
 - Keep this file short. Repository rules, commands, boundaries, and workflow live in `AGENTS.md`.
 - If the methodology drifts again, rerun `/sync-c-tower`; it is the intended update path for this repo.
 

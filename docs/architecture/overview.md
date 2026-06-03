@@ -23,20 +23,14 @@ flowchart TB
         PDF["WeasyPrint (PDF service)"]
     end
 
-    subgraph Sidecar ["Interop Sidecar"]
-        HAPI["HAPI FHIR R5 sidecar<br/>official starter bootstrap"]
-    end
-
     subgraph Data ["Data"]
-        PG17["PostgreSQL 17 (Local)"]
-        HAPIPG["PostgreSQL 17 dedicated<br/>HAPI sidecar local only"]
+        PG17["PostgreSQL 17 (Local Docker)"]
     end
 
     Browser --> NextJS
     NextJS <-->|JSON over HTTP| FastAPI
     FastAPI --> PDF
     FastAPI <-->|Primary operational path| PG17
-    HAPI --> HAPIPG
 ```
 
 ## Component Architecture Diagram
@@ -63,20 +57,13 @@ flowchart LR
         PdfService["PDF Service\nWeasyPrint prescription generation"]
     end
 
-    subgraph Sidecar["Sidecar · HAPI FHIR R5 bootstrap"]
-        Starter["Official starter image\nDockerized local runtime"]
-        Overlay["Read-only interceptor\nCapabilityStatement customization"]
-        Ops["/fhir/metadata\n/actuator/health + readiness-backed healthcheck"]
-    end
-
     subgraph Data["Data"]
         LocalPG["PostgreSQL 17\nlocal Docker profile"]
-        HapiPG["PostgreSQL 17 dedicated\nlocal HAPI sidecar only"]
     end
 
     subgraph Tooling["Quality + Contract Tooling"]
         OpenAPI["OpenAPI schema export"]
-        TypeGen["generate-types.sh"]
+        RepoTool["repo-tool.mjs\nbootstrap · start-backend · backup · smoke · gate"]
         Gate["test_gate.sh\narchitecture + contract checks"]
     end
 
@@ -86,8 +73,8 @@ flowchart LR
     Pages --> ApiClient
     ApiClient --> Router
     Types --> Pages
-    OpenAPI --> TypeGen
-    TypeGen --> Types
+    OpenAPI --> RepoTool
+    RepoTool --> Types
 
     Router --> Auth
     Router --> Services
@@ -96,39 +83,30 @@ flowchart LR
     Services --> Models
     Services --> PdfService
     Models --> LocalPG
-    Starter --> Overlay
-    Starter --> Ops
-    Starter --> HapiPG
 
     Gate -. validates .-> Frontend
     Gate -. validates .-> Backend
     Gate -. verifies .-> OpenAPI
 ```
 
-## Implemented HAPI Sidecar Baseline
+## Native One-Click Runtime
 
-- The local interoperability sidecar lives under `sidecars/hapi-fhir/` and runs independently from FastAPI.
-- Startup helpers: `./scripts/start-hapi-sidecar.sh` and `./scripts/stop-hapi-sidecar.sh`.
-- Initial subset ETL helper: `./scripts/load-hapi-clinical-subset.sh` (reloads converge without `--reset`; `--reset` is only for a clean local wipe).
-- Local endpoints include:
-  - `http://localhost:8090/fhir/metadata`
-  - `http://localhost:8090/actuator/health`
-- Startup waits for `/actuator/health`, `/fhir/metadata`, and Docker health=`healthy`; the container healthcheck is backed by the runtime readiness signal at `/actuator/health/readiness`.
-- The overlay build chain now targets Java 21 LTS, and the final sidecar container has been validated on Java 21 runtime.
-- The current baseline keeps the sidecar localhost-bound and restricts the public surface at interaction/operation level to `CapabilityStatement`, `read`, `search`, and search `Bundle` page retrieval for the approved subset.
-- The published `CapabilityStatement` does not advertise resource versioning, `read history`, conditional interactions, or public write support.
-- Non-approved GET endpoints/operations such as `_history`, `vread`, `$meta`, and `$get-resource-counts` are not publicly exposed; public write operations remain closed and internal ETL writes require the `X-Consultamed-ETL-Key` header.
-- The sidecar emits a minimal audit trail for top-level FHIR requests using request ID + method + interaction + resource type/id + outcome, without logging request URLs, query strings, payload bodies, or authorization material.
-- HAPI now persists on a dedicated local PostgreSQL container (`consultamed-hapi-db`, default host port `54330`).
-- FastAPI keeps its own operational PostgreSQL path (`consultamed-db` / `DATABASE_URL`), remains independently startable, and stays the source of truth for product writes, auth, and business logic; HAPI remains a local sidecar with no public general writes or dual-write path.
-- HAPI schema lifecycle stays owned by the official starter on sidecar startup; ConsultaMed migrations do not run against the sidecar database.
+- Operator path on the clinic PC is `scripts/windows/start-consultamed.bat` (`start.bat`): it ensures Docker Desktop is up, provisions PostgreSQL, launches the backend and frontend natively, runs a post-start smoke check, and opens the browser.
+- `scripts/repo-tool.mjs` is the cross-platform orchestrator. Commands: `bootstrap` (idempotent first-time setup), `start-backend` (prepends the GTK3 runtime to PATH so WeasyPrint renders prescription PDFs, with a fail-fast guard), `setup-local-db`, `backup` / `restore` (pg_dump gzip + rotation), `smoke` (health + PDF render), `generate-types`, `verify-schema-hash`, `test-gate`.
+- Backend and frontend run natively (uvicorn + `npm run dev`); Docker is used only for PostgreSQL.
+
+## Archived: HAPI FHIR interoperability sidecar
+
+- The HAPI FHIR R5 sidecar (`sidecars/hapi-fhir/`), its ETL (`app/fhir/clinical_mapping.py`, `app/fhir/etl.py`), startup scripts, and tests were archived to local-only `.archive/fhir-interop/` by spec `006-windows-runtime-hardening`.
+- Rationale: the sidecar did not participate in the clinical flow (no imports from `api/`, `services/`, `main.py`, or `models/`; no FHIR routes in the router; not launched by the one-click runtime).
+- `app/fhir/base_mapping.py` (+ `__init__.py`) stays live: the `Patient` and `Practitioner` models import its `to_fhir_*` / `fhir_identifiers` helpers. Its test `test_fhir_base_mapping.py` remains in the suite.
+- The archived bundle is reversible via git history or the `.archive/fhir-interop/` copy.
 
 ## Database Runtime Selection
 
 - Backend uses a single runtime selector: `DATABASE_URL`.
 - Non-database runtime settings use the `CONSULTAMED_*` prefix to avoid shell-level env collisions.
 - Local profile example: `backend/.env.local.example`.
-- `backend/.env.supabase.example` remains only as a transitional/historical reference and is not an actively supported runtime profile.
 - Operator path for the current MVP is: set `DATABASE_URL` in `backend/.env` to the local PostgreSQL instance.
 - Infrastructure provisioning (Docker + migrations) is centralized in `node scripts/repo-tool.mjs setup-local-db`; that bootstrap reads SQL from `database/migrations/`.
 - Compatibility wrappers remain available at `./scripts/setup-local-db.sh` and `powershell -ExecutionPolicy Bypass -File scripts/repo-tool.ps1 setup-local-db`.
@@ -340,25 +318,22 @@ consultamed/
 │   └── scripts/
 ├── database/
 │   └── migrations/         # Neutral SQL source for local bootstrap
-├── supabase/
-│   └── config.toml         # Historical Supabase tooling config kept outside active runtime path
-├── sidecars/
-│   └── hapi-fhir/            # Implemented local HAPI starter baseline
 ├── scripts/
 │   ├── repo-tool.mjs         # Shared cross-platform tooling entrypoint
 │   ├── repo-tool.ps1         # Windows wrapper for repo-tool.mjs
+│   ├── bootstrap.bat         # One-command first-time setup (Windows)
+│   ├── register-backup-task.bat # Registers daily pg backup (Windows)
 │   ├── setup-local-db.sh     # POSIX wrapper for repo-tool.mjs setup-local-db
 │   ├── generate-types.sh
-│   ├── start-hapi-sidecar.sh
-│   ├── stop-hapi-sidecar.sh
 │   ├── verify-schema-hash.sh
 │   ├── test_gate.sh
-│   └── windows/
+│   └── windows/              # start-consultamed.bat + stop-consultamed.bat
 ├── docs/
 │   ├── architecture/
 │   ├── plans/
 │   ├── playbooks/
-│   └── specs/                # Active specs
+│   └── specs/                # Active specs (docs/specs/)
+└── .archive/                 # Local-only (gitignored): archived HAPI FHIR sidecar
 └── (local-only archive, not versioned in git)
 ```
 ```
