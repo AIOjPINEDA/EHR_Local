@@ -44,6 +44,13 @@ function execute(commandName, args, options = {}) {
   });
 
   if (result.error) {
+    // A spawn error (e.g. ENOENT for a missing binary) must honour allowFailure
+    // so callers like probe()/resolvePython() can try the next candidate instead
+    // of aborting the whole process. On Windows the .venv/Scripts path exists so
+    // this path never triggered; on macOS the first candidate is absent.
+    if (options.allowFailure) {
+      return result;
+    }
     fail(`Failed to execute ${commandName}: ${result.error.message}`);
   }
 
@@ -500,6 +507,68 @@ function testGate({ runIntegration = false, runBuild = true } = {}) {
   console.log("Test gate passed.");
 }
 
+function resolveGtkBin() {
+  // WeasyPrint on Windows needs the GTK3 runtime DLLs on PATH (Pango/cairo/gdk).
+  // On macOS/Linux the system/brew libraries are discovered automatically, so
+  // this resolves to null and the caller leaves PATH untouched.
+  const override = process.env.CONSULTAMED_GTK_BIN;
+  if (override) {
+    return fs.existsSync(override) ? override : null;
+  }
+
+  if (IS_WINDOWS) {
+    const defaultGtkBin = "C:\\Program Files\\GTK3-Runtime Win64\\bin";
+    if (fs.existsSync(defaultGtkBin)) {
+      return defaultGtkBin;
+    }
+  }
+
+  return null;
+}
+
+function startBackend({ reload = false } = {}) {
+  const python = resolvePython([]);
+
+  const gtkBin = resolveGtkBin();
+  const childEnv = gtkBin
+    ? { PATH: `${gtkBin}${path.delimiter}${process.env.PATH ?? ""}` }
+    : {};
+
+  // Fail fast if WeasyPrint cannot render: surfacing a missing GTK runtime here
+  // beats a 500 error mid-consultation when a prescription PDF is requested.
+  const guard = capture(
+    python.command,
+    [
+      ...python.args,
+      "-c",
+      "import weasyprint; weasyprint.HTML(string='<p>ok</p>').write_pdf()",
+    ],
+    { cwd: BACKEND_DIR, env: childEnv, allowFailure: true },
+  );
+
+  if (guard.status !== 0) {
+    const detail = guard.stderr ? guard.stderr.trim().split("\n").pop() : "";
+    fail(
+      [
+        "No se pudo inicializar WeasyPrint (generacion de recetas PDF).",
+        "Falta el runtime GTK3 requerido en Windows.",
+        "Solucion: instala 'GTK3-Runtime Win64' o define CONSULTAMED_GTK_BIN",
+        "apuntando a la carpeta 'bin' de GTK3.",
+        detail ? `Detalle: ${detail}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+
+  const uvicornArgs = ["-m", "uvicorn", "app.main:app", "--port", "8000"];
+  if (reload) {
+    uvicornArgs.push("--reload");
+  }
+
+  runPython(python, uvicornArgs, { cwd: BACKEND_DIR, env: childEnv });
+}
+
 function parseFlag(flag) {
   return restArgs.includes(flag);
 }
@@ -526,8 +595,11 @@ switch (command) {
       runBuild: !parseFlag("--skip-build"),
     });
     break;
+  case "start-backend":
+    startBackend({ reload: parseFlag("--reload") });
+    break;
   default:
     fail(
-      "Usage: node scripts/repo-tool.mjs <generate-types|verify-schema-hash|setup-local-db|backend-checks|frontend-checks|test-gate> [options]",
+      "Usage: node scripts/repo-tool.mjs <generate-types|verify-schema-hash|setup-local-db|backend-checks|frontend-checks|test-gate|start-backend> [options]",
     );
 }

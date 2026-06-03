@@ -79,5 +79,7 @@ def test_windows_start_script_uses_native_repo_tool_bootstrap() -> None:
     assert 'Docker Desktop.exe' in start_script
     assert 'start "" "%DOCKER_DESKTOP_EXE%"' in start_script
     assert 'repo-tool.ps1" setup-local-db' in start_script
-    assert r'.venv\Scripts\python.exe -m uvicorn' in start_script
+    # Backend launches via repo-tool start-backend (prepends GTK to PATH for
+    # WeasyPrint prescription PDFs), not bare uvicorn.
+    assert "repo-tool.mjs start-backend" in start_script
     assert "npm.cmd run dev" in start_script

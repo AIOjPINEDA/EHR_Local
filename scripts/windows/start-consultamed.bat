@@ -51,8 +51,8 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Iniciar backend y frontend en ventanas separadas
-start "Backend" cmd /k "cd /d ""%ROOT_DIR%\backend"" && .venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000"
+REM Iniciar backend (repo-tool inyecta GTK al PATH para recetas PDF) y frontend
+start "Backend" cmd /k "cd /d ""%ROOT_DIR%"" && node scripts\repo-tool.mjs start-backend --reload"
 timeout /t 3 /nobreak >nul
 start "Frontend" cmd /k "cd /d ""%ROOT_DIR%\frontend"" && npm.cmd run dev"
 
