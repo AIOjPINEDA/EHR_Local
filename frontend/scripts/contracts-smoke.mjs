@@ -14,6 +14,14 @@ function assert(condition, message) {
 async function run() {
   const encounterPagePath = join(projectRoot, "src", "app", "encounters", "[id]", "page.tsx");
   const source = await readFile(encounterPagePath, "utf8");
+  const encounterSoapSectionsPath = join(
+    projectRoot,
+    "src",
+    "components",
+    "encounters",
+    "encounter-soap-sections.tsx",
+  );
+  const encounterSoapSectionsSource = await readFile(encounterSoapSectionsPath, "utf8");
   const dashboardPath = join(projectRoot, "src", "app", "dashboard", "page.tsx");
   const dashboardSource = await readFile(dashboardPath, "utf8");
   const patientsListPath = join(projectRoot, "src", "app", "patients", "page.tsx");
@@ -51,12 +59,16 @@ async function run() {
   assert(source.includes("subject_id"), "encounters/[id] debe usar subject_id en el contrato.");
   assert(!source.includes("patient_id:"), "encounters/[id] no debe tipar patient_id en EncounterDetail.");
   assert(
-    source.includes("subjective_text") &&
-      source.includes("objective_text") &&
-      source.includes("assessment_text") &&
-      source.includes("plan_text") &&
-      source.includes("recommendations_text"),
-    "encounters/[id] debe incluir campos SOAP en el contrato y render."
+    source.includes("EncounterSoapSections"),
+    "encounters/[id] debe renderizar las secciones SOAP vía EncounterSoapSections."
+  );
+  assert(
+    encounterSoapSectionsSource.includes("subjective_text") &&
+      encounterSoapSectionsSource.includes("objective_text") &&
+      encounterSoapSectionsSource.includes("assessment_text") &&
+      encounterSoapSectionsSource.includes("plan_text") &&
+      encounterSoapSectionsSource.includes("recommendations_text"),
+    "EncounterSoapSections debe incluir todos los campos SOAP en el render."
   );
   assert(
     source.includes("api.downloadPdf(`/prescriptions/${encounterId}/pdf`)"),

@@ -7,6 +7,8 @@ import { api } from "@/lib/api/client";
 import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
 import { PatientHeader } from "@/components/patients/patient-header";
+import { AllergyModal, type AllergyForm } from "@/components/patients/allergy-modal";
+import { PatientEditModal } from "@/components/patients/patient-edit-modal";
 import type { Patient, PatientUpdate, EncounterListResponse } from "@/types/api";
 
 export default function PatientDetailPage() {
@@ -22,7 +24,7 @@ export default function PatientDetailPage() {
 
   // Modal para añadir alergia
   const [showAllergyModal, setShowAllergyModal] = useState(false);
-  const [allergyForm, setAllergyForm] = useState({
+  const [allergyForm, setAllergyForm] = useState<AllergyForm>({
     code_text: "",
     category: "medication",
     criticality: "low",
@@ -374,220 +376,24 @@ export default function PatientDetailPage() {
 
       {/* Modal Añadir Alergia */}
       {showAllergyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Añadir Alergia</h3>
-
-            <form onSubmit={handleAddAllergy} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sustancia/Medicamento
-                </label>
-                <input
-                  type="text"
-                  value={allergyForm.code_text}
-                  onChange={(e) => setAllergyForm(prev => ({ ...prev, code_text: e.target.value }))}
-                  required
-                  placeholder="Ej: Penicilina, Ibuprofeno, Mariscos..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Categoría
-                  </label>
-                  <select
-                    value={allergyForm.category}
-                    onChange={(e) => setAllergyForm(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="medication">Medicamento</option>
-                    <option value="food">Alimento</option>
-                    <option value="environment">Ambiental</option>
-                    <option value="biologic">Biológico</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Criticidad
-                  </label>
-                  <select
-                    value={allergyForm.criticality}
-                    onChange={(e) => setAllergyForm(prev => ({ ...prev, criticality: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="low">Baja</option>
-                    <option value="high">Alta</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="submit"
-                  disabled={savingAllergy}
-                  className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {savingAllergy ? "Guardando..." : "Guardar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAllergyModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <AllergyModal
+          form={allergyForm}
+          setForm={setAllergyForm}
+          isSaving={savingAllergy}
+          onSubmit={handleAddAllergy}
+          onClose={() => setShowAllergyModal(false)}
+        />
       )}
 
       {/* Modal Editar Perfil */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-semibold text-gray-800">
-              Editar Perfil del Paciente
-            </h3>
-
-            <form onSubmit={handleEditPatient} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Nombre
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.name_given ?? ""}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        name_given: e.target.value,
-                      }))
-                    }
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Apellidos
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.name_family ?? ""}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        name_family: e.target.value,
-                      }))
-                    }
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Fecha de nacimiento
-                  </label>
-                  <input
-                    type="date"
-                    value={editForm.birth_date ?? ""}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        birth_date: e.target.value || undefined,
-                      }))
-                    }
-                    required
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Género
-                  </label>
-                  <select
-                    value={editForm.gender ?? ""}
-                    onChange={(e) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        gender: e.target.value || undefined,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Sin especificar</option>
-                    <option value="male">Masculino</option>
-                    <option value="female">Femenino</option>
-                    <option value="other">Otro</option>
-                    <option value="unknown">Desconocido</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  value={editForm.telecom_phone ?? ""}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      telecom_phone: e.target.value || undefined,
-                    }))
-                  }
-                  placeholder="Ej: 612345678"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={editForm.telecom_email ?? ""}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({
-                      ...prev,
-                      telecom_email: e.target.value || undefined,
-                    }))
-                  }
-                  placeholder="paciente@email.com"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="submit"
-                  disabled={savingEdit}
-                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {savingEdit ? "Guardando..." : "Guardar cambios"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <PatientEditModal
+          form={editForm}
+          setForm={setEditForm}
+          isSaving={savingEdit}
+          onSubmit={handleEditPatient}
+          onClose={() => setShowEditModal(false)}
+        />
       )}
     </div>
   );
