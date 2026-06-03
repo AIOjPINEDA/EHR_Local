@@ -56,8 +56,16 @@ start "Backend" cmd /k "cd /d ""%ROOT_DIR%"" && node scripts\repo-tool.mjs start
 timeout /t 3 /nobreak >nul
 start "Frontend" cmd /k "cd /d ""%ROOT_DIR%\frontend"" && npm.cmd run dev"
 
-REM Abrir navegador
+REM Verificacion post-arranque (salud + recetas PDF)
 timeout /t 5 /nobreak >nul
+node scripts\repo-tool.mjs smoke
+if %errorlevel% neq 0 (
+    echo.
+    echo AVISO: la verificacion post-arranque fallo. Revisa los mensajes arriba
+    echo ^(backend/health o runtime GTK3 para recetas PDF^).
+)
+
+REM Abrir navegador
 start http://localhost:3000
 
 echo.

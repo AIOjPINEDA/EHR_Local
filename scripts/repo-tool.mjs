@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import zlib from "node:zlib";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
@@ -34,13 +35,23 @@ function execute(commandName, args, options = {}) {
     stdio = ["pipe", "inherit", "inherit"];
   }
 
+  // Default to utf8 when capturing text; callers needing raw bytes (e.g.
+  // pg_dump output for gzip) pass encoding: "buffer".
+  let encoding;
+  if (options.encoding) {
+    encoding = options.encoding === "buffer" ? undefined : options.encoding;
+  } else if (options.captureOutput) {
+    encoding = "utf8";
+  }
+
   const result = spawnSync(commandName, args, {
     cwd: options.cwd ?? REPO_ROOT,
     env: { ...process.env, ...(options.env ?? {}) },
     shell: options.shell ?? false,
     stdio,
-    encoding: options.captureOutput ? "utf8" : undefined,
+    encoding,
     input: options.input,
+    maxBuffer: options.maxBuffer ?? 64 * 1024 * 1024,
   });
 
   if (result.error) {
@@ -685,6 +696,130 @@ function bootstrap() {
   console.log("== bootstrap completado ==");
 }
 
+function resolveBackupDir() {
+  if (process.env.CONSULTAMED_BACKUP_DIR) {
+    return process.env.CONSULTAMED_BACKUP_DIR;
+  }
+  const home = process.env.HOME || process.env.USERPROFILE || REPO_ROOT;
+  return path.join(home, "ConsultaMed-Backups");
+}
+
+function ensureDbRunning() {
+  if (!probe("docker", ["exec", "consultamed-db", "pg_isready", "-U", "postgres", "-d", "consultamed"])) {
+    fail(
+      "La base de datos 'consultamed-db' no esta lista. Arranca primero con: setup-local-db.",
+    );
+  }
+}
+
+function backupDb() {
+  ensureDbRunning();
+
+  const backupDir = resolveBackupDir();
+  fs.mkdirSync(backupDir, { recursive: true });
+
+  const now = new Date();
+  const stamp = now.toISOString().replace(/[-:]/g, "").replace(/\..+/, "").replace("T", "-");
+  const outPath = path.join(backupDir, `consultamed-${stamp}.sql.gz`);
+
+  // pg_dump writes plain SQL to stdout; capture it and gzip in-process so the
+  // command works the same on Windows (no shell pipe / gzip dependency).
+  // --clean --if-exists makes the dump self-contained for restore onto an
+  // existing database (drops objects before recreating them).
+  const dump = capture(
+    "docker",
+    ["exec", "-i", "consultamed-db", "pg_dump", "-U", "postgres", "--clean", "--if-exists", "consultamed"],
+    { encoding: "buffer" },
+  );
+
+  const compressed = zlib.gzipSync(dump.stdout);
+  fs.writeFileSync(outPath, compressed);
+  console.log(`Backup creado: ${outPath} (${compressed.length} bytes)`);
+
+  // Rotation: keep the most recent CONSULTAMED_BACKUP_KEEP (default 14).
+  const keep = readIntegerEnv("CONSULTAMED_BACKUP_KEEP", 14);
+  const backups = fs
+    .readdirSync(backupDir)
+    .filter((name) => /^consultamed-.*\.sql\.gz$/.test(name))
+    .sort();
+
+  if (backups.length > keep) {
+    for (const stale of backups.slice(0, backups.length - keep)) {
+      fs.unlinkSync(path.join(backupDir, stale));
+      console.log(`Backup antiguo eliminado: ${stale}`);
+    }
+  }
+}
+
+function restoreDb() {
+  const fileArg = restArgs.find((arg) => !arg.startsWith("--"));
+  if (!fileArg) {
+    fail("Uso: restore <fichero.sql.gz> [--yes]");
+  }
+  if (!fs.existsSync(fileArg)) {
+    fail(`Fichero de backup no encontrado: ${fileArg}`);
+  }
+  if (!parseFlag("--yes")) {
+    fail(
+      "restore SOBRESCRIBE los datos actuales. Repite el comando con --yes para confirmar.",
+    );
+  }
+
+  ensureDbRunning();
+
+  const sql = zlib.gunzipSync(fs.readFileSync(fileArg)).toString("utf-8");
+  run(
+    "docker",
+    ["exec", "-i", "consultamed-db", "psql", "-U", "postgres", "-d", "consultamed", "-v", "ON_ERROR_STOP=1"],
+    { input: sql },
+  );
+  console.log(`Restauracion completada desde: ${fileArg}`);
+}
+
+function smokeCheck() {
+  let ok = true;
+
+  // 1. Health endpoint
+  const health = capture(
+    "curl",
+    ["-s", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", "5", "http://127.0.0.1:8000/health"],
+    { allowFailure: true },
+  );
+  if (health.stdout.trim() === "200") {
+    console.log("[smoke] /health: OK (200)");
+  } else {
+    ok = false;
+    console.log(`[smoke] /health: FALLO (codigo: ${health.stdout.trim() || "sin respuesta"})`);
+  }
+
+  // 2. WeasyPrint PDF render (verifies GTK wiring)
+  const python = resolvePython([]);
+  const gtkBin = resolveGtkBin();
+  const childEnv = gtkBin
+    ? { PATH: `${gtkBin}${path.delimiter}${process.env.PATH ?? ""}` }
+    : {};
+  const pdf = capture(
+    python.command,
+    [
+      ...python.args,
+      "-c",
+      "import weasyprint,sys; sys.exit(0 if len(weasyprint.HTML(string='<h1>smoke</h1>').write_pdf())>0 else 1)",
+    ],
+    { cwd: BACKEND_DIR, env: childEnv, allowFailure: true },
+  );
+  if (pdf.status === 0) {
+    console.log("[smoke] WeasyPrint PDF: OK");
+  } else {
+    ok = false;
+    console.log("[smoke] WeasyPrint PDF: FALLO (revisa el runtime GTK3)");
+  }
+
+  if (!ok) {
+    process.exit(1);
+  }
+  console.log("[smoke] Todo OK.");
+}
+
 function parseFlag(flag) {
   return restArgs.includes(flag);
 }
@@ -717,8 +852,17 @@ switch (command) {
   case "bootstrap":
     bootstrap();
     break;
+  case "backup":
+    backupDb();
+    break;
+  case "restore":
+    restoreDb();
+    break;
+  case "smoke":
+    smokeCheck();
+    break;
   default:
     fail(
-      "Usage: node scripts/repo-tool.mjs <generate-types|verify-schema-hash|setup-local-db|backend-checks|frontend-checks|test-gate|start-backend|bootstrap> [options]",
+      "Usage: node scripts/repo-tool.mjs <generate-types|verify-schema-hash|setup-local-db|backend-checks|frontend-checks|test-gate|start-backend|bootstrap|backup|restore|smoke> [options]",
     );
 }
