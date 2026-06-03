@@ -17,8 +17,6 @@
   <img src="https://img.shields.io/badge/Node.js-20-417e38?style=flat-square&logo=nodedotjs" alt="Node.js" />
   <img src="https://img.shields.io/badge/TypeScript-5.x-2563eb?style=flat-square&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/PostgreSQL-17-1d4ed8?style=flat-square&logo=postgresql" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/HAPI_FHIR-R5_v8.8-e34c26?style=flat-square&logo=apache&logoColor=white" alt="HAPI FHIR R5" />
-  <img src="https://img.shields.io/badge/Java-21_(sidecar)-ed8b00?style=flat-square&logo=openjdk&logoColor=white" alt="Java 21" />
   <img src="https://img.shields.io/badge/shadcn/ui-Tailwind-06b6d4?style=flat-square&logo=tailwindcss" alt="shadcn/ui" />
 </p>
 
@@ -31,7 +29,6 @@
 - Generación de receta PDF con un clic (WeasyPrint)
 - Autenticación JWT + bcrypt
 - Tipos TypeScript auto-generados desde OpenAPI
-- Sidecar HAPI FHIR R5 local para interoperabilidad (read-only)
 - CI con lint, type-check y tests en cada push/PR
 
 ## Estado actual
@@ -42,9 +39,8 @@
 | Frontend (Next.js 14) | ✅ Completo | UI desktop integrada |
 | Autenticación | ✅ Funcional | bcrypt + JWT |
 | Flujo clínico MVP | ✅ Funcional | Pacientes, consultas, templates, recetas PDF |
-| HAPI FHIR R5 sidecar | ✅ Baseline local | Read-only: `CapabilityStatement`, `read`, `search`, `Bundle` |
 | Tipos API | ✅ Automáticos | OpenAPI → TypeScript |
-| Gate local + CI | ⚠️ Riesgo residual | Deuda heredada de `mypy` puede mantener el gate rojo |
+| Gate local + CI | ✅ Verde | Backend (pytest/ruff/mypy) + frontend (lint/type-check/test) |
 
 ## Quick Start
 
@@ -84,7 +80,6 @@ DEBUG=true
 ```
 
 > Ruta recomendada: PostgreSQL local en `localhost:54329`.
-> `backend/.env.supabase.example` se conserva solo como referencia histórica/transitoria y ya no describe un camino operativo recomendado.
 
 ### 3. Frontend
 
@@ -100,25 +95,7 @@ Opcional — `frontend/.env.local`:
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-### 4. HAPI FHIR sidecar (opcional)
-
-```bash
-./scripts/start-hapi-sidecar.sh
-```
-
-<details>
-<summary>Detalles del sidecar</summary>
-
-- Levanta su propia PostgreSQL dedicada (`consultamed-hapi-db`, `localhost:54330`), separada de la DB operacional.
-- HAPI crea/actualiza su esquema al arrancar; **no apliques** `database/migrations` sobre esta base.
-- Superficie publicada: solo `CapabilityStatement`, `read`, `search` y `Bundle` del subset aprobado — sin versionado, `_history`, escrituras públicas ni operaciones `$meta`.
-- FastAPI mantiene writes, auth y lógica clínica. HAPI es read-only; las escrituras internas van por ETL con `X-Consultamed-ETL-Key`.
-- Carga del subset clínico: `./scripts/load-hapi-clinical-subset.sh`
-- Reset de persistencia HAPI: `docker compose -f sidecars/hapi-fhir/docker-compose.yml down -v --remove-orphans`
-
-</details>
-
-### 5. Login piloto
+### 4. Login piloto
 
 | Campo | Valor |
 |---|---|
@@ -131,16 +108,6 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 |---|---|
 | Frontend | http://localhost:3000 |
 | API / Docs OpenAPI | http://localhost:8000 · http://localhost:8000/docs |
-| HAPI metadata | http://localhost:8090/fhir/metadata |
-| HAPI health | http://localhost:8090/actuator/health |
-
-## Smoke Test
-
-```bash
-./scripts/smoke_phase1.sh http://localhost:8000
-```
-
-Valida conectividad, autenticación, pacientes, consultas y templates.
 
 ## Arquitectura
 
@@ -149,19 +116,15 @@ flowchart LR
     FE["Frontend\nNext.js 14 + TypeScript"]
     API["Backend\nFastAPI · source of truth"]
     DB["PostgreSQL 17\noperacional"]
-    HAPI["HAPI FHIR R5\nsidecar read-only"]
-    HDB["PostgreSQL 17\ndedicada HAPI"]
     PDF["WeasyPrint\nRecetas PDF"]
 
     FE <--> API
     API <--> DB
     API --> PDF
-    API -. ETL interna .-> HAPI
-    HAPI --> HDB
 ```
 
 - **FastAPI** es la API principal y fuente de verdad para writes, auth y lógica clínica.
-- **HAPI FHIR** es un sidecar local de interoperabilidad read-only con persistencia propia.
+- **PostgreSQL 17** (Docker) es la única base de datos del runtime; backend y frontend corren nativos.
 
 ## Estructura del repositorio
 
@@ -169,17 +132,15 @@ flowchart LR
 ├── backend/
 │   ├── app/           # API, modelos, schemas, servicios, validators, FHIR mapping
 │   ├── tests/         # unit/, contracts/, integration/
-│   └── scripts/       # export-openapi, migrations, ETL helpers
+│   └── scripts/       # export-openapi, migrations
 ├── frontend/
 │   ├── src/app/       # Next.js App Router pages
 │   ├── src/components/
 │   ├── src/lib/       # API client, hooks, utils
 │   └── src/types/     # Tipos auto-generados + manuales
-├── sidecars/hapi-fhir/ # Dockerfile, overlay, config HAPI
 ├── database/
 │   └── migrations/     # SQL neutral usado por setup-local-db
-├── supabase/           # Configuración histórica/transitoria fuera del runtime activo
-├── scripts/           # setup-local-db, test_gate, start/stop-hapi, smoke tests
+├── scripts/           # repo-tool.mjs (orquestador) + wrappers (setup-local-db, test_gate)
 ├── docs/              # Arquitectura, specs, playbooks, compliance, release
 └── .github/workflows/ # CI (backend + frontend)
 ```
@@ -212,8 +173,6 @@ ruff check .
 cd frontend
 npm test && npm run lint && npm run type-check
 ```
-
-> El repo conserva deuda heredada de `mypy` que puede mantener el gate rojo; trátalo como riesgo residual documentado.
 
 ## Documentación
 

@@ -37,7 +37,6 @@ psql -d consultamed -f database/migrations/20260208090100_add_encounter_soap_fie
 ```
 
 > El bootstrap local toma su SQL desde la ruta neutral `database/migrations/`.
-> `supabase/` se conserva aparte como artefacto histórico/transitorio, pero ya no es el camino operativo del runtime local.
 
 **Verifica la migración:**
 ```sql
@@ -63,7 +62,6 @@ DEBUG=false
 ```
 
 Usa `backend/.env.local.example` como referencia activa y mantén `backend/.env` apuntando al PostgreSQL local.
-`backend/.env.supabase.example` queda solo como referencia histórica/transitoria y ya no describe un camino operativo soportado.
 
 > ⚠️ **Importante:** Cambia `JWT_SECRET_KEY` a un valor único para producción.
 > Si despliegas PostgreSQL local con Docker, fija imagen explícita de la serie 17: `LOCAL_POSTGRES_IMAGE=postgres:17.7`.
@@ -119,12 +117,12 @@ npm run start
 
 ---
 
-### Paso 5: Smoke Test en Producción
+### Paso 5: Smoke Test
+
+Con el backend en marcha, verifica salud del servicio y render de receta PDF:
 
 ```bash
-export API_URL=https://api.tu-dominio.com
-export PILOT_PASSWORD=piloto2026
-./scripts/smoke_phase1.sh
+node scripts/repo-tool.mjs smoke
 ```
 
 ---
