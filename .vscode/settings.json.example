@@ -1,8 +1,17 @@
+// Plantilla de ajustes del workspace. Copiala a .vscode/settings.json (ignorado por git)
+// y ajustala a tu maquina sin que los cambios vuelvan al repo:
+//   Windows:  copy .vscode\settings.json.example .vscode\settings.json
+//   macOS:    cp .vscode/settings.json.example .vscode/settings.json
 {
     "chat.useAgentsMdFile": true,
     "github.copilot.chat.codeGeneration.useInstructionFiles": true,
-    "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+    // venvPath deja que la extension de Python descubra backend/.venv en cualquier SO.
+    // No uses python.defaultInterpreterPath: su layout difiere (Scripts/python.exe vs bin/python).
+    "python.venvPath": "${workspaceFolder}/backend",
     "python.terminal.activateEnvironment": true,
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/backend"
+    ],
     "chat.agent.maxRequests": 50,
     "chat.tools.terminal.autoApprove": false,
     "python-envs.pythonProjects": [],

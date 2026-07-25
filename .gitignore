@@ -95,7 +95,9 @@ frontend/test-output.css
 # ============================================
 .vscode/*
 !.vscode/
-!.vscode/settings.json
+# settings.json queda local por maquina (rutas de venv difieren entre Windows y macOS/Linux).
+# Copia la plantilla en un clon nuevo: cp .vscode/settings.json.example .vscode/settings.json
+!.vscode/settings.json.example
 !.vscode/extensions.json
 .idea/
 *.swp
