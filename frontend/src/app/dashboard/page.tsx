@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { formatPractitionerName } from "@/lib/api/auth";
 import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
 import { HospitalBrand } from "@/components/branding/hospital-brand";
 import { APP_NAME } from "@/lib/branding/constants";
@@ -115,9 +116,7 @@ export default function DashboardPage() {
           <HospitalBrand title={APP_NAME} subtitle="Dashboard clínico" />
           
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">
-              Dr/Dra. {user.name_given} {user.name_family}
-            </span>
+            <span className="text-sm text-gray-600">{formatPractitionerName(user)}</span>
             <button
               onClick={handleLogout}
               className="text-sm text-gray-500 hover:text-gray-700"

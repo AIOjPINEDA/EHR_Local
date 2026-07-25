@@ -37,6 +37,8 @@ export type Template = Schema["TemplateResponse"];
 export type TemplateListResponse = Schema["TemplateListResponse"];
 
 export type Practitioner = Schema["PractitionerResponse"];
+export type PractitionerPublicSummary = Schema["PractitionerPublicSummary"];
+export type PractitionerCreate = Schema["PractitionerCreate"];
 export type LoginResponse = Schema["TokenResponse"];
 
 export interface PaginatedResponse<T> {

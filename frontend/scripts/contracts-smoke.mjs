@@ -55,6 +55,20 @@ async function run() {
   const medicationSectionSource = await readFile(medicationSectionPath, "utf8");
   const encounterFormActionsPath = join(projectRoot, "src", "components", "encounters", "encounter-form-actions.tsx");
   const encounterFormActionsSource = await readFile(encounterFormActionsPath, "utf8");
+  const loginPath = join(projectRoot, "src", "app", "login", "page.tsx");
+  const loginSource = await readFile(loginPath, "utf8");
+  const registerPagePath = join(projectRoot, "src", "app", "register", "page.tsx");
+  const registerPageSource = await readFile(registerPagePath, "utf8");
+  const registerFormPath = join(projectRoot, "src", "components", "auth", "register-form.tsx");
+  const registerFormSource = await readFile(registerFormPath, "utf8");
+  const practitionerPickerPath = join(projectRoot, "src", "components", "auth", "practitioner-picker.tsx");
+  const practitionerPickerSource = await readFile(practitionerPickerPath, "utf8");
+  const authApiPath = join(projectRoot, "src", "lib", "api", "auth.ts");
+  const authApiSource = await readFile(authApiPath, "utf8");
+  const authStorePath = join(projectRoot, "src", "lib", "stores", "auth-store.ts");
+  const authStoreSource = await readFile(authStorePath, "utf8");
+  const apiClientPath = join(projectRoot, "src", "lib", "api", "client.ts");
+  const apiClientSource = await readFile(apiClientPath, "utf8");
 
   assert(source.includes("subject_id"), "encounters/[id] debe usar subject_id en el contrato.");
   assert(!source.includes("patient_id:"), "encounters/[id] no debe tipar patient_id en EncounterDetail.");
@@ -214,6 +228,52 @@ async function run() {
   assert(
     !autocompleteHookSource.includes("activeItem"),
     "useAutocompleteList no debe exponer estado no utilizado."
+  );
+
+  // --- Perfiles profesionales (alta y selección de acceso) ---
+  assert(
+    !loginSource.includes("AVAILABLE_USERS") && !loginSource.includes("@consultamed.es"),
+    "login no debe llevar una lista fija de médicos: los perfiles vienen del backend."
+  );
+  assert(
+    loginSource.includes("fetchAvailablePractitioners") &&
+      loginSource.includes("<PractitionerPicker"),
+    "login debe cargar los perfiles activos desde la API vía PractitionerPicker."
+  );
+  assert(
+    practitionerPickerSource.includes('href="/register"'),
+    "el selector de acceso debe ofrecer el alta de un perfil nuevo."
+  );
+  assert(
+    registerPageSource.includes("<RegisterForm"),
+    "register/page debe delegar el formulario en RegisterForm."
+  );
+  assert(
+    registerFormSource.includes("registration_password") &&
+      registerFormSource.includes("registerPractitioner"),
+    "RegisterForm debe exigir la clave de administración al dar de alta un perfil."
+  );
+  assert(
+    !registerFormSource.includes("Guadalix") && !authApiSource.includes("Guadalix"),
+    "la clave de alta nunca debe viajar en el bundle del frontend."
+  );
+  assert(
+    authApiSource.includes("export async function registerPractitioner") &&
+      authApiSource.includes("export async function fetchAvailablePractitioners") &&
+      authApiSource.includes("export function formatPractitionerName"),
+    "lib/api/auth debe centralizar login, alta y presentación de perfiles."
+  );
+  assert(
+    !loginSource.includes("api.postForm") && !dashboardSource.includes("Dr/Dra. {"),
+    "las páginas deben usar los helpers de lib/api/auth en vez de armar el contrato a mano."
+  );
+  assert(
+    !authStoreSource.includes("listeners") && !authStoreSource.includes("notify()"),
+    "auth-store no debe mantener suscriptores sin consumidores."
+  );
+  assert(
+    apiClientSource.includes("extractErrorDetail") && apiClientSource.includes("Array.isArray(detail)"),
+    "el cliente API debe traducir los errores de validación 422 de FastAPI a texto legible."
   );
 
   console.log("Frontend contract smoke checks passed.");

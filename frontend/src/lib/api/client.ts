@@ -6,11 +6,48 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-interface ApiError {
-  detail: string;
+type ResponseMode = "json" | "blob";
+
+interface ValidationIssue {
+  loc?: unknown[];
+  msg?: string;
 }
 
-type ResponseMode = "json" | "blob";
+/**
+ * Extrae un mensaje legible del cuerpo de error del backend.
+ *
+ * FastAPI devuelve `detail` como texto para los errores de negocio, pero como
+ * lista de incidencias en los 422 de validación; sin este caso los formularios
+ * mostraban "[object Object]".
+ */
+function extractErrorDetail(payload: unknown): string {
+  const fallback = "Error desconocido";
+
+  if (!payload || typeof payload !== "object") {
+    return fallback;
+  }
+
+  const detail = (payload as { detail?: unknown }).detail;
+
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    const messages = (detail as ValidationIssue[])
+      .map((issue) => {
+        const field = Array.isArray(issue.loc) ? issue.loc[issue.loc.length - 1] : undefined;
+        return field ? `${String(field)}: ${issue.msg ?? ""}`.trim() : issue.msg;
+      })
+      .filter((message): message is string => Boolean(message));
+
+    if (messages.length > 0) {
+      return messages.join(" · ");
+    }
+  }
+
+  return fallback;
+}
 
 interface ApiRequestOptions extends Omit<RequestInit, "headers"> {
   contentType?: string | null;
@@ -49,10 +86,8 @@ class ApiClient {
   }
 
   private async handleErrorResponse(response: Response): Promise<never> {
-    const error: ApiError = await response.json().catch(() => ({
-      detail: "Error desconocido",
-    }));
-    throw new Error(error.detail);
+    const payload = await response.json().catch(() => null);
+    throw new Error(extractErrorDetail(payload));
   }
 
   private async parseResponse<T>(response: Response, responseMode: ResponseMode): Promise<T> {

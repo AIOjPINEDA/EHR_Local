@@ -1,47 +1,52 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
+import { fetchAvailablePractitioners, formatPractitionerName, login } from "@/lib/api/auth";
 import { authStore } from "@/lib/stores/auth-store";
 import { HospitalBrand } from "@/components/branding/hospital-brand";
 import { APP_NAME } from "@/lib/branding/constants";
+import { PractitionerPicker } from "@/components/auth/practitioner-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { User, Lock } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { LoginResponse } from "@/types/api";
-
-interface AvailableUser {
-  email: string;
-  name: string;
-  specialty: string;
-}
-
-const AVAILABLE_USERS: AvailableUser[] = [
-  {
-    email: "sara@consultamed.es",
-    name: "Dra. Sara Isabel Muñoz Mejía",
-    specialty: "Medicina Familiar y Comunitaria",
-  },
-  {
-    email: "jaime@consultamed.es",
-    name: "Dr. Jaime A. Pineda Moreno",
-    specialty: "Medicina de Urgencias",
-  },
-];
+import type { PractitionerPublicSummary } from "@/types/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [practitioners, setPractitioners] = useState<PractitionerPublicSummary[]>([]);
+  const [isLoadingPractitioners, setIsLoadingPractitioners] = useState(true);
+  const [practitionersError, setPractitionersError] = useState("");
   const router = useRouter();
 
-  const handleSelectUser = (user: AvailableUser) => {
-    setEmail(user.email);
+  const loadPractitioners = useCallback(async () => {
+    setIsLoadingPractitioners(true);
+    setPractitionersError("");
+
+    try {
+      setPractitioners(await fetchAvailablePractitioners());
+    } catch {
+      setPractitioners([]);
+      setPractitionersError(
+        "No se pudo cargar la lista de perfiles. Introduce tus credenciales manualmente.",
+      );
+    } finally {
+      setIsLoadingPractitioners(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPractitioners();
+  }, [loadPractitioners]);
+
+  const handleSelectPractitioner = (practitioner: PractitionerPublicSummary) => {
+    setEmail(practitioner.telecom_email ?? "");
     document.getElementById("password")?.focus();
   };
 
@@ -51,11 +56,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const formData = new URLSearchParams();
-      formData.append("username", email);
-      formData.append("password", password);
-
-      const data = await api.postForm<LoginResponse>("/auth/login", formData);
+      const data = await login(email, password);
 
       authStore.login(data.access_token, data.practitioner);
       api.setToken(data.access_token);
@@ -68,58 +69,36 @@ export default function LoginPage() {
     }
   };
 
-  const selectedUser = AVAILABLE_USERS.find((u) => u.email === email);
+  const selectedPractitioner = practitioners.find((p) => p.telecom_email === email);
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4 bg-gray-50">
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-6">
 
         {/* Brand Header */}
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <div className="flex justify-center">
-            <HospitalBrand
-              title={APP_NAME}
-              className="text-left"
-            />
+            <HospitalBrand title={APP_NAME} className="text-left" />
           </div>
           <p className="text-sm text-muted-foreground">Gestión Clínica Inteligente</p>
         </div>
 
-        {/* Quick User Selection Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-              Selección rápida
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3">
-            {AVAILABLE_USERS.map((user) => (
-              <div
-                key={user.email}
-                onClick={() => handleSelectUser(user)}
-                className={cn(
-                  "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 hover:bg-primary/5",
-                  email === user.email ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-white"
-                )}
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
-                  {user.name.split(" ")[1]?.[0] || user.name[0]}
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <p className="font-medium text-sm truncate">{user.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{user.specialty}</p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <PractitionerPicker
+          practitioners={practitioners}
+          selectedEmail={email}
+          isLoading={isLoadingPractitioners}
+          error={practitionersError}
+          onSelect={handleSelectPractitioner}
+        />
 
         {/* Login Form Card */}
         <Card>
           <CardHeader>
             <CardTitle>Iniciar Sesión</CardTitle>
             <CardDescription>
-              {selectedUser ? `Accediendo como ${selectedUser.name}` : "Introduce tus credenciales para continuar"}
+              {selectedPractitioner
+                ? `Accediendo como ${formatPractitionerName(selectedPractitioner)}`
+                : "Introduce tus credenciales para continuar"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -157,7 +136,7 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md border border-red-100">
+                <div className="rounded-md border border-red-100 bg-red-50 p-3 text-sm text-red-500">
                   {error}
                 </div>
               )}
@@ -167,7 +146,7 @@ export default function LoginPage() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="justify-center border-t p-4 bg-gray-50/50">
+          <CardFooter className="justify-center border-t bg-gray-50/50 p-4">
             <p className="text-xs text-muted-foreground">
               Sistema seguro de gestión de historia clínica electrónica
             </p>

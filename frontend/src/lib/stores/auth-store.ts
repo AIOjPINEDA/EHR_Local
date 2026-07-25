@@ -1,7 +1,7 @@
 /**
- * ConsultaMed Frontend - Auth Store (Zustand)
- * 
- * Estado de autenticación del usuario.
+ * ConsultaMed Frontend - Auth Store
+ *
+ * Estado de autenticación del usuario, persistido en localStorage.
  */
 
 import type { Practitioner } from "@/types/api";
@@ -18,73 +18,62 @@ interface AuthStore extends AuthState {
   loadFromStorage: () => void;
 }
 
-const STORAGE_KEY = 'consultamed_auth';
+const STORAGE_KEY = "consultamed_auth";
 
-// Simple store sin Zustand para simplicidad MVP
 let state: AuthState = {
   token: null,
   practitioner: null,
   isAuthenticated: false,
 };
 
-const listeners = new Set<() => void>();
-
-function notify() {
-  listeners.forEach(listener => listener());
-}
-
 export const authStore: AuthStore = {
-  get token() { return state.token; },
-  get practitioner() { return state.practitioner; },
-  get isAuthenticated() { return state.isAuthenticated; },
-  
+  get token() {
+    return state.token;
+  },
+  get practitioner() {
+    return state.practitioner;
+  },
+  get isAuthenticated() {
+    return state.isAuthenticated;
+  },
+
   login(token: string, practitioner: Practitioner) {
     state = {
       token,
       practitioner,
       isAuthenticated: true,
     };
-    // Guardar en localStorage
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ token, practitioner }));
     }
-    notify();
   },
-  
+
   logout() {
     state = {
       token: null,
       practitioner: null,
       isAuthenticated: false,
     };
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.removeItem(STORAGE_KEY);
     }
-    notify();
   },
-  
+
   loadFromStorage() {
-    if (typeof window === 'undefined') return;
-    
+    if (typeof window === "undefined") return;
+
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const { token, practitioner } = JSON.parse(stored);
-        state = {
-          token,
-          practitioner,
-          isAuthenticated: true,
-        };
-        notify();
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+    if (!stored) return;
+
+    try {
+      const { token, practitioner } = JSON.parse(stored);
+      state = {
+        token,
+        practitioner,
+        isAuthenticated: true,
+      };
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
     }
   },
 };
-
-// Hook para React
-export function useAuth() {
-  // Este hook es simplificado - en producción usar Zustand con useStore
-  return authStore;
-}

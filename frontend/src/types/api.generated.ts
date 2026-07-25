@@ -27,6 +27,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/practitioners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Available Practitioners
+         * @description Perfiles activos disponibles en la pantalla de acceso.
+         *
+         *     Endpoint público por necesidad: alimenta el selector rápido del login, que
+         *     hasta ahora era una lista fija en el frontend. Solo expone datos
+         *     profesionales (nombre, especialidad y email de acceso).
+         */
+        get: operations["list_available_practitioners_api_v1_auth_practitioners_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register Practitioner
+         * @description Da de alta un nuevo perfil profesional.
+         *
+         *     El alta la autoriza la clave que entrega administración
+         *     (`CONSULTAMED_REGISTRATION_PASSWORD`), no una sesión existente: un médico
+         *     nuevo debe poder incorporarse sin que otro le ceda sus credenciales.
+         */
+        post: operations["register_practitioner_api_v1_auth_register_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -886,8 +934,63 @@ export interface components {
             telecom_email?: string | null;
         };
         /**
+         * PractitionerCreate
+         * @description Alta de un nuevo perfil profesional, autorizada por la clave de administración.
+         */
+        PractitionerCreate: {
+            /**
+             * Identifier Value
+             * @description Nº Colegiado
+             */
+            identifier_value: string;
+            /** Name Given */
+            name_given: string;
+            /** Name Family */
+            name_family: string;
+            /**
+             * Qualification Code
+             * @description Especialidad médica
+             */
+            qualification_code?: string | null;
+            /**
+             * Telecom Email
+             * Format: email
+             * @description Email de acceso
+             */
+            telecom_email: string;
+            /**
+             * Password
+             * @description Contraseña de acceso del profesional
+             */
+            password: string;
+            /**
+             * Registration Password
+             * @description Clave de alta entregada por administración
+             */
+            registration_password: string;
+        };
+        /**
+         * PractitionerPublicSummary
+         * @description Perfil mínimo expuesto antes del login (selector de la pantalla de acceso).
+         *
+         *     Solo contiene datos profesionales (nombre, especialidad y email de acceso);
+         *     nunca información clínica ni el hash de contraseña.
+         */
+        PractitionerPublicSummary: {
+            /** Id */
+            id: string;
+            /** Name Given */
+            name_given: string;
+            /** Name Family */
+            name_family: string;
+            /** Qualification Code */
+            qualification_code: string | null;
+            /** Telecom Email */
+            telecom_email: string | null;
+        };
+        /**
          * PractitionerResponse
-         * @description Practitioner response schema.
+         * @description Datos del profesional devueltos al cliente autenticado.
          */
         PractitionerResponse: {
             /** Id */
@@ -967,7 +1070,7 @@ export interface components {
         };
         /**
          * TokenResponse
-         * @description Token response schema.
+         * @description Respuesta de login con token de acceso.
          */
         TokenResponse: {
             /** Access Token */
@@ -1017,6 +1120,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_available_practitioners_api_v1_auth_practitioners_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerPublicSummary"][];
+                };
+            };
+        };
+    };
+    register_practitioner_api_v1_auth_register_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PractitionerCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PractitionerResponse"];
                 };
             };
             /** @description Validation Error */

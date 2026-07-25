@@ -48,6 +48,74 @@
         }
       }
     },
+    "/api/v1/auth/practitioners": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "List Available Practitioners",
+        "description": "Perfiles activos disponibles en la pantalla de acceso.\n\nEndpoint público por necesidad: alimenta el selector rápido del login, que\nhasta ahora era una lista fija en el frontend. Solo expone datos\nprofesionales (nombre, especialidad y email de acceso).",
+        "operationId": "list_available_practitioners_api_v1_auth_practitioners_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PractitionerPublicSummary"
+                  },
+                  "type": "array",
+                  "title": "Response List Available Practitioners Api V1 Auth Practitioners Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register Practitioner",
+        "description": "Da de alta un nuevo perfil profesional.\n\nEl alta la autoriza la clave que entrega administración\n(`CONSULTAMED_REGISTRATION_PASSWORD`), no una sesión existente: un médico\nnuevo debe poder incorporarse sin que otro le ceda sus credenciales.",
+        "operationId": "register_practitioner_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PractitionerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PractitionerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/me": {
       "get": {
         "tags": [
@@ -2318,6 +2386,121 @@
         "title": "PatientUpdate",
         "description": "Schema for updating a patient (partial)."
       },
+      "PractitionerCreate": {
+        "properties": {
+          "identifier_value": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 3,
+            "title": "Identifier Value",
+            "description": "Nº Colegiado"
+          },
+          "name_given": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name Given"
+          },
+          "name_family": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name Family"
+          },
+          "qualification_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification Code",
+            "description": "Especialidad médica"
+          },
+          "telecom_email": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "email",
+            "title": "Telecom Email",
+            "description": "Email de acceso"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 8,
+            "title": "Password",
+            "description": "Contraseña de acceso del profesional"
+          },
+          "registration_password": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Registration Password",
+            "description": "Clave de alta entregada por administración"
+          }
+        },
+        "type": "object",
+        "required": [
+          "identifier_value",
+          "name_given",
+          "name_family",
+          "telecom_email",
+          "password",
+          "registration_password"
+        ],
+        "title": "PractitionerCreate",
+        "description": "Alta de un nuevo perfil profesional, autorizada por la clave de administración."
+      },
+      "PractitionerPublicSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name_given": {
+            "type": "string",
+            "title": "Name Given"
+          },
+          "name_family": {
+            "type": "string",
+            "title": "Name Family"
+          },
+          "qualification_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification Code"
+          },
+          "telecom_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telecom Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name_given",
+          "name_family",
+          "qualification_code",
+          "telecom_email"
+        ],
+        "title": "PractitionerPublicSummary",
+        "description": "Perfil mínimo expuesto antes del login (selector de la pantalla de acceso).\n\nSolo contiene datos profesionales (nombre, especialidad y email de acceso);\nnunca información clínica ni el hash de contraseña."
+      },
       "PractitionerResponse": {
         "properties": {
           "id": {
@@ -2369,7 +2552,7 @@
           "telecom_email"
         ],
         "title": "PractitionerResponse",
-        "description": "Practitioner response schema."
+        "description": "Datos del profesional devueltos al cliente autenticado."
       },
       "TemplateCreate": {
         "properties": {
@@ -2604,7 +2787,7 @@
           "practitioner"
         ],
         "title": "TokenResponse",
-        "description": "Token response schema."
+        "description": "Respuesta de login con token de acceso."
       },
       "ValidationError": {
         "properties": {
