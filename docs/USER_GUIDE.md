@@ -64,6 +64,39 @@ desde el equipo de la consulta, en una terminal, dentro de la carpeta `backend`:
 
 ---
 
+## 🚑 Vista de urgencias
+
+### Últimos atendidos
+
+La pantalla **Pacientes** abre en **"Últimos atendidos"**: solo los pacientes que
+ya han pasado por el servicio, del más reciente al más antiguo, con la columna
+*Última visita* en lenguaje de turno ("Hoy", "Hace 3 días").
+
+- Pulsa **"Directorio A-Z"** para ver el listado completo por apellido, incluidos
+  los pacientes que nunca han venido.
+- El buscador funciona en las dos vistas. Si buscas en "Últimos atendidos" y no
+  aparece el paciente, la propia pantalla te ofrece saltar al directorio.
+- El **Dashboard** hace lo mismo: sin búsqueda muestra los últimos atendidos, y
+  en cuanto escribes busca en todo el directorio.
+
+### Actividad del servicio
+
+La pestaña **Actividad** responde a "cuánta gente hemos visto":
+
+- **Consultas hoy**, con la variación frente a ayer.
+- Tarjetas de ayer, esta semana y la semana anterior.
+- Gráfico de **consultas por día** y otro de **consultas por semana** (de lunes a
+  domingo). El selector de periodo (14 / 30 / 90 días) reescala ambos.
+- Cada gráfico tiene **"Ver datos en tabla"** con las cifras exactas.
+
+Dos matices al leerlas:
+
+- Son cifras **de todo el servicio**, no solo de tus consultas.
+- **Consultas** y **pacientes** no coinciden cuando alguien reconsulta: dos
+  visitas del mismo paciente en una semana son 2 consultas y 1 paciente.
+
+---
+
 ## 📋 Panel Principal (Dashboard)
 
 Tras iniciar sesión verás:

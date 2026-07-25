@@ -36,6 +36,11 @@ export type TemplateMedication = Schema["MedicationItem"];
 export type Template = Schema["TemplateResponse"];
 export type TemplateListResponse = Schema["TemplateListResponse"];
 
+export type ActivityCount = Schema["ActivityCount"];
+export type ActivityDayPoint = Schema["ActivityDayPoint"];
+export type ActivityWeekPoint = Schema["ActivityWeekPoint"];
+export type EncounterActivity = Schema["EncounterActivityResponse"];
+
 export type Practitioner = Schema["PractitionerResponse"];
 export type PractitionerPublicSummary = Schema["PractitionerPublicSummary"];
 export type PractitionerCreate = Schema["PractitionerCreate"];

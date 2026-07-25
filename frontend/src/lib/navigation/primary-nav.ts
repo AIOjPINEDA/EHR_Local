@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, NotebookTabs, ShieldCheck, UsersRound } from "lucide-react";
+import { Activity, LayoutDashboard, NotebookTabs, ShieldCheck, UsersRound } from "lucide-react";
 
 export interface PrimaryNavItem {
   href: string;
@@ -20,9 +20,16 @@ export const PRIMARY_NAV_ITEMS: PrimaryNavItem[] = [
   {
     href: "/patients",
     label: "Pacientes",
-    description: "Listado completo y fichas",
+    description: "Últimos atendidos y directorio",
     icon: UsersRound,
     match: "prefix",
+  },
+  {
+    href: "/activity",
+    label: "Actividad",
+    description: "Pacientes por día y semana",
+    icon: Activity,
+    match: "exact",
   },
   {
     href: "/settings/templates",

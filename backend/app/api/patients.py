@@ -9,7 +9,7 @@ from app.database import get_db
 from app.api.auth import get_current_practitioner
 from app.api.exceptions import raise_not_found, raise_bad_request
 from app.models.practitioner import Practitioner
-from app.services.patient_service import PatientService
+from app.services.patient_service import SORT_BY_NAME, PatientService
 from app.schemas.patient import (
     PatientCreate,
     PatientUpdate,
@@ -28,17 +28,24 @@ async def list_patients(
     search: Optional[str] = Query(None, min_length=2, description="Search by name or DNI"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    sort: str = Query(
+        SORT_BY_NAME,
+        pattern="^(name|recent)$",
+        description="name: directorio alfabético · recent: últimos atendidos primero",
+    ),
     db: AsyncSession = Depends(get_db),
     current_user: Practitioner = Depends(get_current_practitioner),
 ) -> PatientListResponse:
     """
     List patients with optional search.
-    
+
     - Search by partial name or DNI (minimum 2 characters)
+    - `sort=recent` limita el listado a pacientes ya atendidos, del más reciente
+      al más antiguo: es la vista útil en urgencias.
     - Paginated results
     """
     service = PatientService(db)
-    patients, total = await service.search(search or "", limit, offset)
+    patients, total = await service.search(search or "", limit, offset, sort=sort)
 
     encounter_stats = await service.get_encounter_stats([p.id for p in patients])
 

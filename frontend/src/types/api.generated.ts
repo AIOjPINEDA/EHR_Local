@@ -109,6 +109,8 @@ export interface paths {
          * @description List patients with optional search.
          *
          *     - Search by partial name or DNI (minimum 2 characters)
+         *     - `sort=recent` limita el listado a pacientes ya atendidos, del más reciente
+         *       al más antiguo: es la vista útil en urgencias.
          *     - Paginated results
          */
         get: operations["list_patients_api_v1_patients__get"];
@@ -221,6 +223,30 @@ export interface paths {
          *     Creates Encounter + Condition(s) + MedicationRequest(s).
          */
         post: operations["create_encounter_api_v1_encounters_patient__patient_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/encounters/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Encounter Activity
+         * @description Actividad asistencial del servicio por día y por semana.
+         *
+         *     Cifras del servicio completo, no del profesional autenticado: en urgencias
+         *     lo que se mide es la carga del turno. Los días se cortan en la zona horaria
+         *     de la consulta (`CLINIC_TIMEZONE`).
+         */
+        get: operations["get_encounter_activity_api_v1_encounters_activity_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -417,6 +443,64 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * ActivityCount
+         * @description Recuento de actividad de un periodo.
+         */
+        ActivityCount: {
+            /**
+             * Encounters
+             * @description Consultas atendidas
+             */
+            encounters: number;
+            /**
+             * Patients
+             * @description Pacientes distintos atendidos
+             */
+            patients: number;
+        };
+        /**
+         * ActivityDayPoint
+         * @description Actividad de un día concreto (zona horaria de la consulta).
+         */
+        ActivityDayPoint: {
+            /**
+             * Encounters
+             * @description Consultas atendidas
+             */
+            encounters: number;
+            /**
+             * Patients
+             * @description Pacientes distintos atendidos
+             */
+            patients: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+        };
+        /**
+         * ActivityWeekPoint
+         * @description Actividad de una semana, identificada por su lunes.
+         */
+        ActivityWeekPoint: {
+            /**
+             * Encounters
+             * @description Consultas atendidas
+             */
+            encounters: number;
+            /**
+             * Patients
+             * @description Pacientes distintos atendidos
+             */
+            patients: number;
+            /**
+             * Week Start
+             * Format: date
+             */
+            week_start: string;
+        };
+        /**
          * AllergyCreate
          * @description Schema for creating an allergy.
          */
@@ -516,6 +600,33 @@ export interface components {
              * @description Estado clínico: active | resolved | inactive
              */
             clinical_status: string;
+        };
+        /**
+         * EncounterActivityResponse
+         * @description Serie de actividad para el panel de urgencias.
+         *
+         *     `daily` y `weekly` son series continuas: los periodos sin actividad vienen
+         *     con ceros para que el gráfico no muestre huecos engañosos.
+         */
+        EncounterActivityResponse: {
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Timezone
+             * @description Zona horaria usada para cortar los días
+             */
+            timezone: string;
+            today: components["schemas"]["ActivityCount"];
+            yesterday: components["schemas"]["ActivityCount"];
+            current_week: components["schemas"]["ActivityCount"];
+            previous_week: components["schemas"]["ActivityCount"];
+            /** Daily */
+            daily: components["schemas"]["ActivityDayPoint"][];
+            /** Weekly */
+            weekly: components["schemas"]["ActivityWeekPoint"][];
         };
         /**
          * EncounterCreate
@@ -1213,6 +1324,8 @@ export interface operations {
                 search?: string | null;
                 limit?: number;
                 offset?: number;
+                /** @description name: directorio alfabético · recent: últimos atendidos primero */
+                sort?: string;
             };
             header?: never;
             path?: never;
@@ -1491,6 +1604,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EncounterResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_encounter_activity_api_v1_encounters_activity_get: {
+        parameters: {
+            query?: {
+                /** @description Días de la serie diaria */
+                days?: number;
+                /** @description Semanas de la serie semanal */
+                weeks?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EncounterActivityResponse"];
                 };
             };
             /** @description Validation Error */

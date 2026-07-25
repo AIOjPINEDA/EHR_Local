@@ -16,6 +16,11 @@ from app.models.encounter import Encounter
 from app.validators.dni import validate_documento_identidad, format_dni
 from app.validators.clinical import validate_birth_date
 
+# Modos de ordenación del listado de pacientes.
+SORT_BY_NAME = "name"
+SORT_BY_RECENT = "recent"
+PATIENT_SORT_OPTIONS = (SORT_BY_NAME, SORT_BY_RECENT)
+
 
 class PatientService(BaseService[Patient]):
     """
@@ -43,42 +48,61 @@ class PatientService(BaseService[Patient]):
                 )
             )
         return conditions
-    
+
+    @staticmethod
+    def _last_visit_subquery() -> Any:
+        """Última visita por paciente, para ordenar por actividad reciente."""
+        return (
+            select(
+                Encounter.subject_id.label("subject_id"),
+                func.max(Encounter.period_start).label("last_visit"),
+            )
+            .group_by(Encounter.subject_id)
+            .subquery()
+        )
+
     async def search(
         self,
         query: str,
         limit: int = 20,
-        offset: int = 0
+        offset: int = 0,
+        sort: str = SORT_BY_NAME,
     ) -> tuple[List[Patient], int]:
         """
         Search patients by name or DNI.
-        
+
         Args:
             query: Search term (name or DNI)
             limit: Maximum results to return
             offset: Pagination offset
-            
+            sort: `name` (directorio alfabético) o `recent` (últimos atendidos).
+                Con `recent` solo se devuelven pacientes con alguna consulta:
+                ordenar por "última visita" a quien nunca ha venido no significa nada.
+
         Returns:
             Tuple of (patients list, total count)
         """
         conditions = self._build_search_conditions(query)
 
-        stmt = (
-            select(Patient)
-            .options(selectinload(Patient.allergies))
-            .where(*conditions)
-            .order_by(Patient.name_family, Patient.name_given)
-            .limit(limit)
-            .offset(offset)
-        )
-        
-        result = await self.db.execute(stmt)
-        patients = result.scalars().all()
-        
+        stmt = select(Patient).options(selectinload(Patient.allergies)).where(*conditions)
         count_stmt = select(func.count(Patient.id)).where(*conditions)
+
+        if sort == SORT_BY_RECENT:
+            last_visit = self._last_visit_subquery()
+            # JOIN interno: filtra a los pacientes ya atendidos y aporta el orden.
+            stmt = stmt.join(last_visit, Patient.id == last_visit.c.subject_id).order_by(
+                last_visit.c.last_visit.desc()
+            )
+            count_stmt = count_stmt.join(last_visit, Patient.id == last_visit.c.subject_id)
+        else:
+            stmt = stmt.order_by(Patient.name_family, Patient.name_given)
+
+        result = await self.db.execute(stmt.limit(limit).offset(offset))
+        patients = result.scalars().all()
+
         count_result = await self.db.execute(count_stmt)
         total = int(count_result.scalar_one() or 0)
-        
+
         return list(patients), total
     
     async def get_by_id(self, patient_id: str) -> Optional[Patient]:

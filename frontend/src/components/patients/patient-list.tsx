@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { formatLastEncounterDate, formatPatientGender } from "@/lib/patients/directory";
+import { formatLastEncounterAge, formatPatientGender } from "@/lib/patients/directory";
 import { cn } from "@/lib/utils";
 import type { PatientSummary } from "@/types/api";
 
@@ -16,18 +16,18 @@ export interface PatientListProps {
 }
 
 /**
- * Reusable PatientList component for displaying patient data in a table.
+ * Tabla reutilizable de pacientes.
  *
- * Supports two layouts:
- * - Dashboard: Compact view with allergies badge (no phone, no action link)
- * - Patients Directory: Full view with phone and action link
+ * Las columnas van siempre en el mismo orden (nombre primero, que es por lo que
+ * se busca al paciente que tienes delante); las opciones solo añaden o quitan
+ * columnas, nunca las reordenan.
  *
- * @param patients - Array of PatientSummary objects to display
- * @param showPhone - Whether to display the phone column (default: false)
- * @param showActionLink - Whether to display the action link column (default: false)
- * @param actionLinkText - Custom text for the action link (default: "Ver ficha →")
- * @param showNewEncounterAction - Whether to display the new encounter quick action (default: false)
- * @param className - Additional CSS classes for the table wrapper
+ * @param patients - Pacientes a mostrar
+ * @param showPhone - Añade la columna de teléfono (default: false)
+ * @param showActionLink - Añade el enlace a la ficha al final de la fila (default: false)
+ * @param actionLinkText - Texto del enlace de acción (default: "Ver ficha →")
+ * @param showNewEncounterAction - Añade el acceso directo a nueva consulta (default: false)
+ * @param className - Clases adicionales para el contenedor de la tabla
  */
 export function PatientList({
   patients,
@@ -42,19 +42,13 @@ export function PatientList({
       <table className="w-full text-sm">
         <thead className="bg-gray-50 text-gray-600">
           <tr>
-            <th className="px-6 py-3 text-left font-semibold">
-              {showPhone ? "DNI" : "Paciente"}
-            </th>
-            <th className="px-6 py-3 text-left font-semibold">
-              {showPhone ? "Nombre" : "ID"}
-            </th>
+            <th className="px-6 py-3 text-left font-semibold">Paciente</th>
+            <th className="px-6 py-3 text-left font-semibold">DNI</th>
             <th className="px-6 py-3 text-left font-semibold">Edad</th>
             <th className="px-6 py-3 text-left font-semibold">Género</th>
             <th className="px-6 py-3 text-left font-semibold">Consultas</th>
-            <th className="px-6 py-3 text-left font-semibold">Última consulta</th>
-            {showPhone && (
-              <th className="px-6 py-3 text-left font-semibold">Teléfono</th>
-            )}
+            <th className="px-6 py-3 text-left font-semibold">Última visita</th>
+            {showPhone && <th className="px-6 py-3 text-left font-semibold">Teléfono</th>}
             <th className="px-6 py-3 text-left font-semibold">Alergias</th>
             {showNewEncounterAction && <th className="px-6 py-3 text-left"></th>}
             {showActionLink && <th className="px-6 py-3 text-left"></th>}
@@ -62,46 +56,26 @@ export function PatientList({
         </thead>
         <tbody>
           {patients.map((patient) => (
-            <tr
-              key={patient.id}
-              className="border-t border-gray-100 hover:bg-gray-50"
-            >
-              <td className={cn("px-6 py-4", showPhone ? "font-mono text-xs text-gray-600" : "font-medium")}>
-                {showPhone ? (
-                  patient.identifier_value
-                ) : (
-                  <Link
-                    href={`/patients/${patient.id}`}
-                    className="text-blue-600 hover:text-blue-700"
-                  >
-                    {patient.name_given} {patient.name_family}
-                  </Link>
-                )}
+            <tr key={patient.id} className="border-t border-gray-100 hover:bg-gray-50">
+              <td className="px-6 py-4 font-medium">
+                <Link
+                  href={`/patients/${patient.id}`}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  {patient.name_given} {patient.name_family}
+                </Link>
               </td>
-              <td className={cn("px-6 py-4", showPhone ? "" : "font-mono text-xs text-gray-600")}>
-                {showPhone ? (
-                  <Link
-                    href={`/patients/${patient.id}`}
-                    className="font-medium text-gray-800 hover:text-blue-600"
-                  >
-                    {patient.name_given} {patient.name_family}
-                  </Link>
-                ) : (
-                  patient.identifier_value
-                )}
+              <td className="px-6 py-4 font-mono text-xs text-gray-600">
+                {patient.identifier_value}
               </td>
               <td className="px-6 py-4 text-gray-600">{patient.age} años</td>
+              <td className="px-6 py-4 text-gray-600">{formatPatientGender(patient.gender)}</td>
+              <td className="px-6 py-4 tabular-nums text-gray-700">{patient.encounter_count}</td>
               <td className="px-6 py-4 text-gray-600">
-                {formatPatientGender(patient.gender)}
-              </td>
-              <td className="px-6 py-4 text-gray-700">{patient.encounter_count}</td>
-              <td className="px-6 py-4 text-gray-600">
-                {formatLastEncounterDate(patient.last_encounter_at)}
+                {formatLastEncounterAge(patient.last_encounter_at)}
               </td>
               {showPhone && (
-                <td className="px-6 py-4 text-gray-600">
-                  {patient.telecom_phone || "-"}
-                </td>
+                <td className="px-6 py-4 text-gray-600">{patient.telecom_phone || "-"}</td>
               )}
               <td className="px-6 py-4">
                 {patient.has_allergies ? (
@@ -117,7 +91,7 @@ export function PatientList({
                 <td className="px-6 py-4">
                   <Link
                     href={`/patients/${patient.id}/encounters/new`}
-                    className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-sm font-medium"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-green-600 hover:text-green-700"
                   >
                     <Plus className="h-4 w-4" /> Nueva Consulta
                   </Link>
@@ -127,7 +101,7 @@ export function PatientList({
                 <td className="px-6 py-4">
                   <Link
                     href={`/patients/${patient.id}`}
-                    className="text-blue-600 hover:text-blue-700 text-sm"
+                    className="text-sm text-blue-600 hover:text-blue-700"
                   >
                     {actionLinkText}
                   </Link>
@@ -140,4 +114,3 @@ export function PatientList({
     </div>
   );
 }
-

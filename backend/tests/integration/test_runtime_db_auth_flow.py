@@ -4,19 +4,14 @@ import os
 from collections.abc import AsyncGenerator
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import create_async_engine
+from httpx import AsyncClient
 
 from app.config import settings
-from app.database import async_session_maker, engine
-from app.main import app
+from app.database import async_session_maker
 from app.services.practitioner_service import PractitionerService
+from tests.integration.conftest import query_runtime_identity
 
 pytestmark = pytest.mark.integration
-
-INTEGRATION_FLAG = "RUN_INTEGRATION"
 
 # Perfil desechable para el flujo de alta; se borra antes y después del test.
 # El dominio es real a propósito: email-validator rechaza TLD reservados (.test).
@@ -24,58 +19,9 @@ TEST_PROFILE_EMAIL = "integration.profile@consultamed.es"
 TEST_PROFILE_PASSWORD = "integracion2026"
 
 
-def _integration_enabled() -> bool:
-    """Enable integration tests only on explicit opt-in."""
-    return os.getenv(INTEGRATION_FLAG, "0") == "1"
-
-
-async def _query_runtime_identity() -> tuple[str, str]:
-    """Return current runtime user and database from configured DATABASE_URL."""
-    engine = create_async_engine(settings.DATABASE_URL, future=True)
-    try:
-        async with engine.connect() as connection:
-            row = (await connection.execute(text("SELECT current_user, current_database()"))).one()
-    finally:
-        await engine.dispose()
-    return row[0], row[1]
-
-
-@pytest.fixture(scope="module", autouse=True)
-async def _require_runtime_database() -> None:
-    """Skip when integration mode is off or runtime DB is unavailable."""
-    if not _integration_enabled():
-        pytest.skip("Integration tests disabled. Set RUN_INTEGRATION=1 to run them.")
-
-    try:
-        await _query_runtime_identity()
-    except SQLAlchemyError as exc:
-        pytest.skip(f"Runtime database unavailable for integration tests: {exc}")
-
-
-@pytest.fixture(autouse=True)
-async def _recycle_engine_pool() -> AsyncGenerator[None, None]:
-    """
-    Devuelve el pool del engine global al terminar cada test.
-
-    `app.database.engine` se crea una sola vez a nivel de módulo, pero cada test
-    corre en su propio event loop: reutilizar conexiones abiertas en un loop ya
-    cerrado rompe asyncpg.
-    """
-    yield
-    await engine.dispose()
-
-
-@pytest.fixture()
-async def api_client() -> AsyncGenerator[AsyncClient, None]:
-    """HTTP client bound to FastAPI app for end-to-end request flow."""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        yield client
-
-
 async def test_runtime_database_url_connects_to_live_database() -> None:
     """DATABASE_URL should resolve to a reachable runtime database."""
-    current_user, current_database = await _query_runtime_identity()
+    current_user, current_database = await query_runtime_identity()
     assert current_user
     assert current_database
 

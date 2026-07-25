@@ -71,6 +71,24 @@ async function run() {
   const apiClientSource = await readFile(apiClientPath, "utf8");
   const authGuardPath = join(projectRoot, "src", "lib", "hooks", "useAuthGuard.ts");
   const authGuardSource = await readFile(authGuardPath, "utf8");
+  const appShellPath = join(projectRoot, "src", "components", "layout", "app-shell.tsx");
+  const appShellSource = await readFile(appShellPath, "utf8");
+  const sessionBadgePath = join(projectRoot, "src", "components", "layout", "session-badge.tsx");
+  const sessionBadgeSource = await readFile(sessionBadgePath, "utf8");
+  const activityPagePath = join(projectRoot, "src", "app", "activity", "page.tsx");
+  const activityPageSource = await readFile(activityPagePath, "utf8");
+  const activityChartPath = join(projectRoot, "src", "components", "activity", "activity-bar-chart.tsx");
+  const activityChartSource = await readFile(activityChartPath, "utf8");
+  const activitySummaryPath = join(projectRoot, "src", "components", "activity", "activity-summary.tsx");
+  const activitySummarySource = await readFile(activitySummaryPath, "utf8");
+  const activitySeriesPath = join(projectRoot, "src", "lib", "activity", "series.ts");
+  const activitySeriesSource = await readFile(activitySeriesPath, "utf8");
+  const compliancePagePath = join(projectRoot, "src", "components", "compliance", "compliance-page.tsx");
+  const compliancePageSource = await readFile(compliancePagePath, "utf8");
+  const patientSortTogglePath = join(projectRoot, "src", "components", "patients", "patient-sort-toggle.tsx");
+  const patientSortToggleSource = await readFile(patientSortTogglePath, "utf8");
+  const navItemsPath = join(projectRoot, "src", "lib", "navigation", "primary-nav.ts");
+  const navItemsSource = await readFile(navItemsPath, "utf8");
 
   assert(source.includes("subject_id"), "encounters/[id] debe usar subject_id en el contrato.");
   assert(!source.includes("patient_id:"), "encounters/[id] no debe tipar patient_id en EncounterDetail.");
@@ -155,8 +173,8 @@ async function run() {
   );
   assert(
     !dashboardSource.includes("Centro de navegación clínico") &&
-      dashboardSource.includes("Listado rápido de pacientes"),
-    "dashboard debe evitar caja de navegación redundante y mantener listado rápido de pacientes."
+      dashboardSource.includes("Últimos pacientes atendidos"),
+    "dashboard debe evitar caja de navegación redundante y abrir con los últimos atendidos."
   );
   assert(
     !dashboardSource.includes("Ver listado completo"),
@@ -182,16 +200,24 @@ async function run() {
     "PatientList debe abrir la ficha al hacer clic en el nombre del paciente."
   );
   assert(
-    dashboardSource.includes("<PrimaryNav"),
-    "dashboard debe renderizar navegación superior reutilizable."
+    [dashboardSource, patientsListSource, templatesSource, activityPageSource, compliancePageSource]
+      .every((source) => source.includes("<AppShell")),
+    "las pantallas autenticadas deben compartir el marco AppShell (marca + navegación + sesión)."
   );
   assert(
-    patientsListSource.includes("<PrimaryNav"),
-    "patients/page debe usar navegación superior reutilizable."
+    [dashboardSource, patientsListSource, templatesSource].every(
+      (source) => !source.includes("<PrimaryNav") && !source.includes("<HospitalBrand"),
+    ),
+    "ninguna pantalla debe volver a montar su propia cabecera a mano."
   );
   assert(
-    templatesSource.includes("<PrimaryNav"),
-    "settings/templates/page debe usar navegación superior reutilizable."
+    appShellSource.includes("<PrimaryNav") && appShellSource.includes("<SessionBadge"),
+    "AppShell debe centralizar navegación y sesión activa."
+  );
+  assert(
+    sessionBadgeSource.includes("authStore.logout") &&
+      sessionBadgeSource.includes("formatPractitionerName"),
+    "la sesión activa debe verse y poder cerrarse desde cualquier pantalla."
   );
   assert(
     primaryNavSource.includes("PRIMARY_NAV_ITEMS") &&
@@ -204,9 +230,14 @@ async function run() {
   );
   assert(
     patientListComponentSource.includes("Consultas") &&
-      patientListComponentSource.includes("Última consulta") &&
+      patientListComponentSource.includes("Última visita") &&
       patientListComponentSource.includes("last_encounter_at"),
-    "PatientList debe mostrar consultas y última consulta por paciente."
+    "PatientList debe mostrar consultas y última visita por paciente."
+  );
+  assert(
+    (patientListComponentSource.match(/text-left font-semibold">Paciente</g) ?? []).length === 1 &&
+      !patientListComponentSource.includes('showPhone ? "DNI" : "Paciente"'),
+    "PatientList no debe reordenar columnas según showPhone: solo añadir o quitar."
   );
   assert(
     patientListComponentSource.includes("Género") &&
@@ -214,12 +245,13 @@ async function run() {
     "PatientList debe mostrar género del paciente en el listado."
   );
   assert(
-    patientListComponentSource.includes("formatLastEncounterDate(") &&
-      !patientListComponentSource.includes("function formatLastEncounterDate("),
+    patientListComponentSource.includes("formatLastEncounterAge(") &&
+      !patientListComponentSource.includes("function formatLastEncounterAge("),
     "PatientList debe reutilizar formatter compartido para última consulta."
   );
   assert(
-    patientsDirectorySource.includes("export function formatLastEncounterDate"),
+    patientsDirectorySource.includes("export function formatLastEncounterDate") &&
+      patientsDirectorySource.includes("export function formatLastEncounterAge"),
     "debe existir un helper compartido para formateo de última consulta."
   );
   assert(
@@ -285,6 +317,67 @@ async function run() {
     authGuardSource.includes("fetchCurrentPractitioner") &&
       authGuardSource.includes("error.status !== 401"),
     "useAuthGuard debe cerrar la sesión cuando el backend revoca el perfil, no ante un fallo de red."
+  );
+
+  // --- Vista de urgencias: últimos atendidos y panel de actividad ---
+  assert(
+    patientsDirectorySource.includes('PATIENT_SORT_RECENT = "recent"') &&
+      patientsDirectorySource.includes("params.set(\"sort\", sort)"),
+    "el constructor de URL del directorio debe soportar el orden por última visita."
+  );
+  assert(
+    patientsListSource.includes("useState<PatientSort>(PATIENT_SORT_RECENT)") &&
+      patientsListSource.includes("<PatientSortToggle"),
+    "patients/page debe abrir en 'últimos atendidos' y permitir volver al directorio."
+  );
+  assert(
+    patientSortToggleSource.includes("Últimos atendidos") &&
+      patientSortToggleSource.includes("Directorio A-Z"),
+    "el conmutador debe nombrar ambas vistas del listado."
+  );
+  assert(
+    dashboardSource.includes("PATIENT_SORT_RECENT") && dashboardSource.includes("PATIENT_SORT_NAME"),
+    "el dashboard debe listar los últimos atendidos y buscar en todo el directorio."
+  );
+  assert(
+    navItemsSource.includes('href: "/activity"'),
+    "la navegación principal debe incluir la pestaña de actividad."
+  );
+  assert(
+    activityPageSource.includes("<ActivitySummary") && activityPageSource.includes("<ActivityBarChart"),
+    "la pestaña de actividad debe mostrar totales y series por día y semana."
+  );
+  assert(
+    (activityPageSource.match(/<ActivityBarChart/g) ?? []).length === 2,
+    "la actividad debe cubrir la serie diaria y la semanal."
+  );
+  assert(
+    activityPageSource.includes("ACTIVITY_WINDOWS") &&
+      activityPageSource.indexOf("ACTIVITY_WINDOWS") < activityPageSource.indexOf("<ActivitySummary"),
+    "el filtro de periodo debe ir por encima de todo lo que reescala."
+  );
+  assert(
+    !activityChartSource.includes("Legend") && activityChartSource.includes("#2a78d6"),
+    "serie única: un solo color secuencial y sin leyenda."
+  );
+  assert(
+    activityChartSource.includes("Ver datos en tabla"),
+    "cada gráfico necesita su equivalente en tabla: el tooltip no puede ser la única vía al dato."
+  );
+  assert(
+    activityChartSource.includes("peakIndex") &&
+      activityChartSource.includes("onFocus") &&
+      activityChartSource.includes("aria-label"),
+    "el gráfico debe etiquetar solo el pico y ser navegable por teclado."
+  );
+  assert(
+    activitySeriesSource.includes("export function niceCeiling") &&
+      activitySeriesSource.includes("export function percentDelta"),
+    "la aritmética del gráfico debe vivir en helpers puros, fuera del JSX."
+  );
+  assert(
+    !activitySummarySource.includes("text-green-") && !activitySummarySource.includes("text-red-"),
+    "más urgencias no es 'bueno' ni 'malo': la variación no lleva color de estado."
   );
 
   console.log("Frontend contract smoke checks passed.");

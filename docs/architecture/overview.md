@@ -176,6 +176,19 @@ Profiles are self-service on the way in and code-only on the way out:
 3. Backend validates the key, rejects duplicate email/Nº Colegiado, hashes the password with bcrypt.
 4. Doctor returns to `/login`, where the new profile is already listed.
 
+### 1c. Emergency-service views
+
+1. `/patients` and the dashboard list default to `GET /patients/?sort=recent` —
+   only patients with encounters, most recent visit first. `sort=name` returns
+   the full alphabetical directory. A search on the dashboard switches to `name`:
+   the patient in front of you may never have been seen here.
+2. `/activity` reads `GET /encounters/activity`, which aggregates `Encounter`
+   rows by day and by week in `CLINIC_TIMEZONE`, zero-filling empty periods.
+   Distinct-patient counts are aggregated per granularity — a weekly figure is
+   not the sum of its days when a patient reconsults.
+3. Charts are single-series columns (one sequential hue, no legend, peak-only
+   direct label) with a table view as the accessible equivalent.
+
 ### 2. Consultation Lifecycle
 
 1. Doctor opens patient record.
@@ -205,6 +218,8 @@ Profiles are self-service on the way in and code-only on the way out:
 | `src/app/` | Route pages (dashboard, patients, encounters, templates) |
 | `src/lib/api/client.ts` | Compact API wrapper with shared request building for JSON, form, and blob flows |
 | `src/lib/stores/auth-store.ts` | Lightweight auth state + persistence |
+| `src/components/layout/app-shell.tsx` | Shared frame for authenticated screens (brand + nav + session) |
+| `src/lib/activity/series.ts` | Pure chart arithmetic (axis ceiling, deltas, labels) |
 | `src/lib/hooks/` | Reusable React hooks (`useAuthGuard`, `usePagination`) |
 | `src/lib/hooks/useAuthGuard.ts` | Auth guard with loading state (prevents flash of unprotected content) |
 | `src/lib/hooks/usePagination.ts` | Abstract pagination hook (FHIR Bundle Links ready, hides limit/offset from UI) |

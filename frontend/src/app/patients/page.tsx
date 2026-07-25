@@ -4,15 +4,21 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
 import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
-import { HospitalBrand } from "@/components/branding/hospital-brand";
-import { PrimaryNav } from "@/components/navigation/primary-nav";
+import { AppShell } from "@/components/layout/app-shell";
 import { PatientList } from "@/components/patients/patient-list";
+import { PatientSortToggle } from "@/components/patients/patient-sort-toggle";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 import {
+  PATIENT_SEARCH_MIN_LENGTH,
+  PATIENT_SORT_RECENT,
   buildPatientsDirectoryUrl,
   normalizePatientSearchQuery,
+  type PatientSort,
 } from "@/lib/patients/directory";
+import { cn } from "@/lib/utils";
 import type { PaginatedResponse, PatientSummary } from "@/types/api";
+
+const PAGE_SIZE = 20;
 
 export default function PatientsListPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
@@ -21,19 +27,21 @@ export default function PatientsListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  // En urgencias se entra a ver quién ha pasado por el servicio, no a leer un
+  // listado alfabético de 800 pacientes: el orden por última visita es el útil.
+  const [sort, setSort] = useState<PatientSort>(PATIENT_SORT_RECENT);
   const [currentPage, setCurrentPage] = useState(1);
-  const limit = 20;
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 250);
-  
+
   const loadPatients = useCallback(async () => {
     setIsLoading(true);
     setError("");
     try {
-      const offset = (currentPage - 1) * limit;
       const url = buildPatientsDirectoryUrl({
-        limit,
-        offset,
+        limit: PAGE_SIZE,
+        offset: (currentPage - 1) * PAGE_SIZE,
         query: normalizePatientSearchQuery(debouncedSearchQuery),
+        sort,
       });
       const data = await api.get<PaginatedResponse<PatientSummary>>(url);
       setPatients(data.items);
@@ -43,17 +51,23 @@ export default function PatientsListPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, debouncedSearchQuery, limit]);
+  }, [currentPage, debouncedSearchQuery, sort]);
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadPatients();
+      void loadPatients();
     }
   }, [isAuthenticated, loadPatients]);
-  
-  const totalPages = Math.ceil(total / limit);
 
-  // Mostrar spinner mientras se valida autenticación
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const isRecentView = sort === PATIENT_SORT_RECENT;
+  const hasSearch = normalizePatientSearchQuery(searchQuery).length >= PATIENT_SEARCH_MIN_LENGTH;
+
+  const handleSortChange = (nextSort: PatientSort) => {
+    setSort(nextSort);
+    setCurrentPage(1);
+  };
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -62,40 +76,24 @@ export default function PatientsListPage() {
     );
   }
 
-  // No renderizar si no autenticado (ya redirigiendo)
   if (!isAuthenticated) {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white shadow-sm">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-4">
-          <HospitalBrand title="Lista de Pacientes" />
-
-          <div className="flex items-center gap-2">
-            <Link
-              href="/settings/templates"
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-            >
-              Templates
-            </Link>
-            <Link
-              href="/patients/new"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              + Nuevo Paciente
-            </Link>
-          </div>
-        </div>
-        <div className="mx-auto max-w-[1400px] px-4 pb-4">
-          <PrimaryNav showTitle={false} />
-        </div>
-      </header>
-      
-      <main className="mx-auto max-w-[1400px] px-4 py-8">
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="mb-3 text-sm font-medium text-gray-700">Búsqueda en directorio de pacientes</p>
+    <AppShell
+      title="Pacientes"
+      actions={
+        <Link
+          href="/patients/new"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+        >
+          + Nuevo Paciente
+        </Link>
+      }
+    >
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <input
             type="text"
             value={searchQuery}
@@ -106,69 +104,99 @@ export default function PatientsListPage() {
             placeholder="Buscar por nombre o DNI..."
             className="w-full max-w-xl rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500"
           />
+          <PatientSortToggle value={sort} onChange={handleSortChange} />
         </div>
-        
-        {error && (
-          <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-        
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : patients.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <p className="text-gray-500 mb-4">
-              {searchQuery ? "No se encontraron pacientes con esa búsqueda." : "No hay pacientes registrados."}
-            </p>
-            <Link
-              href="/patients/new"
-              className="inline-flex px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
-            >
-              Registrar primer paciente
-            </Link>
-          </div>
-        ) : (
-          <>
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <PatientList patients={patients} showPhone showActionLink showNewEncounterAction />
-            </div>
-            
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6">
-                <p className="text-sm text-gray-600">
-                  Mostrando {((currentPage - 1) * limit) + 1} - {Math.min(currentPage * limit, total)} de {total} pacientes
-                </p>
-                
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    ← Anterior
-                  </button>
-                  
-                  <span className="px-4 py-1 text-sm text-gray-600">
-                    Página {currentPage} de {totalPages}
-                  </span>
-                  
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                  >
-                    Siguiente →
-                  </button>
-                </div>
-              </div>
+
+        <p className="mt-3 text-xs text-gray-500">
+          {isRecentView
+            ? "Pacientes que ya han pasado por el servicio, del más reciente al más antiguo."
+            : "Directorio completo por apellido, incluidos pacientes sin consultas."}
+          {isRecentView && hasSearch && (
+            <>
+              {" "}
+              Buscando solo entre los atendidos: si no aparece, cambia a{" "}
+              <button
+                type="button"
+                onClick={() => handleSortChange("name")}
+                className="font-medium text-blue-600 underline hover:text-blue-700"
+              >
+                Directorio A-Z
+              </button>
+              .
+            </>
+          )}
+        </p>
+      </div>
+
+      {error && (
+        <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {isLoading && patients.length === 0 ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+        </div>
+      ) : patients.length === 0 ? (
+        <div className="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
+          <p className="mb-4 text-gray-500">
+            {hasSearch
+              ? "No se encontraron pacientes con esa búsqueda."
+              : isRecentView
+                ? "Todavía no se ha atendido a ningún paciente."
+                : "No hay pacientes registrados."}
+          </p>
+          <Link
+            href="/patients/new"
+            className="inline-flex rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
+          >
+            Registrar paciente
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div
+            className={cn(
+              "overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-opacity",
+              isLoading && "opacity-60",
             )}
-          </>
-        )}
-      </main>
-    </div>
+          >
+            <PatientList patients={patients} showPhone showActionLink showNewEncounterAction />
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Mostrando {(currentPage - 1) * PAGE_SIZE + 1} -{" "}
+                {Math.min(currentPage * PAGE_SIZE, total)} de {total} pacientes
+              </p>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  ← Anterior
+                </button>
+
+                <span className="px-4 py-1 text-sm text-gray-600">
+                  Página {currentPage} de {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="rounded-lg border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </AppShell>
   );
 }

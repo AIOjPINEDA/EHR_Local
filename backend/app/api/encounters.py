@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.api.auth import get_current_practitioner
 from app.api.exceptions import raise_not_found
@@ -15,8 +16,10 @@ from app.models.patient import Patient
 from app.models.encounter import Encounter
 from app.models.condition import Condition
 from app.models.medication_request import MedicationRequest
+from app.services.activity_service import EncounterActivityService
 
 # Schemas atómicos FHIR-compatible
+from app.schemas.activity import EncounterActivityResponse
 from app.schemas.encounter import (
     EncounterCreate,
     EncounterUpdate,
@@ -207,6 +210,26 @@ async def list_patient_encounters(
     )
 
 
+@router.get("/activity", response_model=EncounterActivityResponse)
+async def get_encounter_activity(
+    days: int = Query(30, ge=1, le=90, description="Días de la serie diaria"),
+    weeks: int = Query(12, ge=1, le=26, description="Semanas de la serie semanal"),
+    db: AsyncSession = Depends(get_db),
+    current_user: Practitioner = Depends(get_current_practitioner),
+) -> EncounterActivityResponse:
+    """
+    Actividad asistencial del servicio por día y por semana.
+
+    Cifras del servicio completo, no del profesional autenticado: en urgencias
+    lo que se mide es la carga del turno. Los días se cortan en la zona horaria
+    de la consulta (`CLINIC_TIMEZONE`).
+    """
+    service = EncounterActivityService(db, settings.CLINIC_TIMEZONE)
+    return await service.get_activity(days=days, weeks=weeks)
+
+
+# Declarada después de /activity: una ruta dinámica registrada antes
+# capturaría "activity" como si fuera un encounter_id.
 @router.get("/{encounter_id}", response_model=EncounterResponse)
 async def get_encounter(
     encounter_id: str,

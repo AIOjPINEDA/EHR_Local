@@ -1,11 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { api } from "@/lib/api/client";
 import { useAuthGuard } from "@/lib/hooks/useAuthGuard";
-import { HospitalBrand } from "@/components/branding/hospital-brand";
-import { PrimaryNav } from "@/components/navigation/primary-nav";
+import { AppShell } from "@/components/layout/app-shell";
 import { TemplateCard } from "@/components/templates/template-card";
 import { TemplateFormModal } from "@/components/templates/template-form-modal";
 import type { Template, TemplateListResponse, TemplateMedication } from "@/types/api";
@@ -213,31 +211,18 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white shadow-sm">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-4">
-          <HospitalBrand title="Templates de Tratamiento" />
-          <div className="flex items-center gap-2">
-            <Link
-              href="/patients"
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-            >
-              Pacientes
-            </Link>
-            <button
-              onClick={openCreateModal}
-              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
-            >
-              + Nuevo Template
-            </button>
-          </div>
-        </div>
-        <div className="mx-auto max-w-[1400px] px-4 pb-4">
-          <PrimaryNav showTitle={false} />
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-[1400px] px-4 py-8">
+    <AppShell
+      title="Templates de Tratamiento"
+      actions={
+        <button
+          onClick={openCreateModal}
+          className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+        >
+          + Nuevo Template
+        </button>
+      }
+    >
+      <>
         {error && (
           <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-6">
             {error}
@@ -344,7 +329,7 @@ export default function TemplatesPage() {
             )}
           </div>
         )}
-      </main>
+      </>
 
       {/* Modal */}
       {isModalOpen && (
@@ -369,6 +354,6 @@ export default function TemplatesPage() {
           onClose={() => setIsModalOpen(false)}
         />
       )}
-    </div>
+    </AppShell>
   );
 }

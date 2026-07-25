@@ -149,7 +149,7 @@
           "Patients"
         ],
         "summary": "List Patients",
-        "description": "List patients with optional search.\n\n- Search by partial name or DNI (minimum 2 characters)\n- Paginated results",
+        "description": "List patients with optional search.\n\n- Search by partial name or DNI (minimum 2 characters)\n- `sort=recent` limita el listado a pacientes ya atendidos, del más reciente\n  al más antiguo: es la vista útil en urgencias.\n- Paginated results",
         "operationId": "list_patients_api_v1_patients__get",
         "security": [
           {
@@ -198,6 +198,19 @@
               "default": 0,
               "title": "Offset"
             }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(name|recent)$",
+              "description": "name: directorio alfabético · recent: últimos atendidos primero",
+              "default": "name",
+              "title": "Sort"
+            },
+            "description": "name: directorio alfabético · recent: últimos atendidos primero"
           }
         ],
         "responses": {
@@ -641,6 +654,73 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EncounterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/encounters/activity": {
+      "get": {
+        "tags": [
+          "Encounters"
+        ],
+        "summary": "Get Encounter Activity",
+        "description": "Actividad asistencial del servicio por día y por semana.\n\nCifras del servicio completo, no del profesional autenticado: en urgencias\nlo que se mide es la carga del turno. Los días se cortan en la zona horaria\nde la consulta (`CLINIC_TIMEZONE`).",
+        "operationId": "get_encounter_activity_api_v1_encounters_activity_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "description": "Días de la serie diaria",
+              "default": 30,
+              "title": "Days"
+            },
+            "description": "Días de la serie diaria"
+          },
+          {
+            "name": "weeks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 26,
+              "minimum": 1,
+              "description": "Semanas de la serie semanal",
+              "default": 12,
+              "title": "Weeks"
+            },
+            "description": "Semanas de la serie semanal"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EncounterActivityResponse"
                 }
               }
             }
@@ -1241,6 +1321,81 @@
   },
   "components": {
     "schemas": {
+      "ActivityCount": {
+        "properties": {
+          "encounters": {
+            "type": "integer",
+            "title": "Encounters",
+            "description": "Consultas atendidas"
+          },
+          "patients": {
+            "type": "integer",
+            "title": "Patients",
+            "description": "Pacientes distintos atendidos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "encounters",
+          "patients"
+        ],
+        "title": "ActivityCount",
+        "description": "Recuento de actividad de un periodo."
+      },
+      "ActivityDayPoint": {
+        "properties": {
+          "encounters": {
+            "type": "integer",
+            "title": "Encounters",
+            "description": "Consultas atendidas"
+          },
+          "patients": {
+            "type": "integer",
+            "title": "Patients",
+            "description": "Pacientes distintos atendidos"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "encounters",
+          "patients",
+          "date"
+        ],
+        "title": "ActivityDayPoint",
+        "description": "Actividad de un día concreto (zona horaria de la consulta)."
+      },
+      "ActivityWeekPoint": {
+        "properties": {
+          "encounters": {
+            "type": "integer",
+            "title": "Encounters",
+            "description": "Consultas atendidas"
+          },
+          "patients": {
+            "type": "integer",
+            "title": "Patients",
+            "description": "Pacientes distintos atendidos"
+          },
+          "week_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start"
+          }
+        },
+        "type": "object",
+        "required": [
+          "encounters",
+          "patients",
+          "week_start"
+        ],
+        "title": "ActivityWeekPoint",
+        "description": "Actividad de una semana, identificada por su lunes."
+      },
       "AllergyCreate": {
         "properties": {
           "code_text": {
@@ -1486,6 +1641,59 @@
         ],
         "title": "ConditionResponse",
         "description": "Condition response (FHIR R5 Condition resource).\n\nRepresenta un diagnóstico clínico como recurso atómico independiente."
+      },
+      "EncounterActivityResponse": {
+        "properties": {
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "Zona horaria usada para cortar los días"
+          },
+          "today": {
+            "$ref": "#/components/schemas/ActivityCount"
+          },
+          "yesterday": {
+            "$ref": "#/components/schemas/ActivityCount"
+          },
+          "current_week": {
+            "$ref": "#/components/schemas/ActivityCount"
+          },
+          "previous_week": {
+            "$ref": "#/components/schemas/ActivityCount"
+          },
+          "daily": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityDayPoint"
+            },
+            "type": "array",
+            "title": "Daily"
+          },
+          "weekly": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityWeekPoint"
+            },
+            "type": "array",
+            "title": "Weekly"
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_at",
+          "timezone",
+          "today",
+          "yesterday",
+          "current_week",
+          "previous_week",
+          "daily",
+          "weekly"
+        ],
+        "title": "EncounterActivityResponse",
+        "description": "Serie de actividad para el panel de urgencias.\n\n`daily` y `weekly` son series continuas: los periodos sin actividad vienen\ncon ceros para que el gráfico no muestre huecos engañosos."
       },
       "EncounterCreate": {
         "properties": {

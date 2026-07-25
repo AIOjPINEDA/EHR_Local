@@ -2,6 +2,7 @@
 ConsultaMed Backend - Configuration Settings
 """
 from functools import lru_cache
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -39,6 +40,14 @@ class Settings(BaseSettings):
         validation_alias="CONSULTAMED_REGISTRATION_PASSWORD",
     )
 
+    # Zona horaria de la consulta. Define qué cuenta como "hoy" en las
+    # estadísticas de actividad: una urgencia atendida a las 01:00 pertenece al
+    # día local, no al día UTC.
+    CLINIC_TIMEZONE: str = Field(
+        default="Europe/Madrid",
+        validation_alias="CONSULTAMED_CLINIC_TIMEZONE",
+    )
+
     # CORS
     FRONTEND_URL: str = Field(
         default="http://localhost:3000",
@@ -72,6 +81,10 @@ class Settings(BaseSettings):
             raise ValueError("DATABASE_URL must be set and non-empty.")
         if not self.REGISTRATION_PASSWORD.strip():
             raise ValueError("REGISTRATION_PASSWORD must be set and non-empty.")
+        try:
+            ZoneInfo(self.CLINIC_TIMEZONE)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError(f"CLINIC_TIMEZONE is not a valid IANA timezone: {exc}") from exc
         if self.ENVIRONMENT.lower() == "production" and self.SQLALCHEMY_ECHO:
             raise ValueError("SQLALCHEMY_ECHO cannot be enabled in production.")
         return self

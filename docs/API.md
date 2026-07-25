@@ -90,6 +90,24 @@ curl -X POST "http://localhost:8000/api/v1/auth/register" \
 | GET | `/auth/practitioners` | Perfiles activos para el selector de acceso |
 | GET | `/auth/me` | Usuario actual |
 
+### Actividad asistencial
+
+| Method | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/encounters/activity` | Consultas y pacientes por día y semana |
+
+Parámetros: `days` (1-90, def. 30) y `weeks` (1-26, def. 12).
+
+Las series vienen **continuas**: los periodos sin actividad llegan a cero en vez
+de omitirse, para que el gráfico no junte días separados. Los días se cortan en
+la zona horaria de la consulta (`CONSULTAMED_CLINIC_TIMEZONE`, por defecto
+`Europe/Madrid`): una urgencia atendida a la 01:00 cuenta en su día local, no en
+el día UTC. Las cifras son del servicio completo, no del profesional autenticado.
+
+`encounters` cuenta consultas y `patients` pacientes distintos; en una semana no
+coinciden si alguien reconsulta, por eso el recuento semanal es su propia
+agregación y no la suma de los días.
+
 ### Health Checks (fuera de `/api/v1`)
 
 | Method | Endpoint | Descripción |
@@ -98,6 +116,9 @@ curl -X POST "http://localhost:8000/api/v1/auth/register" \
 | GET | `/` | Health básico con metadata |
 
 ### Patients
+
+> `GET /patients/` acepta `sort`: `name` (directorio alfabético, por defecto) o
+> `recent` (solo pacientes ya atendidos, del más reciente al más antiguo).
 
 | Method | Endpoint | Descripción |
 |--------|----------|-------------|
