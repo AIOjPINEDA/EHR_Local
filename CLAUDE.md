@@ -13,6 +13,7 @@ This shim intentionally defers to `AGENTS.md`. If anything here conflicts with `
 - FastAPI remains the operational source of truth for writes, auth, and business logic.
 - Runtime is native one-click on Windows (`scripts/windows/start-consultamed.bat`), Docker only for PostgreSQL. `scripts/repo-tool.mjs` orchestrates bootstrap, start-backend, backup/restore, smoke, and the gate.
 - The HAPI FHIR R5 sidecar and `app/fhir/{clinical_mapping,etl}.py` were archived to local `.archive/fhir-interop/` by spec 006 (not used by the clinical flow). `app/fhir/base_mapping.py` stays live (imported by patient/practitioner models).
+- Practitioner profiles are self-service (`POST /auth/register` + administration key); deactivation/deletion are CLI-only (`backend/scripts/manage_practitioners.py`) and never exposed in the UI or the API.
 - GitHub Issues are the only active execution backlog. Specs keep change scope, decisions, and historical context; they are not status boards.
 - `./scripts/test_gate.sh` is the pre-commit target and is green as of spec 006. If it turns red, report the exact failing step instead of assuming pre-existing debt.
 

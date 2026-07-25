@@ -18,10 +18,49 @@
 ### Iniciar Sesión
 
 1. Abre la aplicación en tu navegador (Chrome o Firefox recomendado)
-2. Introduce tu email y contraseña
-3. Pulsa **"Iniciar Sesión"**
+2. Pulsa tu nombre en **"Selección rápida"** (rellena tu email) o escríbelo a mano
+3. Introduce tu contraseña
+4. Pulsa **"Acceder al Sistema"**
 
 > ⚠️ La sesión expira automáticamente tras 8 horas.
+
+### Crear un Perfil Nuevo
+
+Cualquier médico que se incorpore a la consulta puede crear su propio perfil sin
+usar las credenciales de otro compañero.
+
+1. En la pantalla de acceso, pulsa **"Crear perfil nuevo"**
+2. Rellena nombre, apellidos, Nº Colegiado, especialidad y email de acceso
+3. Elige una contraseña (mínimo 8 caracteres) y repítela
+4. Introduce la **clave de alta** que entrega administración
+5. Pulsa **"Crear perfil"** y luego **"Ir a iniciar sesión"**
+
+> 🔑 Sin la clave de alta no se puede crear ningún perfil. Pídela a administración;
+> no se envía por email ni aparece en la aplicación.
+
+Notas:
+
+- El email y el Nº Colegiado no pueden repetirse entre perfiles.
+- El perfil nuevo aparece en la "Selección rápida" en cuanto se crea.
+
+### Dar de Baja un Perfil
+
+Por seguridad, las bajas **no están disponibles desde la aplicación**: retirar a un
+médico afecta a la trazabilidad de la historia clínica que ha firmado. Se hacen
+desde el equipo de la consulta, en una terminal, dentro de la carpeta `backend`:
+
+```bash
+.venv\Scripts\python.exe scripts/manage_practitioners.py list
+.venv\Scripts\python.exe scripts/manage_practitioners.py deactivate --email medico@consultamed.es
+.venv\Scripts\python.exe scripts/manage_practitioners.py activate --email medico@consultamed.es
+```
+
+- **`deactivate`** es la opción normal: el médico deja de poder entrar y desaparece
+  del selector, pero sus consultas y recetas siguen firmadas con su nombre.
+- **`delete`** (con `--yes`) borra el perfil definitivamente y **solo funciona si no
+  tiene ninguna consulta ni receta**. Si las tiene, el comando se niega y te indica
+  que uses `deactivate`.
+- **`set-password`** permite reasignar una contraseña olvidada.
 
 ---
 

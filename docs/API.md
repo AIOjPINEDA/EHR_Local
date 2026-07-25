@@ -17,7 +17,8 @@ ConsultaMed usa **JWT (JSON Web Tokens)** con:
 
 ### Header Requerido
 
-Todas las rutas (excepto `/auth/login`) requieren:
+Todas las rutas requieren el header siguiente, salvo las tres públicas
+(`/auth/login`, `/auth/register` y `/auth/practitioners`):
 
 ```
 Authorization: Bearer <JWT_TOKEN>
@@ -46,6 +47,36 @@ curl -X POST "http://localhost:8000/api/v1/auth/login" \
 }
 ```
 
+### Alta de perfil
+
+El alta la autoriza la clave que entrega administración
+(`CONSULTAMED_REGISTRATION_PASSWORD`), no una sesión existente. Devuelve el perfil
+creado, no un token: el alta y el acceso son pasos distintos.
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "identifier_value": "282887777",
+    "name_given": "Carlos",
+    "name_family": "Vidal Soto",
+    "qualification_code": "Cardiologia",
+    "telecom_email": "carlos@consultamed.es",
+    "password": "cardio2026",
+    "registration_password": "<clave de administracion>"
+  }'
+```
+
+| Código | Motivo |
+|--------|--------|
+| 201 | Perfil creado |
+| 403 | Clave de administración incorrecta |
+| 400 | Email o Nº Colegiado ya en uso |
+| 422 | Datos inválidos (contraseña < 8 caracteres, email mal formado) |
+
+> Las bajas **no** están expuestas en la API. Se gestionan desde
+> `backend/scripts/manage_practitioners.py` (ver `docs/USER_GUIDE.md`).
+
 ---
 
 ## 📡 Endpoints
@@ -55,6 +86,8 @@ curl -X POST "http://localhost:8000/api/v1/auth/login" \
 | Method | Endpoint | Descripción |
 |--------|----------|-------------|
 | POST | `/auth/login` | Iniciar sesión (form-data) |
+| POST | `/auth/register` | Alta de perfil con clave de administración |
+| GET | `/auth/practitioners` | Perfiles activos para el selector de acceso |
 | GET | `/auth/me` | Usuario actual |
 
 ### Health Checks (fuera de `/api/v1`)

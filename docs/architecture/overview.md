@@ -136,16 +136,45 @@ Authentication is implemented using JWT tokens with bcrypt password hashing:
 
 - Frontend sends `Authorization: Bearer <token>` header on all API requests.
 - Backend dependency `get_current_practitioner()` decodes JWT.
-- If valid, request proceeds with `Practitioner` context.
+- If valid and the profile is still `active`, request proceeds with `Practitioner` context.
+
+### Practitioner Profiles
+
+Profiles are self-service on the way in and code-only on the way out:
+
+- `POST /api/v1/auth/register` creates a profile. It is authorised by the shared
+  administration key (`CONSULTAMED_REGISTRATION_PASSWORD`, compared with
+  `hmac.compare_digest`), not by an existing session, so a new doctor can join
+  without borrowing someone else's credentials. It returns the profile, not a token.
+- `GET /api/v1/auth/practitioners` feeds the login screen's quick-select with the
+  active profiles (name, specialty, login email — no clinical data, no hashes).
+- `telecom_email` is the login key: stored lowercase and protected by a partial
+  unique index (`idx_practitioners_email_unique`).
+- Deactivation and deletion are deliberately absent from the UI and the API. They
+  live in `backend/scripts/manage_practitioners.py`
+  (`list` / `create` / `set-password` / `activate` / `deactivate` / `delete`).
+  `delete` only proceeds when the profile has no `Encounter` and no
+  `MedicationRequest` attached; otherwise it refuses and points at `deactivate`,
+  which removes access while keeping signed clinical history attributable.
+  Treatment templates are practice configuration, so they are detached
+  (`practitioner_id = NULL`) rather than deleted.
 
 ## Core Functional Flows
 
 ### 1. Login
 
-1. User submits email/password in frontend.
-2. Frontend calls backend `/api/v1/auth/login`.
-3. Backend returns JWT + practitioner profile.
-4. Frontend stores token and redirects to dashboard.
+1. Login screen lists active profiles from `/api/v1/auth/practitioners`; selecting one prefills the email.
+2. User submits email/password in frontend.
+3. Frontend calls backend `/api/v1/auth/login`.
+4. Backend returns JWT + practitioner profile.
+5. Frontend stores token and redirects to dashboard.
+
+### 1b. New Profile
+
+1. Doctor opens `/register` from the login screen.
+2. Frontend posts the profile plus the administration key to `/api/v1/auth/register`.
+3. Backend validates the key, rejects duplicate email/Nº Colegiado, hashes the password with bcrypt.
+4. Doctor returns to `/login`, where the new profile is already listed.
 
 ### 2. Consultation Lifecycle
 

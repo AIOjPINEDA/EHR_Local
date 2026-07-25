@@ -74,6 +74,12 @@ powershell -ExecutionPolicy Bypass -File scripts/repo-tool.ps1 setup-local-db
 5. **Audit Logging**: Every CRUD operation on sensitive data must be logged.
 6. **Input Validation**: Backend validates ALL inputs; frontend validation is only for UX.
 7. **No PII in Logs**: Never log patient names, DNI, or health data.
+8. **Profile lifecycle**: creating a practitioner profile is self-service via
+   `POST /auth/register`, gated by the shared administration key
+   (`CONSULTAMED_REGISTRATION_PASSWORD`). Deactivation and deletion stay out of the
+   UI and the API — they live in `backend/scripts/manage_practitioners.py`. Never
+   expose a delete path that can detach signed clinical history from its author;
+   `deactivate` is the supported way to retire a practitioner.
 
 ## FHIR R5 Alignment
 
