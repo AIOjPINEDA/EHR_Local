@@ -32,6 +32,13 @@ class Settings(BaseSettings):
         validation_alias="CONSULTAMED_ACCESS_TOKEN_EXPIRE_MINUTES",
     )  # 8 hours
 
+    # Alta de perfiles: clave compartida que entrega administración a cada
+    # médico nuevo. No es una credencial de sesión, solo autoriza el registro.
+    REGISTRATION_PASSWORD: str = Field(
+        default="Guadalix",
+        validation_alias="CONSULTAMED_REGISTRATION_PASSWORD",
+    )
+
     # CORS
     FRONTEND_URL: str = Field(
         default="http://localhost:3000",
@@ -63,6 +70,8 @@ class Settings(BaseSettings):
         self.DATABASE_URL = self._ensure_asyncpg(self.DATABASE_URL)
         if not self.DATABASE_URL:
             raise ValueError("DATABASE_URL must be set and non-empty.")
+        if not self.REGISTRATION_PASSWORD.strip():
+            raise ValueError("REGISTRATION_PASSWORD must be set and non-empty.")
         if self.ENVIRONMENT.lower() == "production" and self.SQLALCHEMY_ECHO:
             raise ValueError("SQLALCHEMY_ECHO cannot be enabled in production.")
         return self

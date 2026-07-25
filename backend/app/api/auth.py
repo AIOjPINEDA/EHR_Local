@@ -1,49 +1,36 @@
 """
 ConsultaMed Backend - Authentication Endpoints
 
-Autenticación local con JWT (PyJWT) y bcrypt.
+Autenticación local con JWT (PyJWT) y bcrypt, y alta de nuevos perfiles
+profesionales autorizada por la clave que entrega administración.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Optional, cast
 
-import bcrypt
 import jwt
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, ConfigDict
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.api.exceptions import raise_unauthorized
+from app.api.exceptions import raise_bad_request, raise_forbidden, raise_unauthorized
 from app.database import get_db
 from app.models.practitioner import Practitioner
+from app.schemas.practitioner import (
+    PractitionerCreate,
+    PractitionerPublicSummary,
+    PractitionerResponse,
+    TokenResponse,
+)
+from app.services.practitioner_service import PractitionerService
+from app.services.security import matches_registration_password, verify_password
 
 router = APIRouter()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-
-class PractitionerResponse(BaseModel):
-    """Practitioner response schema."""
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-    identifier_value: str
-    name_given: str
-    name_family: str
-    qualification_code: Optional[str]
-    telecom_email: Optional[str]
-
-
-class TokenResponse(BaseModel):
-    """Token response schema."""
-    access_token: str
-    token_type: str = "bearer"
-    practitioner: PractitionerResponse
-
-
-
+INVALID_CREDENTIALS_DETAIL = "Email o contraseña incorrectos"
+INACTIVE_PROFILE_DETAIL = "Este perfil está desactivado. Contacta con administración."
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -69,12 +56,15 @@ async def get_current_practitioner(
     except jwt.InvalidTokenError:
         raise_unauthorized("Credenciales inválidas")
 
-    stmt = select(Practitioner).where(Practitioner.id == practitioner_id)
-    result = await db.execute(stmt)
-    practitioner = result.scalar_one_or_none()
+    practitioner = await PractitionerService(db).get_by_id(practitioner_id)
 
     if practitioner is None:
         raise_unauthorized("Credenciales inválidas")
+
+    # Un perfil desactivado deja de tener acceso aunque su token siga vigente.
+    if not practitioner.active:
+        raise_unauthorized(INACTIVE_PROFILE_DETAIL)
+
     return practitioner
 
 
@@ -89,36 +79,82 @@ async def login(
     Autentica al practitioner por email y contraseña verificando el `password_hash`
     almacenado con bcrypt y devuelve un token JWT de acceso.
     """
-    # Buscar practitioner por email
-    stmt = select(Practitioner).where(Practitioner.telecom_email == form_data.username)
-    result = await db.execute(stmt)
-    practitioner = result.scalar_one_or_none()
+    practitioner = await PractitionerService(db).get_by_email(form_data.username)
 
-    if not practitioner:
-        raise_unauthorized("Email o contraseña incorrectos")
+    # La verificación se ejecuta también cuando el email no existe para que el
+    # tiempo de respuesta no revele qué perfiles están dados de alta.
+    password_ok = verify_password(
+        form_data.password,
+        practitioner.password_hash if practitioner else None,
+    )
 
-    if not practitioner.password_hash:
-        raise_unauthorized("Email o contraseña incorrectos")
+    if not practitioner or not password_ok:
+        raise_unauthorized(INVALID_CREDENTIALS_DETAIL)
 
-    if not bcrypt.checkpw(form_data.password.encode("utf-8"), practitioner.password_hash.encode("utf-8")):
-        raise_unauthorized("Email o contraseña incorrectos")
-    
-    # Crear token
+    if not practitioner.active:
+        raise_unauthorized(INACTIVE_PROFILE_DETAIL)
+
     access_token = create_access_token(data={"sub": practitioner.id})
-    
+
     return TokenResponse(
         access_token=access_token,
         practitioner=PractitionerResponse.model_validate(practitioner),
     )
 
 
+@router.get("/practitioners", response_model=list[PractitionerPublicSummary])
+async def list_available_practitioners(
+    db: AsyncSession = Depends(get_db),
+) -> list[PractitionerPublicSummary]:
+    """
+    Perfiles activos disponibles en la pantalla de acceso.
+
+    Endpoint público por necesidad: alimenta el selector rápido del login, que
+    hasta ahora era una lista fija en el frontend. Solo expone datos
+    profesionales (nombre, especialidad y email de acceso).
+    """
+    practitioners = await PractitionerService(db).list_active()
+    return [PractitionerPublicSummary.model_validate(p) for p in practitioners]
+
+
+@router.post(
+    "/register",
+    status_code=status.HTTP_201_CREATED,
+    response_model=PractitionerResponse,
+)
+async def register_practitioner(
+    payload: PractitionerCreate,
+    db: AsyncSession = Depends(get_db),
+) -> PractitionerResponse:
+    """
+    Da de alta un nuevo perfil profesional.
+
+    El alta la autoriza la clave que entrega administración
+    (`CONSULTAMED_REGISTRATION_PASSWORD`), no una sesión existente: un médico
+    nuevo debe poder incorporarse sin que otro le ceda sus credenciales.
+    """
+    if not matches_registration_password(
+        payload.registration_password, settings.REGISTRATION_PASSWORD
+    ):
+        raise_forbidden("Clave de administración incorrecta")
+
+    service = PractitionerService(db)
+
+    try:
+        practitioner = await service.create(payload.model_dump(exclude={"registration_password"}))
+    except ValueError as exc:
+        raise_bad_request(str(exc))
+
+    return PractitionerResponse.model_validate(practitioner)
+
+
 @router.get("/me", response_model=PractitionerResponse)
 async def get_me(
     current_user: Practitioner = Depends(get_current_practitioner)
-) -> Practitioner:
+) -> PractitionerResponse:
     """
     Get current authenticated user.
-    
+
     Returns practitioner data for the authenticated user.
     """
-    return current_user
+    return PractitionerResponse.model_validate(current_user)
