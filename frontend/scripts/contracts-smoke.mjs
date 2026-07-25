@@ -69,6 +69,8 @@ async function run() {
   const authStoreSource = await readFile(authStorePath, "utf8");
   const apiClientPath = join(projectRoot, "src", "lib", "api", "client.ts");
   const apiClientSource = await readFile(apiClientPath, "utf8");
+  const authGuardPath = join(projectRoot, "src", "lib", "hooks", "useAuthGuard.ts");
+  const authGuardSource = await readFile(authGuardPath, "utf8");
 
   assert(source.includes("subject_id"), "encounters/[id] debe usar subject_id en el contrato.");
   assert(!source.includes("patient_id:"), "encounters/[id] no debe tipar patient_id en EncounterDetail.");
@@ -274,6 +276,15 @@ async function run() {
   assert(
     apiClientSource.includes("extractErrorDetail") && apiClientSource.includes("Array.isArray(detail)"),
     "el cliente API debe traducir los errores de validación 422 de FastAPI a texto legible."
+  );
+  assert(
+    apiClientSource.includes("export class ApiError") && apiClientSource.includes("response.status"),
+    "el cliente API debe propagar el código HTTP para distinguir 401 de un fallo de red."
+  );
+  assert(
+    authGuardSource.includes("fetchCurrentPractitioner") &&
+      authGuardSource.includes("error.status !== 401"),
+    "useAuthGuard debe cerrar la sesión cuando el backend revoca el perfil, no ante un fallo de red."
   );
 
   console.log("Frontend contract smoke checks passed.");

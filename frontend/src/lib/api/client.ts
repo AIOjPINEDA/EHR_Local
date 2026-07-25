@@ -8,6 +8,22 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 type ResponseMode = "json" | "blob";
 
+/**
+ * Error de respuesta del backend con su código HTTP.
+ *
+ * Permite distinguir un rechazo de credenciales (401/403) de una caída de red,
+ * que no debe cerrar la sesión del usuario.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 interface ValidationIssue {
   loc?: unknown[];
   msg?: string;
@@ -87,7 +103,7 @@ class ApiClient {
 
   private async handleErrorResponse(response: Response): Promise<never> {
     const payload = await response.json().catch(() => null);
-    throw new Error(extractErrorDetail(payload));
+    throw new ApiError(extractErrorDetail(payload), response.status);
   }
 
   private async parseResponse<T>(response: Response, responseMode: ResponseMode): Promise<T> {

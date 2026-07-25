@@ -26,6 +26,16 @@ export async function login(email: string, password: string): Promise<LoginRespo
   return api.postForm<LoginResponse>("/auth/login", formData);
 }
 
+/**
+ * Perfil del profesional autenticado.
+ *
+ * Lanza `ApiError` con 401 si el token ya no vale, por ejemplo porque el perfil
+ * se desactivó o se borró desde la CLI mientras la sesión seguía abierta.
+ */
+export async function fetchCurrentPractitioner(): Promise<Practitioner> {
+  return api.get<Practitioner>("/auth/me");
+}
+
 /** Perfiles activos que pueden iniciar sesión (selector de la pantalla de acceso). */
 export async function fetchAvailablePractitioners(): Promise<PractitionerPublicSummary[]> {
   return api.get<PractitionerPublicSummary[]>("/auth/practitioners");
