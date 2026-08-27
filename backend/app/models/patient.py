@@ -8,7 +8,7 @@ from sqlalchemy import String, Boolean, DateTime, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.database import Base
+from app.database import Base, utcnow
 from app.fhir.base_mapping import (
     patient_fhir_identifiers,
     patient_to_fhir_reference,
@@ -66,12 +66,12 @@ class Patient(Base):
     # Meta
     meta_created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow
+        default=utcnow
     )
     meta_updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
+        default=utcnow,
+        onupdate=utcnow
     )
     
     # Relationships

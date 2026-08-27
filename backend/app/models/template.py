@@ -7,7 +7,7 @@ from sqlalchemy import String, Integer, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
-from app.database import Base
+from app.database import Base, utcnow
 
 
 class TreatmentTemplate(Base):
@@ -70,12 +70,12 @@ class TreatmentTemplate(Base):
     # Meta
     meta_created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow
+        default=utcnow
     )
     meta_updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
+        default=utcnow,
+        onupdate=utcnow
     )
     
     # Relationships

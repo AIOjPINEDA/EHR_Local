@@ -8,7 +8,7 @@ from sqlalchemy import String, DateTime, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.database import Base
+from app.database import Base, utcnow
 
 
 class Encounter(Base):
@@ -53,7 +53,7 @@ class Encounter(Base):
     # Period
     period_start: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow
+        default=utcnow
     )
     period_end: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),

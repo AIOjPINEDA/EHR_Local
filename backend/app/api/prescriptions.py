@@ -68,6 +68,7 @@ async def _get_encounter_or_404(db: AsyncSession, encounter_id: str) -> Encounte
         select(Encounter)
         .options(
             selectinload(Encounter.patient),
+            selectinload(Encounter.practitioner),
             selectinload(Encounter.conditions),
             selectinload(Encounter.medications),
         )
@@ -81,12 +82,16 @@ async def _get_encounter_or_404(db: AsyncSession, encounter_id: str) -> Encounte
     return encounter
 
 
-def _build_prescription_payload(
-    encounter: Encounter,
-    current_practitioner: Practitioner,
-) -> dict[str, Any]:
-    """Construye payload normalizado compartido por preview y PDF."""
+def _build_prescription_payload(encounter: Encounter) -> dict[str, Any]:
+    """Construye payload normalizado compartido por preview y PDF.
+
+    La receta se firma con el medico que atendio la consulta
+    (``encounter.practitioner``), no con quien descarga el PDF. En una consulta
+    con varios medicos, firmar con el usuario logueado estampaba un Nº Colegiado
+    que no correspondia al prescriptor.
+    """
     patient = encounter.patient
+    prescriber = encounter.practitioner
     diagnosis_text = ", ".join(c.code_text for c in encounter.conditions) if encounter.conditions else ""
 
     return {
@@ -97,9 +102,9 @@ def _build_prescription_payload(
             "gender": _format_gender_label(patient.gender),
         },
         "practitioner": {
-            "full_name": f"{current_practitioner.name_given} {current_practitioner.name_family}",
-            "identifier_value": current_practitioner.identifier_value,
-            "qualification_code": current_practitioner.qualification_code,
+            "full_name": f"{prescriber.name_given} {prescriber.name_family}",
+            "identifier_value": prescriber.identifier_value,
+            "qualification_code": prescriber.qualification_code,
         },
         "encounter": {
             "date": encounter.period_start.strftime("%d/%m/%Y"),
@@ -133,7 +138,7 @@ async def get_prescription_preview(
     Returns structured data for frontend preview component.
     """
     encounter = await _get_encounter_or_404(db, encounter_id)
-    payload = _build_prescription_payload(encounter, current_practitioner)
+    payload = _build_prescription_payload(encounter)
 
     return pdf_service.generate_prescription_preview(
         patient=payload["patient"],
@@ -160,7 +165,7 @@ async def download_prescription_pdf(
     if not encounter.medications:
         raise_bad_request("La consulta no tiene medicamentos para generar receta")
 
-    payload = _build_prescription_payload(encounter, current_practitioner)
+    payload = _build_prescription_payload(encounter)
 
     # Generar PDF
     pdf_bytes = pdf_service.generate_prescription_pdf(

@@ -7,7 +7,7 @@ from sqlalchemy import String, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.database import Base
+from app.database import Base, utcnow
 
 
 class Condition(Base):
@@ -64,7 +64,7 @@ class Condition(Base):
     # Meta
     recorded_date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.utcnow
+        default=utcnow
     )
     
     # Relationships
