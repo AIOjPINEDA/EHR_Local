@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:54329/consultamed"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:15432/consultamed"
 
     # JWT Authentication
     JWT_SECRET_KEY: str = Field(

@@ -19,13 +19,13 @@ def test_local_compose_uses_pg17_latest_patch_override() -> None:
     """Compose image must default to explicit PG17 patch and stay overridable."""
     compose = (_repo_root() / "docker-compose.yml").read_text(encoding="utf-8")
     assert "image: ${LOCAL_POSTGRES_IMAGE:-postgres:17.7}" in compose
-    assert '${LOCAL_POSTGRES_PORT:-54329}:5432' in compose
+    assert '${LOCAL_POSTGRES_PORT:-15432}:5432' in compose
 
 
 def test_env_example_uses_single_database_url() -> None:
     """.env.example must use DATABASE_URL as single runtime selector."""
     env_example = (_repo_root() / "backend" / ".env.example").read_text(encoding="utf-8")
-    assert "DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:54329/consultamed" in env_example
+    assert "DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:15432/consultamed" in env_example
     assert "DATABASE_MODE" not in env_example
     assert "LOCAL_DATABASE_URL" not in env_example
     assert "SUPABASE_DATABASE_URL" not in env_example
@@ -60,7 +60,7 @@ def test_repo_tool_reuses_existing_named_container() -> None:
     assert 'const containerName = "consultamed-db";' in repo_tool
     assert '`name=^/${containerName}$`' in repo_tool
     assert 'run("docker", ["start", containerName]);' in repo_tool
-    assert 'readIntegerEnv("LOCAL_POSTGRES_PORT", 54329)' in repo_tool
+    assert 'readIntegerEnv("LOCAL_POSTGRES_PORT", 15432)' in repo_tool
 
 
 def test_repo_tool_uses_neutral_migrations_path() -> None:
@@ -78,8 +78,25 @@ def test_windows_start_script_uses_native_repo_tool_bootstrap() -> None:
     assert ":ensure_docker" in start_script
     assert 'Docker Desktop.exe' in start_script
     assert 'start "" "%DOCKER_DESKTOP_EXE%"' in start_script
-    assert 'repo-tool.ps1" setup-local-db' in start_script
+    assert "repo-tool.mjs setup-local-db" in start_script
     # Backend launches via repo-tool start-backend (prepends GTK to PATH for
     # WeasyPrint prescription PDFs), not bare uvicorn.
     assert "repo-tool.mjs start-backend" in start_script
     assert "npm.cmd run dev" in start_script
+
+
+def test_windows_start_script_waits_for_real_readiness() -> None:
+    """The launcher must poll services instead of sleeping a fixed number of seconds.
+
+    Fixed `timeout /t N` waits raced the backend on a cold start: the smoke check
+    and the browser could fire before uvicorn or the first Next.js compile were
+    ready, so the launcher reported success over a broken app.
+    """
+    start_script = (_repo_root() / "scripts" / "windows" / "start-consultamed.bat").read_text(
+        encoding="utf-8"
+    )
+    assert "repo-tool.mjs preflight" in start_script
+    assert "wait-for --url http://127.0.0.1:8000/health" in start_script
+    assert "wait-for --url http://localhost:3000" in start_script
+    # Reuse a service that is already listening instead of starting a second one.
+    assert ":port_busy" in start_script

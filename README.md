@@ -54,7 +54,7 @@
 ./scripts/setup-local-db.sh
 ```
 
-Levanta PostgreSQL 17 en `localhost:54329` y aplica de forma idempotente el SQL neutral de `database/migrations/`.
+Levanta PostgreSQL 17 en `localhost:15432` y aplica de forma idempotente el SQL neutral de `database/migrations/`.
 
 ### 2. Backend
 
@@ -70,7 +70,7 @@ uvicorn app.main:app --reload --port 8000
 `.env` mínimo:
 
 ```env
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:54329/consultamed
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:15432/consultamed
 JWT_SECRET_KEY=tu-secreto-super-seguro-cambialo
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=480
@@ -79,7 +79,7 @@ ENVIRONMENT=development
 DEBUG=true
 ```
 
-> Ruta recomendada: PostgreSQL local en `localhost:54329`.
+> Ruta recomendada: PostgreSQL local en `localhost:15432`.
 
 ### 3. Frontend
 

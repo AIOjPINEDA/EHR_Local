@@ -3,7 +3,10 @@ services:
     image: ${LOCAL_POSTGRES_IMAGE:-postgres:17.7}
     container_name: consultamed-db
     ports:
-      - "${LOCAL_POSTGRES_PORT:-54329}:5432"
+      # Bind to loopback only: the database holds patient records and uses the
+      # default postgres superuser credentials. Publishing on 0.0.0.0 exposes it
+      # to every device on the clinic/hospital network.
+      - "127.0.0.1:${LOCAL_POSTGRES_PORT:-15432}:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
